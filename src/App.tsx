@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import DriverPortal from "./pages/DriverPortal";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import DriveWithUs from "./pages/DriveWithUs";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/driver" element={<DriverPortal />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/drive-with-us" element={<DriveWithUs />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

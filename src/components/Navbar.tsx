@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 const navLinks = [
   { label: "Home", to: "/home" },
   { label: "Book", to: "/book/normal" },
+  { label: "Drive With Us", to: "/drive-with-us" },
   { label: "Safety", to: "/ride/tracking" },
   { label: "About", to: "/dashboard" },
 ];
@@ -23,9 +24,8 @@ export const Navbar = () => {
 
   return (
     <nav
-      className={`sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md transition-all ${
-        scrolled ? "shadow-sm" : ""
-      }`}
+      className={`sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md transition-all ${scrolled ? "shadow-sm" : ""
+        }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link to="/home">
@@ -37,9 +37,8 @@ export const Navbar = () => {
             <Link
               key={l.to}
               to={l.to}
-              className={`text-[15px] font-medium transition-colors hover:text-foreground ${
-                location.pathname === l.to ? "text-foreground" : "text-muted-foreground"
-              }`}
+              className={`text-[15px] font-medium transition-colors hover:text-foreground ${location.pathname === l.to ? "text-foreground" : "text-muted-foreground"
+                }`}
             >
               {l.label}
             </Link>

@@ -13,20 +13,19 @@ const Splash = () => {
   }, [navigate]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background relative overflow-hidden">
-      {/* Faint map grid */}
-      <svg className="absolute inset-0 h-full w-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id="splash-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="hsl(var(--teal))" strokeWidth="0.5" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#splash-grid)" />
-      </svg>
+    <div
+      className="flex min-h-screen flex-col items-center justify-center relative overflow-hidden bg-cover bg-center"
+      style={{ backgroundImage: "url('/splash-bg.jpg')" }}
+    >
+      {/* Dark overlay to ensure the logo and text remain readable */}
+      <div className="absolute inset-0 bg-black/50" />
 
-      <div className={`flex flex-col items-center transition-all duration-700 ${show ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
+      <div
+        className={`relative z-10 flex flex-col items-center transition-all duration-700 ${show ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
+        style={{ "--foreground": "0 0% 100%" } as React.CSSProperties}
+      >
         <SafeGoLogo size={56} />
-        <p className="mt-4 text-lg text-muted-foreground">Your Safety. Our Priority.</p>
+        <p className="mt-4 text-lg text-white font-medium drop-shadow-md">Your Safety. Our Priority.</p>
       </div>
 
       <div className="absolute bottom-12 left-1/2 h-1 w-48 -translate-x-1/2 overflow-hidden rounded-full bg-secondary">

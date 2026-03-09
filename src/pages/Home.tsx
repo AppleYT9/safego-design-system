@@ -9,7 +9,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Shield, Bell, MapPin, CheckCircle, ArrowRight, Star,
-  Clock, Users, Car, ShieldCheck, Zap, HelpCircle, Package, Lock
+  Clock, Users, Car, ShieldCheck, Zap, HelpCircle, Package, Lock,
+  Banknote, GraduationCap, Heart, CalendarCheck
 } from "lucide-react";
 
 const Home = () => {
@@ -274,7 +275,7 @@ const Home = () => {
               <div key={t.name} className="safego-card p-8 scroll-reveal">
                 <span className="inline-block rounded-full px-3 py-1 text-xs font-medium" style={{ backgroundColor: t.bg, color: t.color }}>{t.mode}</span>
                 <div className="mt-3 flex gap-0.5">
-                  {[1,2,3,4,5].map(i => <Star key={i} size={14} className="fill-amber-400 text-amber-400" />)}
+                  {[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} className="fill-amber-400 text-amber-400" />)}
                 </div>
                 <p className="mt-4 text-sm italic leading-relaxed text-muted-foreground">"{t.quote}"</p>
                 <div className="mt-6 flex items-center gap-3">
@@ -292,8 +293,86 @@ const Home = () => {
         </div>
       </section>
 
-      {/* KEY FEATURES */}
+      {/* BECOME A DRIVER CTA */}
       <section className="section-padding bg-background">
+        <div className="mx-auto max-w-7xl">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-secondary via-background to-mode-teal-light/30 p-8 sm:p-16">
+            {/* Decorative circles */}
+            <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-primary/5 blur-2xl" />
+            <div className="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-mode-pink-light/40 blur-2xl" />
+
+            <div className="relative flex flex-col lg:flex-row items-center gap-12">
+              <div className="flex-1 scroll-reveal">
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary/5 border border-primary/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
+                  <Car size={14} /> Now Hiring
+                </span>
+                <h2 className="mt-5 font-display text-3xl font-bold text-foreground sm:text-5xl">
+                  Become a SafeGo<br />Driver Today
+                </h2>
+                <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground">
+                  Join our team of 3,200+ verified drivers. Men and women welcome — earn great income while keeping rides safe for everyone.
+                </p>
+                <div className="mt-6 grid grid-cols-2 gap-3 max-w-md">
+                  {[
+                    { icon: Banknote, text: "₱3,500+/day Potential" },
+                    { icon: CalendarCheck, text: "Flexible Schedule" },
+                    { icon: GraduationCap, text: "Free Training" },
+                    { icon: Heart, text: "Men & Women Welcome" },
+                  ].map((b) => (
+                    <div key={b.text} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <b.icon size={16} className="text-primary shrink-0" />
+                      <span>{b.text}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-8 flex flex-wrap gap-4">
+                  <Link
+                    to="/drive-with-us"
+                    className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 font-semibold text-primary-foreground transition-all hover:brightness-110 hover:scale-[1.02]"
+                  >
+                    Apply Now <ArrowRight size={18} />
+                  </Link>
+                  <Link
+                    to="/drive-with-us#requirements"
+                    className="inline-flex items-center gap-2 rounded-full border-2 border-foreground px-8 py-4 font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background"
+                  >
+                    View Requirements
+                  </Link>
+                </div>
+              </div>
+
+              <div className="flex-1 flex justify-center scroll-reveal">
+                <div className="grid grid-cols-2 gap-4 max-w-xs">
+                  <div className="safego-card p-6 text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mode-teal-light">
+                      <Shield size={22} className="text-primary" />
+                    </div>
+                    <p className="mt-3 font-display text-2xl font-bold text-foreground">100%</p>
+                    <p className="text-xs text-muted-foreground">Insured Drivers</p>
+                  </div>
+                  <div className="safego-card p-6 text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mode-pink-light">
+                      <Users size={22} className="text-mode-pink" />
+                    </div>
+                    <p className="mt-3 font-display text-2xl font-bold text-foreground">3,200+</p>
+                    <p className="text-xs text-muted-foreground">Active Drivers</p>
+                  </div>
+                  <div className="safego-card p-6 text-center col-span-2">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mode-blue-light">
+                      <Star size={22} className="text-mode-blue" />
+                    </div>
+                    <p className="mt-3 font-display text-2xl font-bold text-foreground">4.8 ⭐</p>
+                    <p className="text-xs text-muted-foreground">Average Driver Rating</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* KEY FEATURES */}
+      <section className="section-padding section-alt">
         <div className="mx-auto max-w-7xl">
           <div className="scroll-reveal">
             <span className="caption-label">TAKING CARE OF EVERY CLIENT</span>

@@ -25,9 +25,10 @@ export const Footer = () => {
           <div>
             <h4 className="font-display text-sm font-bold">Company</h4>
             <div className="mt-3 flex flex-col gap-2">
-              {["About", "Careers", "Blog", "Press"].map((l) => (
-                <Link key={l} to="/home" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l}</Link>
-              ))}
+              <Link to="/home" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</Link>
+              <Link to="/drive-with-us" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Careers</Link>
+              <Link to="/home" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
+              <Link to="/home" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Press</Link>
             </div>
           </div>
           <div>
