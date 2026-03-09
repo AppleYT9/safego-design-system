@@ -8,11 +8,13 @@ export default {
     container: {
       center: true,
       padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
+      screens: { "2xl": "1400px" },
     },
     extend: {
+      fontFamily: {
+        display: ["Syne", "sans-serif"],
+        body: ["Inter", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -57,28 +59,40 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          dark: "hsl(var(--brand-dark))",
+        },
+        mode: {
+          pink: "hsl(var(--pink))",
+          "pink-light": "hsl(var(--pink-light))",
+          "pink-dark": "hsl(var(--pink-dark))",
+          purple: "hsl(var(--purple))",
+          "purple-light": "hsl(var(--purple-light))",
+          "purple-dark": "hsl(var(--purple-dark))",
+          blue: "hsl(var(--blue))",
+          "blue-light": "hsl(var(--blue-light))",
+          "blue-dark": "hsl(var(--blue-dark))",
+          teal: "hsl(var(--teal))",
+          "teal-light": "hsl(var(--teal-light))",
+          "teal-dark": "hsl(var(--teal-dark))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        "2xl": "1rem",
+        "3xl": "1.5rem",
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
