@@ -7,7 +7,7 @@ import {
     BadgeCheck, Clock, MapPin, Banknote, GraduationCap,
     FileCheck, Fingerprint, HeartHandshake, Award, TrendingUp,
     Smartphone, CalendarCheck, Fuel, Stethoscope, UserCheck,
-    ChevronRight, Sparkles, Target, Eye
+    ChevronRight, Sparkles, Target, Eye, ShieldCheck, Zap
 } from "lucide-react";
 
 const DriveWithUs = () => {
@@ -86,7 +86,7 @@ const DriveWithUs = () => {
     ];
 
     const benefits = [
-        { icon: Banknote, title: "Competitive Earnings", desc: "Earn up to ₱3,500/day with flexible surge bonuses and weekly incentives." },
+        { icon: Banknote, title: "Competitive Earnings", desc: "Earn up to ₹3,500/day with flexible surge bonuses and weekly incentives." },
         { icon: CalendarCheck, title: "Flexible Schedule", desc: "Drive when you want. Full-time or part-time — you're in control of your hours." },
         { icon: Shield, title: "Insurance Coverage", desc: "Comprehensive accident and health insurance for all verified SafeGo drivers." },
         { icon: Fuel, title: "Fuel Discounts", desc: "Exclusive fuel discount cards and partner deals to reduce your operating costs." },
@@ -160,196 +160,322 @@ const DriveWithUs = () => {
             rating: 5.0,
             avatar: "MR",
         },
+        {
+            name: "Sarah T.",
+            role: "Part-time Driver",
+            duration: "8 months with SafeGo",
+            quote: "I drive on weekends to earn extra cash for college. The community support is incredible, and the instant weekly payouts are a lifesaver.",
+            rating: 4.7,
+            avatar: "ST",
+        },
+        {
+            name: "David K.",
+            role: "Night Shift Driver",
+            duration: "3 years with SafeGo",
+            quote: "I feel incredibly secure driving at night thanks to the live tracking and SOS features. SafeGo has the best safety protocols hands down.",
+            rating: 4.9,
+            avatar: "DK",
+        }
     ];
 
     return (
         <div ref={revealRef}>
             <Navbar />
 
-            {/* HERO SECTION */}
-            <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-background">
-                {/* Background decorative elements */}
-                <div className="absolute inset-0">
-                    <div className="absolute top-20 right-20 w-72 h-72 rounded-full bg-primary/5 blur-3xl" />
-                    <div className="absolute bottom-20 left-20 w-96 h-96 rounded-full bg-mode-pink-light/30 blur-3xl" />
-                    <svg className="absolute right-0 top-0 h-full w-1/2 opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+            {/* HERO SECTION - PROFESSIONAL SAAS LOOK */}
+            <section className="relative min-h-[95vh] flex items-center overflow-hidden bg-background py-20 pb-24">
+                {/* Advanced Background Gradients & Grid */}
+                <div className="absolute inset-0 z-0">
+                    <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
+                    <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-mode-pink-light/40 blur-[100px] pointer-events-none" />
+                    <svg className="absolute inset-0 h-full w-full opacity-[0.03] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
                         <defs>
-                            <pattern id="drive-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="hsl(var(--teal))" strokeWidth="0.5" />
+                            <pattern id="premium-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1" />
                             </pattern>
                         </defs>
-                        <rect width="100%" height="100%" fill="url(#drive-grid)" />
+                        <rect width="100%" height="100%" fill="url(#premium-grid)" />
                     </svg>
+                    {/* Linear fade out at bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
                 </div>
 
-                <div className="relative mx-auto flex max-w-7xl flex-col-reverse items-center gap-12 px-4 py-20 lg:flex-row lg:gap-16 sm:px-6 lg:px-8">
-                    {/* Left */}
+                <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-col-reverse items-center gap-12 px-6 lg:flex-row lg:gap-20 sm:px-8 lg:px-12">
+                    {/* Left Content */}
                     <div className="flex-1 scroll-reveal">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
-                            <Car size={14} /> Now Hiring Drivers
-                        </span>
-                        <h1 className="mt-6 font-display text-5xl font-extrabold leading-[1.05] text-foreground sm:text-7xl">
-                            Drive With<br />SafeGo.
+                        <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-primary shadow-sm backdrop-blur-md transition-all hover:bg-primary/10">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            </span>
+                            Now Hiring Operators
+                        </div>
+                        
+                        <h1 className="mt-8 font-display text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+                            Earn More With<br />
+                            <span className="bg-gradient-to-r from-primary to-mode-blue bg-clip-text text-transparent">SafeGo.</span>
                         </h1>
-                        <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
-                            Join our growing family of verified drivers — both men and women. Earn great income while making every ride safe for everyone.
+                        
+                        <p className="mt-6 max-w-lg text-lg font-medium leading-relaxed text-muted-foreground/90">
+                            Join an elite tier of verified drivers. Enjoy flexible hours, premium pay rates, and the most advanced safety technology in the industry.
                         </p>
-                        <div className="mt-8 flex flex-wrap gap-4">
-                            <a
-                                href="#apply"
-                                className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 font-semibold text-primary-foreground transition-all hover:brightness-110 hover:scale-[1.02]"
+                        
+                        <div className="mt-10 flex flex-wrap items-center gap-4">
+                            <Link
+                                to="/apply-driver"
+                                className="group relative inline-flex items-center gap-3 overflow-hidden rounded-2xl bg-foreground px-8 py-4 font-bold text-background transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-foreground/20 active:scale-[0.98]"
                             >
-                                Apply Now <ArrowRight size={18} />
-                            </a>
+                                <span className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                                <span className="relative z-10 flex items-center gap-2">
+                                    Start Earning <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+                                </span>
+                            </Link>
                             <a
                                 href="#requirements"
-                                className="inline-flex items-center gap-2 rounded-full border-2 border-foreground px-8 py-4 font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background"
+                                className="inline-flex items-center gap-2 rounded-2xl border-2 border-border bg-background/50 px-8 py-4 font-bold text-foreground backdrop-blur-sm transition-all hover:border-primary/30 hover:bg-primary/5"
                             >
                                 View Requirements
                             </a>
                         </div>
-                        <div className="mt-6 flex flex-wrap items-center gap-3 text-[13px] text-muted-foreground">
-                            <span className="flex items-center gap-1"><CheckCircle size={14} className="text-primary" /> Equal Opportunity</span>
-                            <span className="text-border">•</span>
-                            <span className="flex items-center gap-1"><CheckCircle size={14} className="text-primary" /> ₱3,500+/day Potential</span>
-                            <span className="text-border">•</span>
-                            <span className="flex items-center gap-1"><CheckCircle size={14} className="text-primary" /> Free Training</span>
+                        
+                        <div className="mt-10 flex flex-wrap items-center gap-6 rounded-2xl border border-border/50 bg-card/40 p-4 backdrop-blur-sm">
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                                    <Banknote size={16} className="text-primary" />
+                                </div>
+                                <div>
+                                    <p className="font-display text-sm font-bold text-foreground">₹3,500+</p>
+                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Daily Potential</p>
+                                </div>
+                            </div>
+                            <div className="h-8 w-px bg-border/60" />
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mode-blue/10">
+                                    <CalendarCheck size={16} className="text-mode-blue" />
+                                </div>
+                                <div>
+                                    <p className="font-display text-sm font-bold text-foreground">100%</p>
+                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Flexible Hours</p>
+                                </div>
+                            </div>
+                            <div className="h-8 w-px bg-border/60" />
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mode-pink/10">
+                                    <Heart size={16} className="text-mode-pink" />
+                                </div>
+                                <div>
+                                    <p className="font-display text-sm font-bold text-foreground">Equal</p>
+                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Opportunity</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Right — floating driver card */}
-                    <div className="relative flex-1 scroll-reveal hidden lg:flex justify-center">
-                        {/* Concentric rings */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            {[200, 280, 360].map((s) => (
-                                <div key={s} className="absolute rounded-full border border-primary/[0.08]" style={{ width: s, height: s }} />
-                            ))}
+                    {/* Right — Interactive SaaS Driver Card */}
+                    <div className="relative flex-1 scroll-reveal hidden lg:flex justify-center items-center">
+                        {/* Dynamic Radar/Pulse Effect */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="absolute w-[450px] h-[450px] rounded-full border-[1.5px] border-primary/10 animate-[spin_20s_linear_infinite]" />
+                            <div className="absolute w-[350px] h-[350px] rounded-full border border-primary/15 animate-[spin_15s_linear_infinite_reverse]" />
+                            <div className="absolute w-[250px] h-[250px] rounded-full bg-primary/5 blur-xl animate-pulse" />
                         </div>
 
-                        <div className="animate-float relative z-10 w-[360px] rounded-3xl border border-border bg-background p-8 shadow-xl">
-                            <div className="flex items-center gap-4">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground">
-                                    SG
-                                </div>
-                                <div>
-                                    <p className="font-display text-lg font-bold text-foreground">SafeGo Driver</p>
-                                    <p className="text-sm text-muted-foreground">Verified & Certified</p>
-                                </div>
+                        {/* Top Floating Badge */}
+                        <div className="absolute -right-8 top-12 z-30 flex animate-bounce items-center gap-3 rounded-xl border border-border/60 bg-background/90 px-4 py-3 shadow-xl backdrop-blur-xl" style={{ animationDuration: '4s' }}>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15">
+                                <Users size={16} className="text-primary" />
                             </div>
-                            <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-                                <div className="rounded-xl bg-secondary p-3">
-                                    <p className="font-display text-xl font-bold text-foreground">₱3.5K</p>
-                                    <p className="text-[10px] text-muted-foreground">Avg/Day</p>
-                                </div>
-                                <div className="rounded-xl bg-secondary p-3">
-                                    <p className="font-display text-xl font-bold text-foreground">4.9</p>
-                                    <p className="text-[10px] text-muted-foreground">Rating</p>
-                                </div>
-                                <div className="rounded-xl bg-secondary p-3">
-                                    <p className="font-display text-xl font-bold text-foreground">flex</p>
-                                    <p className="text-[10px] text-muted-foreground">Schedule</p>
-                                </div>
+                            <div>
+                                <p className="text-sm font-bold text-foreground">3,200+</p>
+                                <p className="text-[10px] text-muted-foreground">Active Drivers</p>
                             </div>
-                            <div className="mt-5 space-y-2.5">
-                                {["Insurance Covered", "Free Training", "Weekly Payouts"].map((b) => (
-                                    <div key={b} className="flex items-center gap-2.5 text-sm">
-                                        <CheckCircle size={16} className="text-primary shrink-0" />
-                                        <span className="text-foreground">{b}</span>
+                        </div>
+
+                        {/* Bottom Floating Badge */}
+                        <div className="absolute -left-6 bottom-16 z-30 flex animate-bounce items-center gap-3 rounded-xl border border-border/60 bg-background/90 px-4 py-3 shadow-xl backdrop-blur-xl" style={{ animationDuration: '3.5s', animationDelay: '1s' }}>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mode-pink-light">
+                                <Heart size={16} className="text-mode-pink" />
+                            </div>
+                            <span className="text-xs font-bold text-foreground">Men & Women<br/>Welcome</span>
+                        </div>
+
+                        {/* Main Glass Card - High-Fidelity 3D ID Card */}
+                        <div className="relative z-20 w-[420px] group rounded-[2.5rem] bg-gradient-to-b from-white/90 to-white/40 p-[2px] shadow-[0_20px_80px_-15px_rgba(0,0,0,0.1)] backdrop-blur-2xl transition-all duration-700 hover:-translate-y-4 hover:shadow-[0_40px_100px_-20px_rgba(16,185,129,0.2)]">
+                            <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-white/40 via-transparent to-black/5 pointer-events-none" />
+                            {/* Inner Card Container */}
+                            <div className="relative h-full w-full rounded-[calc(2.5rem-2px)] bg-background/80 p-8 overflow-hidden">
+                                {/* Holographic Sweep on Hover */}
+                                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 opacity-0 transition-all duration-1000 group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
+                                
+                                {/* Card Header - ID Badge Style */}
+                                <div className="flex items-start justify-between mb-8 relative z-10">
+                                    <div className="flex items-center gap-5">
+                                        <div className="relative">
+                                            <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-lg group-hover:bg-primary/40 transition-colors duration-500" />
+                                            <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 via-primary to-emerald-600 text-2xl font-black text-white shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)]">
+                                                SG
+                                                <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-4 border-background bg-emerald-500 shadow-sm">
+                                                    <CheckCircle size={10} className="text-white" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-primary mb-2">
+                                                <ShieldCheck size={12} /> verified
+                                            </div>
+                                            <p className="font-display text-2xl font-black text-foreground tracking-tight">SafeGo Elite</p>
+                                            <p className="text-sm font-medium text-muted-foreground">ID: SG-9920-X</p>
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
-                            <button className="mt-6 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground">
-                                Join SafeGo Today
-                            </button>
-                        </div>
+                                    <div className="flex flex-col gap-1 items-end">
+                                        <div className="h-1 w-1 rounded-full bg-border" />
+                                        <div className="h-1 w-1 rounded-full bg-border" />
+                                        <div className="h-1 w-1 rounded-full bg-border" />
+                                    </div>
+                                </div>
 
-                        {/* Floating badges */}
-                        <div className="absolute -right-4 top-8 z-20 flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 shadow-lg">
-                            <Users size={18} className="text-primary" />
-                            <span className="text-xs font-semibold">3,200+ Active Drivers</span>
-                        </div>
-                        <div className="absolute -left-4 bottom-16 z-20 flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 shadow-lg">
-                            <Heart size={18} className="text-pink-500" />
-                            <span className="text-xs font-semibold">Men & Women Welcome</span>
+                                {/* Stats Bar - Pill shape */}
+                                <div className="relative z-10 flex items-stretch justify-between rounded-2xl border border-border/40 bg-white/50 p-2 shadow-inner backdrop-blur-md">
+                                    <div className="flex-1 flex flex-col items-center justify-center py-2 relative">
+                                        <p className="font-display text-2xl font-black text-foreground">₹3.5K</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">Avg/Day</p>
+                                        <div className="absolute right-0 top-2 bottom-2 w-px bg-border/50" />
+                                    </div>
+                                    <div className="flex-1 flex flex-col items-center justify-center py-2 relative group/stat cursor-default">
+                                        <div className="absolute inset-0 bg-amber-400/10 rounded-xl opacity-0 group-hover/stat:opacity-100 transition-opacity" />
+                                        <div className="flex items-center gap-1 z-10">
+                                            <p className="font-display text-2xl font-black text-foreground">4.9</p>
+                                            <Star size={16} className="fill-amber-400 text-amber-400 animate-[pulse_3s_infinite]" />
+                                        </div>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-0.5 z-10">Rating</p>
+                                        <div className="absolute right-0 top-2 bottom-2 w-px bg-border/50" />
+                                    </div>
+                                    <div className="flex-1 flex flex-col items-center justify-center py-2 text-primary">
+                                        <p className="font-display text-2xl font-black">100%</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest mt-0.5">Flexible</p>
+                                    </div>
+                                </div>
+
+                                {/* Benefits List - 3D embossed look */}
+                                <div className="mt-8 space-y-3 relative z-10">
+                                    {[
+                                        { icon: Shield, text: "Comprehensive Insurance", color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+                                        { icon: GraduationCap, text: "Free Professional Training", color: "text-purple-500", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+                                        { icon: Zap, text: "Instant Weekly Payouts", color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" }
+                                    ].map((b, i) => (
+                                        <div key={i} className={`flex items-center gap-4 rounded-xl border ${b.border} bg-white/40 p-3.5 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] backdrop-blur-md transition-all duration-300 hover:scale-[1.03] hover:bg-white/60`}>
+                                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm border border-border/30`}>
+                                                <b.icon size={18} className={b.color} />
+                                            </div>
+                                            <span className="text-sm font-bold text-foreground/90">{b.text}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Premium Action Button */}
+                                <Link to="/apply-driver" className="relative z-10 mt-8 w-full flex items-center justify-center gap-3 rounded-xl bg-gradient-to-b from-foreground to-foreground/90 py-4 text-sm font-black text-background transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_8px_20px_rgba(0,0,0,0.2)] overflow-hidden group/btn">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-primary via-emerald-400 to-primary opacity-0 transition-opacity duration-300 group-hover/btn:opacity-100" />
+                                    <span className="relative z-10 flex items-center gap-2">Claim Your Spot <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" /></span>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* WHY DRIVE WITH SAFEGO */}
-            <section className="section-padding section-alt">
-                <div className="mx-auto max-w-7xl">
-                    <div className="text-center scroll-reveal">
-                        <span className="caption-label">WHY JOIN US</span>
-                        <h2 className="mt-3 font-display text-4xl font-bold text-foreground sm:text-5xl">Benefits of Being a SafeGo Driver</h2>
-                        <p className="mt-3 text-lg text-muted-foreground">We invest in our drivers because you're the heart of SafeGo</p>
+            {/* WHY DRIVE WITH SAFEGO - PREMIUM GRID */}
+            <section className="relative py-28 px-4 sm:px-6 lg:px-12 bg-secondary/30">
+                <div className="absolute inset-0 pointer-events-none opacity-[0.05]" 
+                     style={{ backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`, backgroundSize: '32px 32px' }}></div>
+                
+                <div className="mx-auto max-w-7xl relative">
+                    <div className="text-center scroll-reveal mb-16">
+                        <span className="caption-label">Ecosystem Excellence</span>
+                        <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">
+                            The Heart of <span className="text-primary">SafeGo.</span>
+                        </h2>
+                        <p className="mt-6 text-lg font-medium text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                            We've engineered a driver-first platform designed for maximum earning potential and industry-leading safety.
+                        </p>
                     </div>
-                    <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                        {benefits.map((b) => (
-                            <div key={b.title} className="safego-card p-8 scroll-reveal group hover:border-primary/20 transition-all duration-300">
-                                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mode-teal-light group-hover:bg-primary/10 transition-colors">
-                                    <b.icon size={24} className="text-primary" />
+
+                    <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                        {benefits.map((b, i) => (
+                            <div key={b.title} className="group relative rounded-[2rem] border border-border/50 bg-background/60 p-8 shadow-sm backdrop-blur-sm transition-all duration-500 hover:-translate-y-2 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 scroll-reveal">
+                                <div className="absolute top-0 right-0 p-4 opacity-0 transition-opacity group-hover:opacity-100">
+                                    <Sparkles size={16} className="text-primary animate-pulse" />
                                 </div>
-                                <h3 className="mt-5 font-display text-lg font-bold text-foreground">{b.title}</h3>
-                                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{b.desc}</p>
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/80 group-hover:bg-primary/10 transition-colors">
+                                    <b.icon size={28} className="text-primary group-hover:scale-110 transition-transform duration-500" />
+                                </div>
+                                <h3 className="mt-6 font-display text-xl font-black text-foreground">{b.title}</h3>
+                                <p className="mt-3 text-sm leading-relaxed text-muted-foreground font-medium">{b.desc}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* EQUAL OPPORTUNITY — MEN & WOMEN */}
-            <section className="section-padding bg-background">
-                <div className="mx-auto max-w-7xl">
-                    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-foreground via-foreground to-primary/80 px-8 py-20 sm:px-16">
-                        {/* Decorative */}
-                        <svg className="absolute right-0 top-0 h-full w-1/2 opacity-[0.06]" viewBox="0 0 200 200">
-                            <circle cx="200" cy="100" r="80" fill="none" stroke="white" strokeWidth="0.5" />
-                            <circle cx="200" cy="100" r="120" fill="none" stroke="white" strokeWidth="0.5" />
-                            <circle cx="200" cy="100" r="160" fill="none" stroke="white" strokeWidth="0.5" />
-                        </svg>
+            {/* EQUAL OPPORTUNITY — SAAS STYLE DASHBOARD LOOK */}
+            <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background overflow-hidden">
+                <div className="mx-auto max-w-[1400px]">
+                    <div className="relative rounded-[3rem] border border-border/60 bg-foreground p-12 lg:p-20 shadow-[0_0_100px_rgba(0,0,0,0.1)] overflow-hidden">
+                        {/* High-tech background elements */}
+                        <div className="absolute top-0 right-0 w-full h-full pointer-events-none overflow-hidden">
+                            <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px]" />
+                            <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-mode-pink/15 blur-[100px]" />
+                            <svg className="absolute inset-0 w-full h-full opacity-[0.05]" viewBox="0 0 100 100">
+                                <defs>
+                                    <pattern id="dot-pattern" width="10" height="10" patternUnits="userSpaceOnUse">
+                                        <circle cx="2" cy="2" r="1" fill="white" />
+                                    </pattern>
+                                </defs>
+                                <rect width="100%" height="100%" fill="url(#dot-pattern)" />
+                            </svg>
+                        </div>
 
-                        <div className="relative flex flex-col lg:flex-row items-center gap-12">
-                            <div className="flex-1">
-                                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white/80">
-                                    <HeartHandshake size={14} /> Equal Opportunity Employer
-                                </span>
-                                <h2 className="mt-6 font-display text-3xl font-bold text-white sm:text-5xl">
-                                    Everyone Deserves<br />the Driver's Seat
+                        <div className="relative z-10 flex flex-col lg:flex-row items-center gap-16">
+                            <div className="flex-1 scroll-reveal">
+                                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/90 mb-8 backdrop-blur-md">
+                                    <HeartHandshake size={14} className="text-primary" /> Equal Opportunity Employer
+                                </div>
+                                <h2 className="font-display text-5xl font-black text-white sm:text-6xl tracking-tight leading-[1.1]">
+                                    Everyone Deserves <br/><span className="bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">The Front Seat.</span>
                                 </h2>
-                                <p className="mt-4 text-lg leading-relaxed text-white/70">
-                                    At SafeGo, we believe greatness has no gender. We actively hire and support both men and women drivers. Our inclusive hiring practices ensure equal pay, equal training, and equal growth opportunities for everyone.
+                                <p className="mt-8 text-xl leading-relaxed text-white/60 font-medium max-w-2xl">
+                                    Greatness has no gender. We actively hire, train, and support both men and women. Our inclusive practices ensure everyone gets equal pay, protection, and promotion paths.
                                 </p>
-                                <div className="mt-8 grid grid-cols-2 gap-4">
+                                
+                                <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     {[
-                                        { icon: Target, text: "Equal Pay for All" },
-                                        { icon: GraduationCap, text: "Same Training Programs" },
-                                        { icon: Shield, text: "Safety for Every Driver" },
-                                        { icon: TrendingUp, text: "Equal Promotion Paths" },
+                                        { icon: Target, text: "Equal Pay Policy", color: "text-primary" },
+                                        { icon: GraduationCap, text: "Universal Training", color: "text-mode-blue" },
+                                        { icon: Shield, text: "Safety for Everyone", color: "text-mode-pink" },
+                                        { icon: TrendingUp, text: "Fair Advancement", color: "text-emerald-400" },
                                     ].map((item) => (
-                                        <div key={item.text} className="flex items-center gap-3">
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10">
-                                                <item.icon size={16} className="text-primary" />
+                                        <div key={item.text} className="flex items-center gap-4 group transition-all">
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/5 border border-white/10 group-hover:border-white/30 transition-all">
+                                                <item.icon size={20} className={item.color} />
                                             </div>
-                                            <span className="text-sm font-medium text-white/90">{item.text}</span>
+                                            <span className="text-base font-bold text-white/90">{item.text}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="flex-1 flex justify-center">
-                                <div className="grid grid-cols-2 gap-4 max-w-sm">
-                                    <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-6 text-center">
-                                        <p className="font-display text-4xl font-extrabold text-white">45%</p>
-                                        <p className="mt-1 text-sm text-white/60">Female Drivers</p>
+                            <div className="flex-1 w-full lg:max-w-md scroll-reveal">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="group rounded-[2.5rem] bg-white/[0.03] backdrop-blur-xl border border-white/10 p-10 text-center transition-all hover:bg-white/[0.08] hover:border-white/20">
+                                        <div className="font-display text-6xl font-black text-white tracking-tighter">45%</div>
+                                        <div className="mt-2 text-[11px] font-black uppercase tracking-widest text-white/40">Female Operators</div>
                                     </div>
-                                    <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 p-6 text-center">
-                                        <p className="font-display text-4xl font-extrabold text-white">55%</p>
-                                        <p className="mt-1 text-sm text-white/60">Male Drivers</p>
+                                    <div className="group rounded-[2.5rem] bg-white/[0.03] backdrop-blur-xl border border-white/10 p-10 text-center transition-all hover:bg-white/[0.08] hover:border-white/20">
+                                        <div className="font-display text-6xl font-black text-white tracking-tighter">55%</div>
+                                        <div className="mt-2 text-[11px] font-black uppercase tracking-widest text-white/40">Male Operators</div>
                                     </div>
-                                    <div className="rounded-2xl bg-primary/20 backdrop-blur-sm border border-primary/30 p-6 text-center col-span-2">
-                                        <p className="font-display text-4xl font-extrabold text-white">100%</p>
-                                        <p className="mt-1 text-sm text-white/60">Equal Opportunity & Respect</p>
+                                    <div className="group rounded-[2.5rem] bg-primary/20 backdrop-blur-xl border border-primary/30 p-12 text-center col-span-2 shadow-[0_0_50px_rgba(5,150,105,0.1)] transition-all hover:bg-primary/30">
+                                        <div className="font-display text-7xl font-black text-white tracking-tighter">100%</div>
+                                        <div className="mt-3 text-sm font-bold uppercase tracking-[0.2em] text-white">Equal Opportunity & Respect</div>
                                     </div>
                                 </div>
                             </div>
@@ -358,29 +484,29 @@ const DriveWithUs = () => {
                 </div>
             </section>
 
-            {/* REQUIREMENTS */}
-            <section id="requirements" className="section-padding section-alt">
+            {/* REQUIREMENTS - GRID CARDS */}
+            <section id="requirements" className="py-28 px-4 sm:px-6 lg:px-8 bg-secondary/20">
                 <div className="mx-auto max-w-7xl">
-                    <div className="text-center scroll-reveal">
-                        <span className="caption-label">WHAT WE LOOK FOR</span>
-                        <h2 className="mt-3 font-display text-4xl font-bold text-foreground sm:text-5xl">Hiring Requirements</h2>
-                        <p className="mt-3 max-w-2xl mx-auto text-lg text-muted-foreground">
-                            We maintain high standards to ensure passenger safety. Here's what you need to join — the same for both men and women.
+                    <div className="text-center scroll-reveal mb-20">
+                        <span className="caption-label">The Blueprint</span>
+                        <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">Membership <span className="text-primary">Criteria.</span></h2>
+                        <p className="mt-6 max-w-2xl mx-auto text-lg font-medium text-muted-foreground leading-relaxed">
+                            Elite standards for elite professionals. We maintain a high bar to ensure the safest ecosystem in the country.
                         </p>
                     </div>
-                    <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {requirements.map((r) => (
-                            <div key={r.title} className="safego-card p-8 scroll-reveal relative overflow-hidden group hover:border-primary/20 transition-all duration-300">
-                                <div className="absolute top-4 right-4">
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/5 px-3 py-1 text-[10px] font-semibold text-primary">
-                                        <Users size={10} /> All Genders
+                            <div key={r.title} className="group relative overflow-hidden rounded-[2rem] border border-border/50 bg-background/80 p-10 backdrop-blur-sm transition-all duration-500 hover:-translate-y-2 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 scroll-reveal">
+                                <div className="absolute top-0 right-0 p-6">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                        <Users size={12} /> Standardized
                                     </span>
                                 </div>
-                                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mode-teal-light group-hover:bg-primary/10 transition-colors">
-                                    <r.icon size={24} className="text-primary" />
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary group-hover:bg-primary/10 transition-colors">
+                                    <r.icon size={28} className="text-foreground transition-all group-hover:text-primary group-hover:scale-110" />
                                 </div>
-                                <h3 className="mt-5 font-display text-lg font-bold text-foreground">{r.title}</h3>
-                                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{r.desc}</p>
+                                <h3 className="mt-8 font-display text-xl font-black text-foreground">{r.title}</h3>
+                                <p className="mt-3 text-sm leading-relaxed text-muted-foreground font-medium">{r.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -422,7 +548,7 @@ const DriveWithUs = () => {
                                     </div>
                                     <div className="mt-6 flex items-center gap-2 text-sm font-medium" style={{ color: mode.color }}>
                                         <BadgeCheck size={16} />
-                                        <span>Earn {mode.mode} badge + ₱500 bonus/ride</span>
+                                        <span>Earn {mode.mode} badge + ₹500 bonus/ride</span>
                                     </div>
                                 </div>
                             </div>
@@ -431,45 +557,45 @@ const DriveWithUs = () => {
                 </div>
             </section>
 
-            {/* HIRING PROCESS */}
-            <section className="section-padding section-alt">
-                <div className="mx-auto max-w-7xl">
-                    <div className="text-center scroll-reveal">
-                        <span className="caption-label">STEP BY STEP</span>
-                        <h2 className="mt-3 font-display text-4xl font-bold text-foreground sm:text-5xl">How to Get Started</h2>
-                        <p className="mt-3 text-lg text-muted-foreground">From application to your first ride in as little as 5 days</p>
+            {/* HIRING PROCESS - SAAS VERTICAL TIMELINE */}
+            <section className="py-28 px-4 sm:px-6 lg:px-12 bg-secondary/30 relative">
+                <div className="mx-auto max-w-6xl relative">
+                    <div className="text-center scroll-reveal mb-24">
+                        <span className="caption-label">Fast Track Activation</span>
+                        <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">Onboarding <span className="text-primary">Flow.</span></h2>
+                        <p className="mt-6 text-lg font-medium text-muted-foreground max-w-2xl mx-auto">From registration to revenue in less than 96 hours. Guaranteed.</p>
                     </div>
-                    <div className="mt-16 relative">
-                        {/* Connecting line */}
-                        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border hidden lg:block" />
 
-                        <div className="space-y-12 lg:space-y-0">
+                    <div className="relative">
+                        {/* Connecting Line - Premium Gradient */}
+                        <div className="absolute left-[39px] lg:left-1/2 top-0 bottom-0 w-[2px] bg-gradient-to-b from-primary via-border to-primary/20 transform lg:-translate-x-1/2" />
+
+                        <div className="space-y-20 relative">
                             {hiringProcess.map((step, i) => (
-                                <div
-                                    key={step.step}
-                                    className={`relative scroll-reveal lg:flex items-center gap-12 ${i % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
-                                        } ${i > 0 ? "lg:mt-[-2rem]" : ""}`}
-                                    style={{ marginTop: i > 0 ? "3rem" : undefined }}
-                                >
-                                    <div className={`flex-1 ${i % 2 === 0 ? "lg:text-right lg:pr-16" : "lg:text-left lg:pl-16"}`}>
-                                        <div className={`safego-card inline-block p-8 text-left max-w-md ${i % 2 === 0 ? "lg:ml-auto" : ""}`}>
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-mode-teal-light">
-                                                    <step.icon size={22} className="text-primary" />
+                                <div key={step.step} className={`relative flex items-center gap-12 lg:gap-24 scroll-reveal ${i % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"}`}>
+                                    {/* Content side */}
+                                    <div className={`flex-1 pl-20 lg:pl-0 ${i % 2 === 0 ? "lg:text-right" : "lg:text-left"}`}>
+                                        <div className="group inline-block w-full max-w-lg">
+                                            <div className={`inline-flex items-center gap-3 mb-4 ${i % 2 === 0 ? "lg:flex-row-reverse" : ""}`}>
+                                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary font-black group-hover:scale-110 transition-transform">
+                                                    {step.step}
                                                 </div>
-                                                <span className="font-display text-3xl font-extrabold text-secondary">{step.step}</span>
+                                                <h3 className="font-display text-2xl font-black text-foreground">{step.title}</h3>
                                             </div>
-                                            <h3 className="font-display text-xl font-bold text-foreground">{step.title}</h3>
-                                            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
+                                            <p className="text-base font-medium text-muted-foreground leading-relaxed">
+                                                {step.desc}
+                                            </p>
                                         </div>
                                     </div>
 
-                                    {/* Center dot */}
-                                    <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-lg z-10">
-                                        {step.step}
+                                    {/* Center marker */}
+                                    <div className="absolute left-0 lg:left-1/2 transform lg:-translate-x-1/2 h-20 w-20 flex items-center justify-center">
+                                        <div className="h-4 w-4 rounded-full bg-background border-[4px] border-primary z-10 shadow-[0_0_20px_rgba(16,185,129,0.3)]" />
+                                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </div>
 
-                                    <div className="flex-1" />
+                                    {/* Placeholder side to balance grid */}
+                                    <div className="flex-1 hidden lg:block" />
                                 </div>
                             ))}
                         </div>
@@ -477,31 +603,40 @@ const DriveWithUs = () => {
                 </div>
             </section>
 
-            {/* DRIVER TESTIMONIALS */}
-            <section className="section-padding bg-background">
-                <div className="mx-auto max-w-7xl">
-                    <div className="text-center scroll-reveal">
-                        <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Hear From Our Drivers</h2>
-                        <p className="mt-3 text-lg text-muted-foreground">Real stories from real SafeGo partners</p>
-                    </div>
-                    <div className="mt-12 grid gap-6 md:grid-cols-3">
-                        {driverTestimonials.map((t) => (
-                            <div key={t.name} className="safego-card p-8 scroll-reveal">
-                                <div className="flex gap-0.5">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                        <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
-                                    ))}
-                                    <span className="ml-2 text-xs font-semibold text-foreground">{t.rating}</span>
+            {/* DRIVER TESTIMONIALS - MARQUEE */}
+            <section className="py-24 bg-background overflow-hidden relative">
+                <div className="mx-auto max-w-7xl text-center scroll-reveal relative z-20 mb-16">
+                    <span className="caption-label">COMMUNITY VOICES</span>
+                    <h2 className="mt-4 font-display text-4xl font-bold text-foreground sm:text-5xl">Hear From Our Drivers</h2>
+                    <p className="mt-4 text-lg text-muted-foreground">Real stories from real SafeGo partners</p>
+                </div>
+                
+                {/* Left/Right Fades for Marquee Masking */}
+                <div className="absolute left-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+
+                <div className="relative flex overflow-hidden group">
+                    <div className="flex w-max animate-marquee items-stretch gap-6 px-3">
+                        {/* Duplicate the array twice to create a seamless infinite loop */}
+                        {[...driverTestimonials, ...driverTestimonials].map((t, i) => (
+                            <div key={i} className="safego-card w-[350px] md:w-[400px] p-8 shrink-0 flex flex-col justify-between transition-transform duration-300 hover:scale-[1.02]">
+                                <div>
+                                    <div className="flex gap-0.5">
+                                        {Array.from({ length: 5 }).map((_, idx) => (
+                                            <Star key={idx} size={14} className="fill-amber-400 text-amber-400" />
+                                        ))}
+                                        <span className="ml-2 text-xs font-semibold text-foreground">{t.rating}</span>
+                                    </div>
+                                    <p className="mt-6 text-sm italic leading-relaxed text-muted-foreground">"{t.quote}"</p>
                                 </div>
-                                <p className="mt-4 text-sm italic leading-relaxed text-muted-foreground">"{t.quote}"</p>
-                                <div className="mt-6 flex items-center gap-3">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                                <div className="mt-8 flex items-center gap-4 border-t border-border/50 pt-6">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-sm font-black text-primary">
                                         {t.avatar}
                                     </div>
                                     <div>
                                         <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                                        <p className="text-xs text-primary font-medium">{t.role}</p>
-                                        <p className="text-[11px] text-muted-foreground">{t.duration}</p>
+                                        <p className="text-xs text-primary font-bold uppercase tracking-wider">{t.role}</p>
+                                        <p className="text-[11px] text-muted-foreground mt-0.5 opacity-60 font-semibold">{t.duration}</p>
                                     </div>
                                 </div>
                             </div>
@@ -529,7 +664,7 @@ const DriveWithUs = () => {
                             },
                             {
                                 q: "How much can I earn per day?",
-                                a: "Top-performing drivers earn ₱3,000–₱5,000 per day depending on hours, surge periods, and mode certifications. Mode-certified drivers earn bonus per ride.",
+                                a: "Top-performing drivers earn ₹3,000–₹5,000 per day depending on hours, surge periods, and mode certifications. Mode-certified drivers earn bonus per ride.",
                             },
                             {
                                 q: "Do I need my own vehicle?",
@@ -558,40 +693,7 @@ const DriveWithUs = () => {
                 </div>
             </section>
 
-            {/* CTA — APPLY NOW */}
-            <section id="apply" className="px-4 py-16 sm:px-6 lg:px-8">
-                <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-emerald-400 px-8 py-20 text-center sm:px-16">
-                    {/* Decorative */}
-                    <div className="absolute inset-0 overflow-hidden">
-                        <div className="absolute -top-20 -left-20 w-60 h-60 rounded-full bg-white/10 blur-2xl" />
-                        <div className="absolute -bottom-20 -right-20 w-80 h-80 rounded-full bg-white/10 blur-2xl" />
-                    </div>
 
-                    <div className="relative">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white mb-6">
-                            <Sparkles size={14} /> Join 3,200+ drivers
-                        </div>
-                        <h2 className="font-display text-3xl font-bold text-white sm:text-5xl">Ready to Start Your Journey?</h2>
-                        <p className="mt-4 text-white/80 text-lg max-w-xl mx-auto">
-                            Whether you're a man or a woman, full-time or part-time — there's a place for you at SafeGo. Apply today and start earning within a week.
-                        </p>
-                        <div className="mt-8 flex flex-wrap justify-center gap-4">
-                            <Link
-                                to="/signup"
-                                className="rounded-full bg-white px-8 py-4 font-semibold text-primary transition-all hover:scale-[1.02] hover:shadow-lg"
-                            >
-                                Apply as a Driver
-                            </Link>
-                            <a
-                                href="#requirements"
-                                className="rounded-full border-2 border-white/40 px-8 py-4 font-semibold text-white transition-colors hover:border-white hover:bg-white/10"
-                            >
-                                View Requirements
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
             <Footer />
         </div>

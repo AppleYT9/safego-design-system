@@ -1,12 +1,12 @@
 import { useEffect, useRef } from "react";
 
-export function useScrollReveal() {
+export function useScrollReveal(deps: any[] = []) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const children = el.querySelectorAll(".scroll-reveal");
+    const children = el.querySelectorAll(".scroll-reveal:not(.revealed)");
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry, i) => {
@@ -20,7 +20,7 @@ export function useScrollReveal() {
     );
     children.forEach((child) => observer.observe(child));
     return () => observer.disconnect();
-  }, []);
+  }, deps);
 
   return ref;
 }

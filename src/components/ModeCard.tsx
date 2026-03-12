@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { ModeConfig } from "@/config/modeConfig";
 
-export const ModeCard = ({ mode }: { mode: ModeConfig }) => {
+export const ModeCard = ({ mode, hideCTA = false }: { mode: ModeConfig; hideCTA?: boolean }) => {
   const Icon = mode.icon;
   const isPink = mode.id === "pink";
 
@@ -37,13 +37,15 @@ export const ModeCard = ({ mode }: { mode: ModeConfig }) => {
         ))}
       </div>
 
-      <Link
-        to={`/book/${mode.id}`}
-        className="mt-6 flex w-full items-center justify-center rounded-full py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110"
-        style={{ backgroundColor: mode.accent }}
-      >
-        {mode.cta}
-      </Link>
+      {!hideCTA && (
+        <Link
+          to={`/book/${mode.id}`}
+          className="mt-6 flex w-full items-center justify-center rounded-full py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110"
+          style={{ backgroundColor: mode.accent }}
+        >
+          {mode.cta}
+        </Link>
+      )}
     </div>
   );
 };

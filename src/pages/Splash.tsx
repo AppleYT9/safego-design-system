@@ -1,28 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { SafeGoLogo } from "@/components/SafeGoLogo";
 
 const Splash = () => {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     setShow(true);
-    // Navigation will be handled when the full video finishes playing (`onEnded` event)
+    // Force play the video to ensure autoplay works on all browsers
+    if (videoRef.current) {
+      videoRef.current.play().catch((err) => {
+        console.error("Autoplay prevents video from playing:", err);
+      });
+    }
   }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center relative bg-black overflow-hidden">
       {/* Background Video */}
       <video
+        ref={videoRef}
+        src="/SplSH.mp4"
         autoPlay
         muted
         playsInline
         onEnded={() => navigate("/home")}
-        className="absolute inset-0 w-full h-full object-cover"
-      >
-        <source src="/SplSH.mp4" type="video/mp4" />
-      </video>
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
 
       {/* Subtle overlay to ensure the logo and text remain readable */}
       <div className="absolute inset-0 bg-black/30" />
