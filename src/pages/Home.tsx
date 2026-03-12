@@ -197,8 +197,48 @@ const Home = () => {
   const [activeMode, setActiveMode] = useState("all");
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const cardRef = useRef<HTMLDivElement>(null);
+
   const revealRef = useScrollReveal([activeMode]);
   const filtered = activeMode === "all" ? modes : modes.filter((m) => m.id === activeMode);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    // Calculate tilt (max 8 degrees)
+    const rotateX = ((y - centerY) / centerY) * -8;
+    const rotateY = ((x - centerX) / centerX) * 8;
+
+    setTilt({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+  };
+
+  const fullQuote = "True peace of mind is knowing that someone is looking out for you at every turn. We built this platform so you never have to ride alone.";
+  const [displayedQuote, setDisplayedQuote] = useState("");
+
+  useEffect(() => {
+    const words = fullQuote.split(" ");
+    let i = 0;
+    const timer = setInterval(() => {
+      if (i < words.length) {
+        setDisplayedQuote(prev => (prev ? prev + " " : "") + words[i]);
+        i++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 120);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div ref={revealRef}>
@@ -206,6 +246,24 @@ const Home = () => {
 
       {/* HERO */}
       <section className="relative min-h-[90vh] flex items-center bg-background overflow-hidden">
+        {/* Animated Background 3D Particles */}
+        <div className="absolute inset-0 pointer-events-none opacity-20">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full bg-primary/20 blur-3xl animate-pulse"
+              style={{
+                width: `${Math.random() * 300 + 100}px`,
+                height: `${Math.random() * 300 + 100}px`,
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${i * 2}s`,
+                animationDuration: `${Math.random() * 10 + 10}s`
+              }}
+            />
+          ))}
+        </div>
+
         {/* Faint map decoration on right */}
         <svg className="absolute right-0 top-0 h-full w-1/2 opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -220,7 +278,6 @@ const Home = () => {
         <div className="mx-auto flex w-full max-w-[1400px] flex-col-reverse items-center gap-12 px-6 py-20 lg:flex-row lg:gap-16 sm:px-8 lg:px-12">
           {/* Left */}
           <div className="flex-1 scroll-reveal">
-
             <h1 className="mt-8 font-display text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
               Real Safety for<br /><span className="text-primary">Every</span> Passenger.
             </h1>
@@ -228,25 +285,37 @@ const Home = () => {
               SafeGo adapts to you with tailored routes, verified operators, and real-time monitoring. Premium safety, accessible for all.
             </p>
             <div className="mt-10 max-w-xl">
-              <p className="text-[17px] font-medium text-foreground italic leading-relaxed">
-                True peace of mind is knowing that someone is looking out for you at every turn. We built this platform so you never have to ride alone.
+              <p className="text-[17px] font-medium text-foreground italic leading-relaxed min-h-[50px]">
+                {displayedQuote}
+                <span className="inline-block w-1 h-5 bg-primary ml-1 animate-pulse" style={{ visibility: displayedQuote.length === fullQuote.length ? 'hidden' : 'visible' }} />
               </p>
               <p className="mt-4 text-xs font-bold tracking-widest text-primary uppercase">— The SafeGo Promise</p>
             </div>
           </div>
 
-          {/* Right — Interactive Booking Card */}
-          <div className="relative flex-1 scroll-reveal hidden lg:flex justify-center">
+          {/* Right — Interactive 3D Booking Card */}
+          <div className="relative flex-1 scroll-reveal hidden lg:flex justify-center perspective-[2000px]">
             {/* Radar Animation Background rings */}
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="absolute w-[400px] h-[400px] rounded-full border border-primary/20 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
               {[200, 300, 400].map((s) => (
                 <div key={s} className="absolute rounded-full border border-primary/[0.08]" style={{ width: s, height: s }} />
               ))}
             </div>
 
-            <div className="relative z-10 w-[380px] group rounded-[2rem] border-2 border-border/50 bg-background/80 backdrop-blur-xl p-8 shadow-2xl transition-all duration-500 hover:border-primary/40 hover:-translate-y-2">
-              <div className="mb-6 flex items-center justify-between">
+            <div
+              ref={cardRef}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              style={{
+                transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+                transformStyle: "preserve-3d",
+                transition: "transform 0.1s ease-out"
+              }}
+              className="relative z-10 w-[380px] group rounded-[2.5rem] border-2 border-border/50 bg-background/80 backdrop-blur-xl p-8 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] transition-all duration-300 hover:border-primary/40"
+            >
+              {/* Inner elements with translation on Z-axis for depth */}
+              <div style={{ transform: "translateZ(30px)" }} className="mb-6 flex items-center justify-between">
                 <div>
                   <h3 className="font-display text-xl font-bold text-foreground">Quick Book</h3>
                   <p className="text-xs text-muted-foreground mt-1">Select your specialized ride</p>
@@ -256,7 +325,7 @@ const Home = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div style={{ transform: "translateZ(45px)" }} className="grid grid-cols-2 gap-3 mb-6">
                 <Link to="/book/pink" className="flex flex-col items-center justify-center rounded-xl border border-mode-pink/20 bg-mode-pink-light/50 p-3 transition-colors hover:bg-mode-pink-light">
                   <Shield className="text-mode-pink mb-1" size={18} />
                   <span className="text-xs font-semibold text-mode-pink">Pink Mode</span>
@@ -275,7 +344,7 @@ const Home = () => {
                 </Link>
               </div>
 
-              <div className="flex flex-col gap-3 relative">
+              <div style={{ transform: "translateZ(20px)" }} className="flex flex-col gap-3 relative">
                 {/* Connecting line between inputs */}
                 <div className="absolute left-[15px] top-[24px] bottom-[24px] w-[2px] bg-border z-0"></div>
                 <div className="relative z-10 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
@@ -288,17 +357,30 @@ const Home = () => {
                 </div>
               </div>
 
-              <Link to="/book/normal" className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-4 text-sm font-bold text-background transition-all hover:bg-primary hover:text-primary-foreground hover:scale-[1.03] active:scale-[0.98]">
+              <Link to="/book/normal" style={{ transform: "translateZ(60px)" }} className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-4 text-sm font-bold text-background transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98]">
                 Book Ride Now <ArrowRight size={16} />
               </Link>
             </div>
 
-            {/* Orbiting badges */}
-            <div className="absolute -right-6 top-16 z-20 flex animate-bounce items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 shadow-xl" style={{ animationDuration: '3s' }}>
+            {/* Orbiting badges with high Z-translation */}
+            <div
+              className="absolute -right-6 top-16 z-20 flex animate-bounce items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 shadow-xl"
+              style={{
+                animationDuration: '3s',
+                transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(100px)`
+              }}
+            >
               <ShieldCheck size={20} className="text-primary" />
               <span className="text-sm font-bold text-foreground">Verified ✓</span>
             </div>
-            <div className="absolute -left-8 bottom-24 z-20 flex animate-bounce items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 shadow-xl" style={{ animationDuration: '4s', animationDelay: '1s' }}>
+            <div
+              className="absolute -left-8 bottom-24 z-20 flex animate-bounce items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 shadow-xl"
+              style={{
+                animationDuration: '4s',
+                animationDelay: '1s',
+                transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(120px)`
+              }}
+            >
               <Clock size={20} className="text-mode-pink" />
               <span className="text-sm font-bold text-foreground">24/7 Monitored</span>
             </div>
@@ -513,83 +595,7 @@ const Home = () => {
         `}</style>
       </section>
 
-      {/* BECOME A DRIVER CTA */}
-      <section className="section-padding bg-background">
-        <div className="mx-auto max-w-[1400px]">
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-secondary via-background to-mode-teal-light/30 p-8 sm:p-16">
-            {/* Decorative circles */}
-            <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-primary/5 blur-2xl" />
-            <div className="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-mode-pink-light/40 blur-2xl" />
 
-            <div className="relative flex flex-col lg:flex-row items-center gap-12">
-              <div className="flex-1 scroll-reveal">
-                <span className="inline-flex items-center gap-2 rounded-full bg-primary/5 border border-primary/20 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
-                  <Car size={14} /> Now Hiring
-                </span>
-                <h2 className="mt-5 font-display text-3xl font-bold text-foreground sm:text-5xl">
-                  Become a SafeGo<br />Driver Today
-                </h2>
-                <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground">
-                  Join our team of 3,200+ verified drivers. Men and women welcome — earn great income while keeping rides safe for everyone.
-                </p>
-                <div className="mt-6 grid grid-cols-2 gap-3 max-w-md">
-                  {[
-                    { icon: Banknote, text: "₹3,500+/day Potential" },
-                    { icon: CalendarCheck, text: "Flexible Schedule" },
-                    { icon: GraduationCap, text: "Free Training" },
-                    { icon: Heart, text: "Men & Women Welcome" },
-                  ].map((b) => (
-                    <div key={b.text} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <b.icon size={16} className="text-primary shrink-0" />
-                      <span>{b.text}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-8 flex flex-wrap gap-4">
-                  <Link
-                    to="/drive-with-us"
-                    className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 font-semibold text-primary-foreground transition-all hover:brightness-110 hover:scale-[1.02]"
-                  >
-                    Apply Now <ArrowRight size={18} />
-                  </Link>
-                  <Link
-                    to="/drive-with-us#requirements"
-                    className="inline-flex items-center gap-2 rounded-full border-2 border-foreground px-8 py-4 font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background"
-                  >
-                    View Requirements
-                  </Link>
-                </div>
-              </div>
-
-              <div className="flex-1 flex justify-center scroll-reveal">
-                <div className="grid grid-cols-2 gap-4 max-w-xs">
-                  <div className="safego-card p-6 text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mode-teal-light">
-                      <Shield size={22} className="text-primary" />
-                    </div>
-                    <p className="mt-3 font-display text-2xl font-bold text-foreground">100%</p>
-                    <p className="text-xs text-muted-foreground">Insured Drivers</p>
-                  </div>
-                  <div className="safego-card p-6 text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mode-pink-light">
-                      <Users size={22} className="text-mode-pink" />
-                    </div>
-                    <p className="mt-3 font-display text-2xl font-bold text-foreground">3,200+</p>
-                    <p className="text-xs text-muted-foreground">Active Drivers</p>
-                  </div>
-                  <div className="safego-card p-6 text-center col-span-2">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mode-blue-light">
-                      <Star size={22} className="text-mode-blue" />
-                    </div>
-                    <p className="mt-3 font-display text-2xl font-bold text-foreground">4.8 ⭐</p>
-                    <p className="text-xs text-muted-foreground">Average Driver Rating</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* KEY FEATURES */}
       <section className="section-padding section-alt overflow-hidden">

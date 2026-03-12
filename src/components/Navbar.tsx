@@ -51,7 +51,7 @@ export const Navbar = ({ fullWidth = false }: { fullWidth?: boolean }) => {
               <button
                 onClick={() => {
                   localStorage.removeItem("token");
-                  window.location.href = "/home";
+                  window.location.href = "/login";
                 }}
                 className="rounded-full bg-destructive/5 hover:bg-destructive/10 border border-destructive/10 text-destructive px-6 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all"
               >
@@ -100,7 +100,7 @@ export const Navbar = ({ fullWidth = false }: { fullWidth?: boolean }) => {
                   onClick={() => {
                     localStorage.removeItem("token");
                     setOpen(false);
-                    window.location.href = "/home";
+                    window.location.href = "/login";
                   }}
                   className="rounded-full bg-destructive px-5 py-2 text-sm font-semibold text-destructive-foreground"
                 >

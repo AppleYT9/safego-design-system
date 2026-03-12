@@ -1,11 +1,7 @@
 import { Link } from "react-router-dom";
 import { SafeGoLogo } from "./SafeGoLogo";
-import { ArrowRight } from "lucide-react";
-import { useState } from "react";
 
 export const Footer = () => {
-  const [email, setEmail] = useState("");
-
   return (
     <footer className="border-t border-border bg-background">
       <div className="mx-auto max-w-7xl px-4 pt-16 pb-8 sm:px-6 lg:px-8">
@@ -17,9 +13,10 @@ export const Footer = () => {
           <div>
             <h4 className="font-display text-sm font-bold">Product</h4>
             <div className="mt-3 flex flex-col gap-2">
-              {["Home", "Book a Ride", "Safety Features", "Pricing"].map((l) => (
-                <Link key={l} to="/home" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{l}</Link>
-              ))}
+              <Link to="/home" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Home</Link>
+              <Link to="/book/normal" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Book a Ride</Link>
+              <Link to="/safety" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Safety Features</Link>
+              <Link to="/home" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
             </div>
           </div>
           <div>
@@ -32,18 +29,11 @@ export const Footer = () => {
             </div>
           </div>
           <div>
-            <h4 className="font-display text-sm font-bold">Stay Updated</h4>
-            <div className="mt-3 flex rounded-full border border-border bg-secondary">
-              <input
-                type="email"
-                placeholder="Your e-mail"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-transparent px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
-              />
-              <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors" aria-label="Subscribe">
-                <ArrowRight size={18} />
-              </button>
+            <h4 className="font-display text-sm font-bold">Contact Us</h4>
+            <div className="mt-3 flex flex-col gap-2">
+              <a href="mailto:SafeGo@gmail.com" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                SafeGo@gmail.com
+              </a>
             </div>
           </div>
         </div>
