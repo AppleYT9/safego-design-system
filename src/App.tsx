@@ -11,8 +11,10 @@ import RideTracking from "./pages/RideTracking";
 import Dashboard from "./pages/Dashboard";
 import DriverPortal from "./pages/DriverPortal";
 import AdminDashboard from "./pages/AdminDashboard";
+import Safety from "./pages/Safety";
 import NotFound from "./pages/NotFound";
 import DriveWithUs from "./pages/DriveWithUs";
+import ApplyDriver from "./pages/ApplyDriver";
 
 const queryClient = new QueryClient();
 
@@ -29,10 +31,12 @@ const App = () => (
           <Route path="/signup" element={<AuthPage />} />
           <Route path="/book/:mode" element={<BookingPage />} />
           <Route path="/ride/tracking" element={<RideTracking />} />
+          <Route path="/safety" element={<Safety />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/driver" element={<DriverPortal />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/drive-with-us" element={<DriveWithUs />} />
+          <Route path="/apply-driver" element={<ApplyDriver />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

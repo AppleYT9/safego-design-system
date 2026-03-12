@@ -14,8 +14,8 @@ const navItems = [
 ];
 
 const requests = [
-  { id: 1, pickup: "SM Megamall", dest: "Makati CBD", mode: "Pink", modeColor: "hsl(var(--pink))", modeBg: "hsl(var(--pink-light))", dist: "8.2 km", fare: "₱195" },
-  { id: 2, pickup: "QC Memorial", dest: "Eastwood", mode: "Normal", modeColor: "hsl(var(--teal))", modeBg: "hsl(var(--teal-light))", dist: "5.1 km", fare: "₱142" },
+  { id: 1, pickup: "SM Megamall", dest: "Makati CBD", mode: "Pink", modeColor: "hsl(var(--pink))", modeBg: "hsl(var(--pink-light))", dist: "8.2 km", fare: "₹195" },
+  { id: 2, pickup: "QC Memorial", dest: "Eastwood", mode: "Normal", modeColor: "hsl(var(--teal))", modeBg: "hsl(var(--teal-light))", dist: "5.1 km", fare: "₹142" },
 ];
 
 const docs = [
@@ -56,7 +56,7 @@ const DriverPortal = () => (
         </div>
         <div className="mt-6 flex gap-8 text-sm">
           <div><p className="text-2xl font-bold font-display text-foreground">12</p><p className="text-muted-foreground">Today's Rides</p></div>
-          <div><p className="text-2xl font-bold font-display text-foreground">₱3,240</p><p className="text-muted-foreground">Earnings</p></div>
+          <div><p className="text-2xl font-bold font-display text-foreground">₹3,240</p><p className="text-muted-foreground">Earnings</p></div>
           <div><p className="text-2xl font-bold font-display text-foreground">94%</p><p className="text-muted-foreground">Acceptance</p></div>
         </div>
       </div>

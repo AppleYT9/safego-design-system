@@ -7,52 +7,35 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 4%;
+    --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 4%;
+    --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 4%;
-    --primary: 166 100% 39%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 20% 98%;
-    --secondary-foreground: 0 0% 4%;
-    --muted: 210 20% 98%;
-    --muted-foreground: 215 14% 65%;
-    --accent: 210 20% 98%;
-    --accent-foreground: 0 0% 4%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 166 100% 39%;
-    --radius: 0.75rem;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 160 84% 35%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 160 84% 35%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 160 84% 35%;
+    --radius: 1.5rem;
 
-    /* SafeGo Brand */
-    --brand: 166 100% 39%;
-    --brand-dark: 221 39% 11%;
-
-    /* Mode Colors - HSL */
-    --pink: 330 56% 56%;
-    --pink-light: 330 100% 97%;
-    --pink-dark: 330 67% 33%;
-    --purple: 263 70% 58%;
-    --purple-light: 263 100% 97%;
-    --purple-dark: 263 67% 35%;
-    --blue: 199 89% 48%;
-    --blue-light: 199 100% 97%;
-    --blue-dark: 199 80% 24%;
-    --teal: 166 100% 39%;
-    --teal-light: 166 100% 97%;
-    --teal-dark: 166 80% 20%;
-
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 4%;
-    --sidebar-primary: 166 100% 39%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 98%;
-    --sidebar-accent-foreground: 0 0% 4%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 166 100% 39%;
+    /* Mode Colors - Professional HSL */
+    --pink: 330 81% 60%;
+    --pink-light: 330 100% 98%;
+    --purple: 262 83% 58%;
+    --purple-light: 262 100% 98%;
+    --blue: 214 95% 43%;
+    --blue-light: 214 100% 98%;
+    --teal: 160 84% 35%;
+    --teal-light: 160 100% 98%;
   }
 }
 
@@ -64,54 +47,98 @@
     @apply bg-background text-foreground font-body antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Syne', sans-serif;
+    @apply font-display tracking-tight text-foreground;
   }
 }
 
 @layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+  }
+  
+  .premium-shadow {
+    box-shadow: 
+      0 2px 4px rgba(0,0,0,0.02),
+      0 10px 20px rgba(0,0,0,0.04),
+      0 20px 40px rgba(0,0,0,0.04);
+  }
+
   .section-padding {
-    @apply py-24 px-4 sm:px-6 lg:px-8;
+    @apply py-24 px-4 sm:px-6 lg:px-12;
   }
-  .section-alt {
-    background-color: hsl(var(--secondary));
-  }
+
   .safego-card {
-    @apply bg-card rounded-[20px] border border-border shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-all duration-300;
+    @apply bg-card rounded-[2.5rem] border border-border/40 transition-all duration-500 premium-shadow hover:scale-[1.01] hover:border-primary/20;
   }
-  .safego-card:hover {
-    @apply shadow-[0_8px_32px_rgba(0,0,0,0.10)] -translate-y-1;
-  }
+
   .caption-label {
-    @apply text-xs uppercase tracking-[0.1em] text-muted-foreground font-medium;
+    @apply text-[11px] font-black uppercase tracking-[0.3em] text-primary/80;
   }
+
   .scroll-reveal {
     opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transform: translateY(20px);
+    transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
+
   .scroll-reveal.revealed {
     opacity: 1;
     transform: translateY(0);
   }
-  .sos-pulse {
-    animation: pulse-red 2s infinite;
-  }
-  @keyframes pulse-red {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
-    50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); }
-  }
-  @keyframes float {
-    0%, 100% { transform: translateY(-8px); }
-    50% { transform: translateY(8px); }
-  }
-  .animate-float {
-    animation: float 4s ease-in-out infinite;
-  }
-  @keyframes progress-fill {
-    from { width: 0%; }
-    to { width: 100%; }
-  }
-  .animate-progress {
-    animation: progress-fill 2.8s ease-in-out forwards;
-  }
+}
+
+
+.sos-pulse {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(-8px); }
+  50% { transform: translateY(8px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes move-map {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-20px, -20px); }
+}
+
+.animate-move-map {
+  animation: move-map 3s linear infinite;
+}
+
+@keyframes progress-fill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+.animate-progress {
+  animation: progress-fill 2.8s ease-in-out forwards;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
