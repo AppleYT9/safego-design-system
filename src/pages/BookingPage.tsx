@@ -545,11 +545,28 @@ const BookingPage = () => {
   };
 
   const handleConfirmRide = () => {
-    const newRide = { mode: mode.name.replace(" Mode", ""), route: `${pickup} → ${destination}`, date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }), driver: selectedDriver?.name || "Driver", status: "In Progress", rating: 0 };
+    const bookingData = {
+      id: `R-${Math.floor(Math.random() * 9000 + 1000)}`,
+      passenger: "Guest User",
+      mode: mode.name.replace(" Mode", ""),
+      driver: selectedDriver?.name || "Driver",
+      route: `${pickup} → ${destination}`,
+      status: "In Progress",
+      type: "booking",
+      timestamp: Date.now()
+    };
+
+    const newRide = { ...bookingData, date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }), rating: 0 };
+    
     try {
       const saved = localStorage.getItem("safego_rides");
       localStorage.setItem("safego_rides", JSON.stringify([newRide, ...(saved ? JSON.parse(saved) : [])]));
+      
+      // Emit event for Admin Dashboard
+      localStorage.setItem("safego_latest_booking", JSON.stringify(bookingData));
+      window.dispatchEvent(new Event("storage")); 
     } catch (_) { }
+
     setFlowState("confirmed");
     leftRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -848,11 +865,11 @@ const BookingPage = () => {
                 )}
 
                 {/* ── Submit Button ── */}
-                <div className="sticky bottom-0 left-0 right-0 py-6 mt-8 bg-gradient-to-t from-background to-transparent pointer-events-none">
+                <div className="mt-10 mb-4 relative z-20">
                   <button
                     onClick={handleFindRoute}
                     disabled={isAnalyzing}
-                    className="w-full relative group flex items-center justify-center gap-3 rounded-2xl py-5 text-sm font-black text-white transition-all shadow-xl hover:shadow-2xl active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed pointer-events-auto overflow-hidden"
+                    className="w-full relative group flex items-center justify-center gap-3 rounded-2xl py-5 text-sm font-black text-white transition-all shadow-xl hover:shadow-2xl active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed overflow-hidden"
                     style={{ backgroundColor: mode.accent }}
                   >
                     <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out pointer-events-none" />

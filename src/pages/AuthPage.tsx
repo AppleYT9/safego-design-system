@@ -10,7 +10,7 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const isLogin = location.pathname === "/login";
   
-  const [role, setRole] = useState<"passenger" | "driver">("passenger");
+  const [role, setRole] = useState<"passenger" | "driver" | "admin">("passenger");
   
   // Form State
   const [fullName, setFullName] = useState("");
@@ -29,6 +29,11 @@ const AuthPage = () => {
     }
   }, [navigate]);
 
+  // Clear errors when switching roles
+  useEffect(() => {
+    setError("");
+  }, [role]);
+
   const handleGoogleLogin = () => {
     setShowGoogleAccounts(true);
   };
@@ -36,7 +41,7 @@ const AuthPage = () => {
   const selectGoogleAccount = (email: string) => {
     localStorage.setItem("userEmail", email);
     localStorage.setItem("token", "google-dummy-token");
-    if (email.includes("admin")) {
+    if (email.includes("admin") || role === "admin") {
       window.location.href = "/admin";
     } else {
       window.location.href = role === "driver" ? "/driver" : "/home";
@@ -47,6 +52,16 @@ const AuthPage = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    // Shortcut for Admin Login: Allow any email/password to redirect to dashboard
+    if (role === "admin") {
+      setTimeout(() => {
+        localStorage.setItem("token", "admin-dummy-token");
+        navigate("/admin");
+        setLoading(false);
+      }, 500);
+      return;
+    }
 
     try {
       let endpoint = "";
@@ -96,17 +111,15 @@ const AuthPage = () => {
         throw new Error(errorMessage);
       }
 
-      // Save token (Assume backend returns access_token in data or data.access_token)
+      // Save token
       if (data.access_token) {
         localStorage.setItem("token", data.access_token);
       }
 
-      // Registration might not return a token directly depending on the backend, 
-      // but if it does or if it's login:
-      if (role === "driver") {
-        navigate("/driver");
-      } else if (data.role === "admin" || email.includes("admin")) {
+      if (data.role === "admin" || email.includes("admin")) {
         navigate("/admin");
+      } else if (role === "driver") {
+        navigate("/driver");
       } else {
         navigate("/home");
       }
@@ -187,7 +200,7 @@ const AuthPage = () => {
 
         {/* Role toggle */}
         <div className="mx-auto mb-6 flex w-fit rounded-full border border-border/50 bg-background/50 p-1 backdrop-blur-sm">
-          {(["passenger", "driver"] as const).map((r) => (
+          {(["passenger", "driver", "admin"] as const).map((r) => (
             <button
               key={r}
               type="button"
@@ -201,9 +214,21 @@ const AuthPage = () => {
         </div>
 
         <h2 className="mt-2 font-display text-3xl font-bold text-foreground text-center">
-          {isLogin ? "Welcome Back" : "Create Account"}
+          {isLogin ? "Welcome Back" : (role === "admin" ? "Admin Access" : "Create Account")}
         </h2>
         
+        {role === "admin" && !isLogin && (
+          <div className="mt-4 rounded-lg bg-primary/10 p-3 text-sm text-primary text-center">
+            Company credentials are required for Admin access. 
+            <button 
+              onClick={() => navigate("/login")}
+              className="ml-1 font-bold underline"
+            >
+              Go to Login
+            </button>
+          </div>
+        )}
+
         {error && (
           <div className="mt-4 flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
             <AlertCircle size={16} />
@@ -212,7 +237,7 @@ const AuthPage = () => {
         )}
 
         <form onSubmit={handleAuth} className="mt-6 flex flex-col gap-4">
-          {!isLogin && (
+          {!isLogin && role !== "admin" && (
             <div>
               <label className="text-sm font-medium text-foreground">Full Name</label>
               <input 
@@ -235,7 +260,7 @@ const AuthPage = () => {
               placeholder="you@email.com" 
             />
           </div>
-          {!isLogin && (
+          {!isLogin && role !== "admin" && (
             <div>
               <label className="text-sm font-medium text-foreground">Phone</label>
               <input 
@@ -261,7 +286,7 @@ const AuthPage = () => {
               placeholder="••••••••" 
             />
           </div>
-          {!isLogin && (
+          {!isLogin && role !== "admin" && (
             <div>
               <label className="text-sm font-medium text-foreground">Confirm Password</label>
               <input 
@@ -280,7 +305,7 @@ const AuthPage = () => {
             disabled={loading}
             className="mt-2 flex w-full justify-center items-center gap-2 rounded-xl bg-primary py-4 text-sm font-semibold text-primary-foreground transition-all hover:brightness-110 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {loading ? <Loader2 className="animate-spin" size={18} /> : (isLogin ? "Sign In" : "Create Account")}
+            {loading ? <Loader2 className="animate-spin" size={18} /> : (isLogin || role === "admin" ? "Sign In" : "Create Account")}
           </button>
 
           <div className="relative mt-2 flex items-center py-2">
@@ -305,12 +330,26 @@ const AuthPage = () => {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <Link to={isLogin ? "/signup" : "/login"} className="text-primary font-medium hover:underline">
-            {isLogin ? "Sign Up" : "Login"}
-          </Link>
-        </p>
+        {role !== "admin" && (
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <Link to={isLogin ? "/signup" : "/login"} className="text-primary font-medium hover:underline">
+              {isLogin ? "Sign Up" : "Login"}
+            </Link>
+          </p>
+        )}
+        
+        {role === "admin" && !isLogin && (
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Administrative accounts are managed by SafeGo.
+          </p>
+        )}
+
+        {role === "admin" && isLogin && (
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Only authorized personnel may access the admin dashboard.
+          </p>
+        )}
       </div>
     </div>
   );
