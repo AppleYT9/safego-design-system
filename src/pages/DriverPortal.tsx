@@ -766,7 +766,7 @@ const DriverPortal = () => {
               localStorage.removeItem("token");
               window.location.href = "/login";
             }}
-            className="flex items-center gap-3 rounded-2xl px-4 py-3.5 text-[13px] font-bold text-red-500 hover:bg-red-50 transition-all w-full text-left"
+            className="flex items-center justify-center gap-3 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-4 py-3.5 text-[13px] font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] active:scale-[0.97] w-full text-left"
           >
             <LogOut size={20} /> Logout Account
           </button>
@@ -812,7 +812,7 @@ const DriverPortal = () => {
                 localStorage.removeItem("token");
                 window.location.href = "/login";
               }}
-              className="flex items-center gap-4 rounded-2xl px-5 py-5 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors mt-auto border-t border-border pt-6 text-left w-full"
+              className="flex items-center justify-center gap-4 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-5 py-4 text-sm font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.3)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] mt-auto text-left w-full active:scale-[0.98]"
             >
               <LogOut size={20} /> Logout Account
             </button>

@@ -92,7 +92,7 @@ const MapPanel = ({ accent, centerLoc, triggerRoute, onRouteExtracted, onCabSele
             <div style="background:${accent};color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);">
               ${cab.name.split(" ").map((n: string) => n[0]).join("")}
             </div>
-            <div style="background:white;border-radius:6px;padding:1px 5px;font-size:9px;font-weight:700;color:#111;margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;">
+            <div style="background:hsl(var(--card));border-radius:6px;padding:1px 5px;font-size:9px;font-weight:700;color:hsl(var(--card-foreground));margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;">
               ${cab.eta} min
             </div>
             <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid white;margin-top:-1px;"></div>
@@ -194,7 +194,7 @@ const MapPanel = ({ accent, centerLoc, triggerRoute, onRouteExtracted, onCabSele
           // Draw Distance Tag in Blue
           if (coordsList.length > 2) {
             const midPt = coordsList[Math.floor(coordsList.length / 2)];
-            const distHtml = `<div style="background:white;color:#2563eb;font-weight:900;padding:4px 8px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid #2563eb;font-size:12px;white-space:nowrap;margin-top:-20px;text-align:center;">${distKm.toFixed(1)} km</div>`;
+            const distHtml = `<div style="background:hsl(var(--card));color:#2563eb;font-weight:900;padding:4px 8px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid #2563eb;font-size:12px;white-space:nowrap;margin-top:-20px;text-align:center;">${distKm.toFixed(1)} km</div>`;
             const distIcon = L.divIcon({ html: distHtml, className: "", iconSize: [60, 24], iconAnchor: [30, 12] });
             L.marker(midPt, { icon: distIcon, isRouteLayer: true }).addTo(mapInstanceRef.current);
           }
@@ -254,7 +254,7 @@ const MapPanel = ({ accent, centerLoc, triggerRoute, onRouteExtracted, onCabSele
 
         // Add the new cab markers
         newCabs.forEach((cab: any) => {
-          const cabHtml = `<div style="position:relative;display:flex;flex-direction:column;align-items:center;"><div style="background:${accent};color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);">${cab.name.split(" ").map((n: string) => n[0]).join("")}</div><div style="background:white;border-radius:6px;padding:1px 5px;font-size:9px;font-weight:700;color:#111;margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;">${cab.eta} min</div><div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid white;margin-top:-1px;"></div></div>`;
+          const cabHtml = `<div style="position:relative;display:flex;flex-direction:column;align-items:center;"><div style="background:${accent};color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);">${cab.name.split(" ").map((n: string) => n[0]).join("")}</div><div style="background:hsl(var(--card));border-radius:6px;padding:1px 5px;font-size:9px;font-weight:700;color:hsl(var(--card-foreground));margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;">${cab.eta} min</div><div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid hsl(var(--card));margin-top:-1px;"></div></div>`;
           const cabIcon = L.divIcon({ html: cabHtml, className: "", iconSize: [36, 52], iconAnchor: [18, 52] });
           L.marker([cab.lat, cab.lng], { icon: cabIcon }).addTo(mapInstanceRef.current).bindPopup(`<b>${cab.name}</b><br>⭐ ${cab.rating} &nbsp;·&nbsp; ETA ${cab.eta} min`, { closeButton: false });
         });
@@ -303,7 +303,7 @@ const MapPanel = ({ accent, centerLoc, triggerRoute, onRouteExtracted, onCabSele
           <div
             className="rounded-2xl p-3 flex gap-2 overflow-x-auto"
             style={{
-              background: "rgba(255,255,255,0.93)",
+              background: "hsl(var(--card) / 0.93)",
               backdropFilter: "blur(14px)",
               WebkitBackdropFilter: "blur(14px)",
               boxShadow: "0 -2px 20px rgba(0,0,0,0.08)",
@@ -557,14 +557,14 @@ const BookingPage = () => {
     };
 
     const newRide = { ...bookingData, date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }), rating: 0 };
-    
+
     try {
       const saved = localStorage.getItem("safego_rides");
       localStorage.setItem("safego_rides", JSON.stringify([newRide, ...(saved ? JSON.parse(saved) : [])]));
-      
+
       // Emit event for Admin Dashboard
       localStorage.setItem("safego_latest_booking", JSON.stringify(bookingData));
-      window.dispatchEvent(new Event("storage")); 
+      window.dispatchEvent(new Event("storage"));
     } catch (_) { }
 
     setFlowState("confirmed");
@@ -593,7 +593,7 @@ const BookingPage = () => {
           localStorage.setItem("safego_rides", JSON.stringify(ridesList));
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     setFlowState("booking");
     setPickup("");
@@ -655,7 +655,7 @@ const BookingPage = () => {
                 </div>
 
                 {/* ── 1. Route Form ── */}
-                <div className="mt-8 rounded-[2rem] border border-border/40 bg-white p-8 premium-shadow relative transition-all hover:-translate-y-1">
+                <div className="mt-8 rounded-[2rem] border border-border/40 bg-card p-8 premium-shadow relative transition-all hover:-translate-y-1">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="p-2 rounded-lg" style={{ backgroundColor: `${mode.accent}15` }}>
                       <Navigation size={16} style={{ color: mode.accent }} />
@@ -672,7 +672,7 @@ const BookingPage = () => {
                           onChange={handlePickupChange}
                           onFocus={() => setShowPickupDropdown(true)}
                           onBlur={() => setTimeout(() => setShowPickupDropdown(false), 200)}
-                          className="w-full rounded-xl border border-border bg-secondary/60 px-4 py-3 text-sm outline-none focus:border-primary transition-colors pr-10"
+                          className="w-full rounded-xl border border-border dark:border-white/10 bg-secondary/60 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors pr-10 dark:text-white dark:placeholder:text-white/30"
                           placeholder="Pickup location"
                         />
 
@@ -716,7 +716,7 @@ const BookingPage = () => {
                               setShowDestDropdown(false);
                             }
                           }}
-                          className="w-full rounded-xl border border-border bg-secondary/60 px-4 py-3 text-sm outline-none focus:border-primary transition-colors"
+                          className="w-full rounded-xl border border-border dark:border-white/10 bg-secondary/60 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30"
                           placeholder="Destination"
                         />
 
@@ -743,13 +743,13 @@ const BookingPage = () => {
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Date</label>
                       <div className="relative">
-                        <input type="date" className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm outline-none focus:border-primary transition-all focus:ring-4 focus:ring-primary/5" />
+                        <input type="date" className="w-full rounded-xl border border-border dark:border-white/10 bg-secondary/30 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-all focus:ring-4 focus:ring-primary/5 dark:text-white dark:[color-scheme:dark]" />
                       </div>
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Time</label>
                       <div className="relative">
-                        <input type="time" className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm outline-none focus:border-primary transition-all focus:ring-4 focus:ring-primary/5" />
+                        <input type="time" className="w-full rounded-xl border border-border dark:border-white/10 bg-secondary/30 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-all focus:ring-4 focus:ring-primary/5 dark:text-white dark:[color-scheme:dark]" />
                       </div>
                     </div>
                   </div>
@@ -767,7 +767,7 @@ const BookingPage = () => {
                       <Link
                         key={m.id}
                         to={`/book/${m.id}`}
-                        className={`group relative flex flex-col items-center justify-center rounded-[2.5rem] border p-6 transition-all duration-500 overflow-hidden ${isActive ? "border-transparent bg-white premium-shadow scale-[1.05] z-10" : "border-border bg-background/40 hover:bg-white hover:border-border/80 shadow-sm"}`}
+                        className={`group relative flex flex-col items-center justify-center rounded-[2.5rem] border p-6 transition-all duration-500 overflow-hidden ${isActive ? "border-transparent bg-card premium-shadow scale-[1.05] z-10" : "border-border bg-background/40 hover:bg-card hover:border-border/80 shadow-sm"}`}
                         style={isActive ? { boxShadow: `0 20px 40px -10px ${m.accent}25` } : {}}
                       >
                         {isActive && (
@@ -815,52 +815,58 @@ const BookingPage = () => {
 
                 {/* ── PWD extras ── */}
                 {mode.id === "pwd" && (
-                  <div className="mt-4 rounded-[2rem] border border-border/40 bg-white p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
-                    <h3 className="text-sm font-semibold text-foreground mb-3">Accessibility Needs</h3>
+                  <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
+                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                       <Shield size={16} className="text-[hsl(var(--purple))]" /> Accessibility Needs
+                    </h3>
                     <div className="grid grid-cols-2 gap-2">
                       {["Wheelchair Accessible Vehicle", "Driver Assistance Required", "Vision Assistance", "Hearing Assistance"].map((n, i) => (
-                        <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-2.5 hover:bg-secondary cursor-pointer transition-colors text-xs">
-                          <input type="checkbox" className="accent-[hsl(var(--purple))] cursor-pointer" />
+                        <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-3 hover:bg-secondary cursor-pointer transition-all text-xs font-semibold text-foreground/90">
+                          <input type="checkbox" className="accent-[hsl(var(--purple))] h-4 w-4 cursor-pointer" />
                           {n}
                         </label>
                       ))}
                     </div>
-                    <h3 className="text-sm font-semibold text-foreground mt-4 mb-2">Emergency Contact</h3>
-                    <input type="tel" placeholder="+63 912 345 6789" className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors" />
+                    <h3 className="text-sm font-bold text-foreground mt-6 mb-3">Emergency Contact</h3>
+                    <input type="tel" placeholder="+63 912 345 6789" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                   </div>
                 )}
 
                 {/* ── Pink extras ── */}
                 {mode.id === "pink" && (
-                  <div className="mt-4 rounded-[2rem] border border-border/40 bg-white p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
-                    <h3 className="text-sm font-semibold text-foreground mb-3">Safety Preferences</h3>
+                  <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
+                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                       <Shield size={16} className="text-[hsl(var(--pink))]" /> Safety Preferences
+                    </h3>
                     <div className="grid grid-cols-1 gap-2">
                       {["Prefer Female Driver", "Share Live Location with Emergency Contact", "Enable Auto SOS in unsafe situations"].map((n, i) => (
-                        <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-2.5 hover:bg-secondary cursor-pointer transition-colors text-xs">
-                          <input type="checkbox" defaultChecked={i === 0} className="accent-[hsl(var(--pink))] cursor-pointer" />
+                        <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-3 hover:bg-secondary cursor-pointer transition-all text-xs font-semibold text-foreground/90">
+                          <input type="checkbox" defaultChecked={i === 0} className="accent-[hsl(var(--pink))] h-4 w-4 cursor-pointer" />
                           {n}
                         </label>
                       ))}
                     </div>
-                    <h3 className="text-sm font-semibold text-foreground mt-4 mb-2">Emergency Contact</h3>
-                    <input type="tel" placeholder="Emergency contact number" className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors" />
+                    <h3 className="text-sm font-bold text-foreground mt-6 mb-3">Emergency Contact</h3>
+                    <input type="tel" placeholder="Emergency contact number" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                   </div>
                 )}
 
                 {/* ── Elderly extras ── */}
                 {mode.id === "elderly" && (
-                  <div className="mt-4 rounded-[2rem] border border-border/40 bg-white p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
-                    <h3 className="text-sm font-semibold text-foreground mb-3">Assistance Options</h3>
+                  <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
+                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                       <Shield size={16} className="text-[hsl(var(--blue))]" /> Assistance Options
+                    </h3>
                     <div className="grid grid-cols-1 gap-2">
                       {["Driver Assistance Required", "Help with Boarding and Exiting Vehicle", "Medical Support Contact"].map((n, i) => (
-                        <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-2.5 hover:bg-secondary cursor-pointer transition-colors text-xs">
-                          <input type="checkbox" className="accent-[hsl(var(--blue))] cursor-pointer" />
+                        <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-3 hover:bg-secondary cursor-pointer transition-all text-xs font-semibold text-foreground/90">
+                          <input type="checkbox" className="accent-[hsl(var(--blue))] h-4 w-4 cursor-pointer" />
                           {n}
                         </label>
                       ))}
                     </div>
-                    <h3 className="text-sm font-semibold text-foreground mt-4 mb-2">Emergency Contact</h3>
-                    <input type="tel" placeholder="Family or caregiver's number" className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors" />
+                    <h3 className="text-sm font-bold text-foreground mt-6 mb-3">Emergency Contact</h3>
+                    <input type="tel" placeholder="Family or caregiver's number" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                   </div>
                 )}
 
@@ -884,7 +890,7 @@ const BookingPage = () => {
                 {/* ── Route Result ── */}
                 {routeFound && !isAnalyzing && (
                   <div className="mt-8 space-y-6 animate-in slide-in-from-bottom-8 fade-in duration-700 pb-12">
-                    <div className="rounded-[2.5rem] bg-white premium-shadow border border-border/40 p-8 relative overflow-hidden transition-all hover:-translate-y-1">
+                    <div className="rounded-[2.5rem] bg-card premium-shadow border border-border/40 p-8 relative overflow-hidden transition-all hover:-translate-y-1">
                       <div className="absolute top-0 right-0 p-4 opacity-5">
                         <Shield size={120} style={{ color: mode.accent }} />
                       </div>
@@ -943,7 +949,7 @@ const BookingPage = () => {
                           <p className="text-xs text-muted-foreground mt-1 font-medium">Please tap a vehicle on the interactive map.</p>
                         </div>
                       ) : (
-                        <div className="rounded-[2.5rem] bg-white border border-border/40 p-8 premium-shadow animate-in slide-in-from-bottom-4 duration-500 relative transition-all hover:-translate-y-1">
+                        <div className="rounded-[2.5rem] bg-card border border-border/40 p-8 premium-shadow animate-in slide-in-from-bottom-4 duration-500 relative transition-all hover:-translate-y-1">
                           <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-[10px] font-black uppercase tracking-[0.1em] text-muted-foreground">
                               <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
@@ -1071,14 +1077,14 @@ const BookingPage = () => {
             {flowState === "confirmed" && (
               <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-6 max-w-lg mx-auto py-8">
                 <div className="text-center">
-                  <div className="mx-auto w-16 h-16 bg-green-100 flex items-center justify-center rounded-full mb-4 shadow-sm">
+                  <div className="mx-auto w-16 h-16 bg-green-500/10 flex items-center justify-center rounded-full mb-4 shadow-sm">
                     <CheckCircle2 size={32} className="text-green-600" />
                   </div>
                   <h2 className="text-2xl font-bold font-display text-foreground">Ride Confirmed!</h2>
                   <p className="text-muted-foreground mt-2 text-sm">Your driver is on the way to your pickup location.</p>
                 </div>
 
-                <div className="rounded-[2.5rem] bg-white border border-border/40 premium-shadow p-8 mt-8 transition-all hover:-translate-y-1">
+                <div className="rounded-[2.5rem] bg-card border border-border/40 premium-shadow p-8 mt-8 transition-all hover:-translate-y-1">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Driver Details</h3>
                   <div className="flex items-center gap-4">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full text-lg font-bold text-white shadow-md bg-green-500">
@@ -1121,7 +1127,7 @@ const BookingPage = () => {
                   <p className="text-muted-foreground mt-2 text-sm">How was your journey with {selectedDriver?.name}?</p>
                 </div>
 
-                <div className="rounded-[2.5rem] bg-white border border-border/40 premium-shadow p-8 mt-8 text-center flex flex-col items-center transition-all hover:-translate-y-1">
+                <div className="rounded-[2.5rem] bg-card border border-border/40 premium-shadow p-8 mt-8 text-center flex flex-col items-center transition-all hover:-translate-y-1">
                   <h3 className="text-sm font-bold text-foreground mb-4">Rate your driver</h3>
 
                   {/* Interactive Star Rating */}
@@ -1152,7 +1158,7 @@ const BookingPage = () => {
                       value={reviewText}
                       onChange={(e) => setReviewText(e.target.value)}
                       placeholder={`Tell us what you liked about ${selectedDriver?.name}...`}
-                      className="w-full rounded-xl border border-border bg-secondary/30 p-3 text-sm focus:border-primary outline-none transition-colors resize-none"
+                      className="w-full rounded-xl border border-border bg-secondary/30 dark:bg-white/5 p-3 text-sm focus:border-primary outline-none transition-colors resize-none dark:text-white dark:placeholder:text-white/30"
                     />
                   </div>
                 </div>
