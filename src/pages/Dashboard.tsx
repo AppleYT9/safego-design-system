@@ -27,7 +27,7 @@ const rides = [
 const statusColors: Record<string, string> = {
   Completed: "bg-primary/10 text-primary",
   Cancelled: "bg-destructive/10 text-destructive",
-  "In Progress": "bg-amber-100 text-amber-700",
+  "In Progress": "bg-amber-500/10 text-amber-500",
 };
 
 const Dashboard = () => {
@@ -133,8 +133,8 @@ const Dashboard = () => {
             </button>
           ))}
         </nav>
-        <div className="mt-auto">
-          <Link to="/home" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground">
+        <div className="mt-auto pt-4 border-t border-border/50">
+          <Link to="/home" className="flex items-center justify-center gap-3 rounded-xl bg-[#ef4444] hover:bg-[#dc2626] px-3 py-3 text-sm font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.25)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] active:scale-[0.97]">
             <LogOut size={18} /> Logout
           </Link>
         </div>

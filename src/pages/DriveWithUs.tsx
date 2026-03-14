@@ -205,21 +205,21 @@ const DriveWithUs = () => {
                     <div className="flex-1 scroll-reveal">
                         <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-primary shadow-sm backdrop-blur-md transition-all hover:bg-primary/10">
                             <span className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                             </span>
                             Now Hiring Operators
                         </div>
-                        
+
                         <h1 className="mt-8 font-display text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
                             Earn More With<br />
                             <span className="bg-gradient-to-r from-primary to-mode-blue bg-clip-text text-transparent">SafeGo.</span>
                         </h1>
-                        
+
                         <p className="mt-6 max-w-lg text-lg font-medium leading-relaxed text-muted-foreground/90">
                             Join an elite tier of verified drivers. Enjoy flexible hours, premium pay rates, and the most advanced safety technology in the industry.
                         </p>
-                        
+
                         <div className="mt-10 flex flex-wrap items-center gap-4">
                             <Link
                                 to="/apply-driver"
@@ -237,7 +237,7 @@ const DriveWithUs = () => {
                                 View Requirements
                             </a>
                         </div>
-                        
+
                         <div className="mt-10 flex flex-wrap items-center gap-6 rounded-2xl border border-border/50 bg-card/40 p-4 backdrop-blur-sm">
                             <div className="flex items-center gap-2">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
@@ -296,17 +296,17 @@ const DriveWithUs = () => {
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mode-pink-light">
                                 <Heart size={16} className="text-mode-pink" />
                             </div>
-                            <span className="text-xs font-bold text-foreground">Men & Women<br/>Welcome</span>
+                            <span className="text-xs font-bold text-foreground">Men & Women<br />Welcome</span>
                         </div>
 
                         {/* Main Glass Card - High-Fidelity 3D ID Card */}
-                        <div className="relative z-20 w-[420px] group rounded-[2.5rem] bg-gradient-to-b from-white/90 to-white/40 p-[2px] shadow-[0_20px_80px_-15px_rgba(0,0,0,0.1)] backdrop-blur-2xl transition-all duration-700 hover:-translate-y-4 hover:shadow-[0_40px_100px_-20px_rgba(16,185,129,0.2)]">
+                        <div className="relative z-20 w-[420px] group rounded-[2.5rem] bg-gradient-to-b from-white/95 to-white/40 dark:from-white/10 dark:to-white/5 p-[px] shadow-[0_20px_80px_-15px_rgba(0,0,0,0.1)] backdrop-blur-2xl transition-all duration-700 hover:-translate-y-4 hover:shadow-[0_40px_100px_-20px_rgba(16,185,129,0.2)]">
                             <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-white/40 via-transparent to-black/5 pointer-events-none" />
                             {/* Inner Card Container */}
-                            <div className="relative h-full w-full rounded-[calc(2.5rem-2px)] bg-background/80 p-8 overflow-hidden">
+                            <div className="relative h-full w-full rounded-[calc(2.5rem-2px)] bg-background/90 dark:bg-black/40 p-8 overflow-hidden">
                                 {/* Holographic Sweep on Hover */}
                                 <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 opacity-0 transition-all duration-1000 group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
-                                
+
                                 {/* Card Header - ID Badge Style */}
                                 <div className="flex items-start justify-between mb-8 relative z-10">
                                     <div className="flex items-center gap-5">
@@ -335,7 +335,7 @@ const DriveWithUs = () => {
                                 </div>
 
                                 {/* Stats Bar - Pill shape */}
-                                <div className="relative z-10 flex items-stretch justify-between rounded-2xl border border-border/40 bg-white/50 p-2 shadow-inner backdrop-blur-md">
+                                <div className="relative z-10 flex items-stretch justify-between rounded-2xl border border-border/40 bg-white/50 dark:bg-white/5 p-2 shadow-inner backdrop-blur-md">
                                     <div className="flex-1 flex flex-col items-center justify-center py-2 relative">
                                         <p className="font-display text-2xl font-black text-foreground">₹3.5K</p>
                                         <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">Avg/Day</p>
@@ -385,9 +385,9 @@ const DriveWithUs = () => {
 
             {/* WHY DRIVE WITH SAFEGO - PREMIUM GRID */}
             <section className="relative py-28 px-4 sm:px-6 lg:px-12 bg-secondary/30">
-                <div className="absolute inset-0 pointer-events-none opacity-[0.05]" 
-                     style={{ backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`, backgroundSize: '32px 32px' }}></div>
-                
+                <div className="absolute inset-0 pointer-events-none opacity-[0.05]"
+                    style={{ backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`, backgroundSize: '32px 32px' }}></div>
+
                 <div className="mx-auto max-w-7xl relative">
                     <div className="text-center scroll-reveal mb-16">
                         <span className="caption-label">Ecosystem Excellence</span>
@@ -419,19 +419,12 @@ const DriveWithUs = () => {
             {/* EQUAL OPPORTUNITY — SAAS STYLE DASHBOARD LOOK */}
             <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background overflow-hidden">
                 <div className="mx-auto max-w-[1400px]">
-                    <div className="relative rounded-[3rem] border border-border/60 bg-foreground p-12 lg:p-20 shadow-[0_0_100px_rgba(0,0,0,0.1)] overflow-hidden">
+                    <div className="relative rounded-[3rem] border border-white/10 bg-[#0f172a] p-12 lg:p-20 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] overflow-hidden">
                         {/* High-tech background elements */}
                         <div className="absolute top-0 right-0 w-full h-full pointer-events-none overflow-hidden">
-                            <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px]" />
-                            <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-mode-pink/15 blur-[100px]" />
-                            <svg className="absolute inset-0 w-full h-full opacity-[0.05]" viewBox="0 0 100 100">
-                                <defs>
-                                    <pattern id="dot-pattern" width="10" height="10" patternUnits="userSpaceOnUse">
-                                        <circle cx="2" cy="2" r="1" fill="white" />
-                                    </pattern>
-                                </defs>
-                                <rect width="100%" height="100%" fill="url(#dot-pattern)" />
-                            </svg>
+                            <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px]" />
+                            <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-mode-pink/10 blur-[100px]" />
+                            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`, backgroundSize: '24px 24px' }} />
                         </div>
 
                         <div className="relative z-10 flex flex-col lg:flex-row items-center gap-16">
@@ -440,12 +433,12 @@ const DriveWithUs = () => {
                                     <HeartHandshake size={14} className="text-primary" /> Equal Opportunity Employer
                                 </div>
                                 <h2 className="font-display text-5xl font-black text-white sm:text-6xl tracking-tight leading-[1.1]">
-                                    Everyone Deserves <br/><span className="bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">The Front Seat.</span>
+                                    Everyone Deserves <br /><span className="bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">The Front Seat.</span>
                                 </h2>
                                 <p className="mt-8 text-xl leading-relaxed text-white/60 font-medium max-w-2xl">
                                     Greatness has no gender. We actively hire, train, and support both men and women. Our inclusive practices ensure everyone gets equal pay, protection, and promotion paths.
                                 </p>
-                                
+
                                 <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     {[
                                         { icon: Target, text: "Equal Pay Policy", color: "text-primary" },
@@ -610,7 +603,7 @@ const DriveWithUs = () => {
                     <h2 className="mt-4 font-display text-4xl font-bold text-foreground sm:text-5xl">Hear From Our Drivers</h2>
                     <p className="mt-4 text-lg text-muted-foreground">Real stories from real SafeGo partners</p>
                 </div>
-                
+
                 {/* Left/Right Fades for Marquee Masking */}
                 <div className="absolute left-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
                 <div className="absolute right-0 top-0 bottom-0 w-16 md:w-40 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />

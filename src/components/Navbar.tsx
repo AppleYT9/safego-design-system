@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { SafeGoLogo } from "./SafeGoLogo";
 import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const navLinks = [
   { label: "Home", to: "/home" },
@@ -24,7 +25,7 @@ export const Navbar = ({ fullWidth = false }: { fullWidth?: boolean }) => {
 
   return (
     <nav
-      className={`sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-xl transition-all ${scrolled ? "shadow-sm" : ""}`}
+      className={`sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl transition-all ${scrolled ? "shadow-sm" : ""}`}
     >
       <div className={`relative flex h-20 w-full items-center mx-auto ${fullWidth ? "px-4 sm:px-6 lg:px-8" : "max-w-[1400px] px-6 sm:px-8 lg:px-12"}`}>
         {/* Logo */}
@@ -46,6 +47,7 @@ export const Navbar = ({ fullWidth = false }: { fullWidth?: boolean }) => {
         </div>
 
         <div className="hidden items-center gap-3 md:flex ml-auto">
+          <ThemeToggle />
           {localStorage.getItem("token") ? (
             <>
               <button
@@ -53,7 +55,7 @@ export const Navbar = ({ fullWidth = false }: { fullWidth?: boolean }) => {
                   localStorage.removeItem("token");
                   window.location.href = "/login";
                 }}
-                className="rounded-full bg-destructive/5 hover:bg-destructive/10 border border-destructive/10 text-destructive px-6 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all"
+                className="rounded-full bg-[#ef4444] hover:bg-[#dc2626] text-white px-6 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:shadow-[0_0_25px_rgba(239,68,68,0.6)] premium-shadow"
               >
                 Sign Out
               </button>
@@ -93,16 +95,21 @@ export const Navbar = ({ fullWidth = false }: { fullWidth?: boolean }) => {
               {l.label}
             </Link>
           ))}
-          <div className="mt-3 flex gap-3">
-            {localStorage.getItem("token") ? (
-              <>
+          <div className="mt-4 border-t border-border pt-4 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-muted-foreground">App Theme</span>
+              <ThemeToggle />
+            </div>
+            <div className="flex gap-3">
+              {localStorage.getItem("token") ? (
+                <>
                 <button
                   onClick={() => {
                     localStorage.removeItem("token");
                     setOpen(false);
                     window.location.href = "/login";
                   }}
-                  className="rounded-full bg-destructive px-5 py-2 text-sm font-semibold text-destructive-foreground"
+                  className="rounded-full bg-[#ef4444] hover:bg-[#dc2626] px-5 py-2 text-sm font-bold text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:shadow-[0_0_25px_rgba(239,68,68,0.6)] hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Logout
                 </button>
@@ -117,6 +124,7 @@ export const Navbar = ({ fullWidth = false }: { fullWidth?: boolean }) => {
                 </Link>
               </>
             )}
+            </div>
           </div>
         </div>
       )}

@@ -37,30 +37,68 @@
     --teal: 160 84% 35%;
     --teal-light: 160 100% 98%;
   }
+
+  .dark {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 40% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 160 84% 35%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 160 84% 35%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 160 84% 35%;
+
+    --pink: 330 81% 60%;
+    --pink-light: 330 30% 20%;
+    --purple: 262 83% 58%;
+    --purple-light: 262 30% 20%;
+    --blue: 214 95% 43%;
+    --blue-light: 214 30% 20%;
+    --teal: 160 84% 35%;
+    --teal-light: 160 30% 20%;
+  }
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-display tracking-tight text-foreground;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+    @apply bg-background/70 backdrop-blur-xl border border-border/40 shadow-[0_8px_32px_0_rgba(31, 38, 135, 0.07)];
   }
-  
+
   .premium-shadow {
-    box-shadow: 
-      0 2px 4px rgba(0,0,0,0.02),
-      0 10px 20px rgba(0,0,0,0.04),
-      0 20px 40px rgba(0,0,0,0.04);
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.02),
+      0 10px 20px rgba(0, 0, 0, 0.04),
+      0 20px 40px rgba(0, 0, 0, 0.04);
   }
 
   .section-padding {
@@ -93,13 +131,27 @@
 }
 
 @keyframes pulse-red {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-  50% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(-8px); }
-  50% { transform: translateY(8px); }
+
+  0%,
+  100% {
+    transform: translateY(-8px);
+  }
+
+  50% {
+    transform: translateY(8px);
+  }
 }
 
 .animate-float {
@@ -107,8 +159,13 @@
 }
 
 @keyframes move-map {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(-20px, -20px); }
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(-20px, -20px);
+  }
 }
 
 .animate-move-map {
@@ -116,8 +173,13 @@
 }
 
 @keyframes progress-fill {
-  from { width: 0%; }
-  to { width: 100%; }
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
 }
 
 .animate-progress {
@@ -125,13 +187,23 @@
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .animate-marquee {
