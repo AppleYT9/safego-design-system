@@ -1,7 +1,8 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { getModeConfig, modes } from "@/config/modeConfig";
 import type { RideMode } from "@/config/modeConfig";
 import { Navbar } from "@/components/Navbar";
+import { useVoiceAssistant } from "@/contexts/VoiceAssistantContext";
 import { SafetyScoreBar } from "@/components/SafetyScoreBar";
 import {
   ArrowLeft, Star, MessageCircle, Shield, Loader2, CheckCircle2,
@@ -10,20 +11,25 @@ import {
 import { useState, useEffect, useRef } from "react";
 
 // ─── Simulated nearby cabs ───────────────────────────────────────────────────
-const generateNearbyCabs = (lat: number, lng: number) =>
-  Array.from({ length: 6 }, (_, i) => ({
+const generateNearbyCabs = (lat: number, lng: number, mode: string = "normal") => {
+  const maleNames = ["James D.", "Alex J.", "Robert P.", "David L.", "Michael S.", "Chris B."];
+  const femaleNames = ["Sarah M.", "Maria C.", "Joyce T.", "Emma W.", "Sophia K.", "Olivia R."];
+  const names = mode === "pink" ? femaleNames : maleNames;
+
+  return Array.from({ length: 6 }, (_, i) => ({
     id: i,
     lat: lat + (Math.random() - 0.5) * 0.012,
     lng: lng + (Math.random() - 0.5) * 0.012,
-    name: ["James D.", "Sarah M.", "Alex J.", "Maria C.", "Robert P.", "Joyce T."][i],
+    name: names[i % names.length],
     rating: (Math.random() * 0.3 + 4.7).toFixed(1),
     eta: Math.floor(Math.random() * 6 + 1),
   }));
+};
 
 // ─── Leaflet Map Panel (no API key) ─────────────────────────────────────────
 declare global { interface Window { L: any } }
 
-const MapPanel = ({ accent, centerLoc, triggerRoute, onRouteExtracted, onCabSelect }: { accent: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void }) => {
+const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onCabSelect }: { accent: string, mode: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [cabs, setCabs] = useState<any[]>([]);
@@ -83,7 +89,7 @@ const MapPanel = ({ accent, centerLoc, triggerRoute, onRouteExtracted, onCabSele
       L.circle([lat, lng], { radius: 60, color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.08, weight: 1.5, dashArray: "5 5" }).addTo(map);
 
       // ── Cab markers ──
-      const cabData = generateNearbyCabs(lat, lng);
+      const cabData = generateNearbyCabs(lat, lng, mode);
       setCabs(cabData);
 
       cabData.forEach((cab) => {
@@ -223,7 +229,7 @@ const MapPanel = ({ accent, centerLoc, triggerRoute, onRouteExtracted, onCabSele
       mapInstanceRef.current.flyTo([centerLoc.lat, centerLoc.lng], 15, { duration: 1.5 });
 
       // Update cab data around new location
-      const newCabs = generateNearbyCabs(centerLoc.lat, centerLoc.lng);
+      const newCabs = generateNearbyCabs(centerLoc.lat, centerLoc.lng, mode);
       setCabs(newCabs);
 
       // Re-add "You are here" marker at exact new center
@@ -363,7 +369,20 @@ const MapPanel = ({ accent, centerLoc, triggerRoute, onRouteExtracted, onCabSele
 // ─── Main Booking Page ───────────────────────────────────────────────────────
 const BookingPage = () => {
   const { mode: modeId } = useParams<{ mode: string }>();
+  const location = useLocation();
+  const voiceState = location.state as { pickup?: string, destination?: string, auto_search?: boolean, auto_confirm?: boolean };
+
   const mode = getModeConfig((modeId as RideMode) || "normal");
+  const { speak } = useVoiceAssistant();
+
+  useEffect(() => {
+    if (voiceState?.pickup) setPickup(voiceState.pickup);
+    if (voiceState?.destination) setDestination(voiceState.destination);
+
+    if (modeId === "pwd") {
+      speak("You are now on the booking page. I am finding your current location.");
+    }
+  }, [modeId, voiceState]);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [routeFound, setRouteFound] = useState(false);
@@ -407,7 +426,9 @@ const BookingPage = () => {
 
   // Auto-fill on mount
   useEffect(() => {
-    handleUseCurrentLocation();
+    if (!voiceState?.pickup) {
+      handleUseCurrentLocation();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -420,6 +441,18 @@ const BookingPage = () => {
   const [askStatus, setAskStatus] = useState<"idle" | "asking" | "accepted" | "rejected">("idle");
   const [flowState, setFlowState] = useState<"booking" | "confirmed" | "review">("booking");
   const [rating, setRating] = useState(0);
+
+  // Auto-trigger route if voice command had locations
+  useEffect(() => {
+    if (voiceState?.auto_search && voiceState.destination) {
+      // Wait a small bit for coordinates/nominatim if needed, but we have text
+      const timer = setTimeout(() => {
+        handleFindRoute();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [voiceState]);
+
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
@@ -530,6 +563,15 @@ const BookingPage = () => {
       }));
       setIsAnalyzing(false);
       setRouteFound(true);
+
+      // AUTO-PROCESS: If voice command requested full booking
+      if (voiceState?.auto_confirm) {
+        setTimeout(() => {
+          // Select the first driver (if any cabs generated)
+          speak("Route found. Automatically connecting you with the nearest driver.");
+          handleAskDriver();
+        }, 1500);
+      }
     }, 2000);
   };
 
@@ -817,7 +859,7 @@ const BookingPage = () => {
                 {mode.id === "pwd" && (
                   <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                       <Shield size={16} className="text-[hsl(var(--purple))]" /> Accessibility Needs
+                      <Shield size={16} className="text-[hsl(var(--purple))]" /> Accessibility Needs
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
                       {["Wheelchair Accessible Vehicle", "Driver Assistance Required", "Vision Assistance", "Hearing Assistance"].map((n, i) => (
@@ -836,7 +878,7 @@ const BookingPage = () => {
                 {mode.id === "pink" && (
                   <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                       <Shield size={16} className="text-[hsl(var(--pink))]" /> Safety Preferences
+                      <Shield size={16} className="text-[hsl(var(--pink))]" /> Safety Preferences
                     </h3>
                     <div className="grid grid-cols-1 gap-2">
                       {["Prefer Female Driver", "Share Live Location with Emergency Contact", "Enable Auto SOS in unsafe situations"].map((n, i) => (
@@ -855,7 +897,7 @@ const BookingPage = () => {
                 {mode.id === "elderly" && (
                   <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                       <Shield size={16} className="text-[hsl(var(--blue))]" /> Assistance Options
+                      <Shield size={16} className="text-[hsl(var(--blue))]" /> Assistance Options
                     </h3>
                     <div className="grid grid-cols-1 gap-2">
                       {["Driver Assistance Required", "Help with Boarding and Exiting Vehicle", "Medical Support Contact"].map((n, i) => (
@@ -1181,7 +1223,7 @@ const BookingPage = () => {
 
         {/* ════ RIGHT PANEL — Live Map ════ */}
         <div className="hidden lg:block lg:w-1/2 relative">
-          <MapPanel accent={mode.accent} centerLoc={mapCenter} triggerRoute={triggerRoute} onRouteExtracted={handleRouteExtracted} onCabSelect={(cab: any) => { setSelectedDriver(cab); setAskStatus("idle"); }} />
+          <MapPanel accent={mode.accent} mode={modeId || "normal"} centerLoc={mapCenter} triggerRoute={triggerRoute} onRouteExtracted={handleRouteExtracted} onCabSelect={(cab: any) => { setSelectedDriver(cab); setAskStatus("idle"); }} />
         </div>
       </div>
     </div>

@@ -14,6 +14,7 @@ class UserRegister(BaseModel):
     password: str = Field(..., min_length=6)
     confirm_password: str = Field(..., min_length=6)
     role: str = Field(default="passenger")
+    gender: str = Field(default="male")
 
 
 class UserLogin(BaseModel):
@@ -35,6 +36,7 @@ class UserResponse(BaseModel):
     phone: str
     role: str
     preferred_mode: Optional[str] = None
+    gender: Optional[str] = None
     profile_photo: Optional[str] = None
     is_active: bool
     is_verified: bool
@@ -355,3 +357,33 @@ class DocumentReview(BaseModel):
 
 class UserToggleActive(BaseModel):
     is_active: bool
+
+
+# ==================== VOICE & SOS TRIGGER ====================
+
+class VoiceCommandRequest(BaseModel):
+    command: str
+    context: Optional[dict] = None
+
+
+class VoiceActionResponse(BaseModel):
+    action: str  # "NAVIGATE", "BOOK", "SOS", "LOCATION_SHARE", "UNKNOWN", "TELL_STATUS", "LOGOUT", "BROWSER"
+    target: Optional[str] = None
+    params: Optional[dict] = None
+    plan: Optional[List[dict]] = None
+    feedback: str
+    audio: Optional[str] = None
+    transcript: Optional[str] = None  # What STT recognized
+
+
+class LocationShareRequest(BaseModel):
+    latitude: float
+    longitude: float
+    address: Optional[str] = None
+
+
+class SOSTriggerRequest(BaseModel):
+    latitude: float
+    longitude: float
+    location_address: Optional[str] = None
+    ride_id: Optional[int] = None

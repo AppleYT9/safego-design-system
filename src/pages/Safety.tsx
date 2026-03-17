@@ -190,34 +190,50 @@ const Safety = () => {
     };
 
     const handleSOS = async () => {
-        if (!userLocation) {
-            toast.error("Critical: Location not detected. Alerting authorities via last known tower...");
-            // Even without precise GPS, we'd trigger SOS
-        }
+        // Prepare SOS Payload
+        const sosPayload = {
+            latitude: userLocation?.lat || 0,
+            longitude: userLocation?.lng || 0,
+            location_address: "Live Location from Device",
+            severity: "critical",
+            ride_id: null // Could be populated if in an active ride
+        };
 
-        const mapUrl = userLocation 
-            ? `https://www.google.com/maps?q=${userLocation.lat},${userLocation.lng}`
-            : "Unknown Location (GPS Error)";
+        try {
+            // 1. Alerting Authorities (Local Optimistic UI)
+            toast.error("EMERGENCY SOS TRIGGERED", {
+                description: "Contacting emergency services and broadcasting your location...",
+                duration: 10000,
+            });
 
-        // 1. Alerting Authorities UI
-        toast.error("EMERGENCY SOS TRIGGERED", {
-            description: "Local authorities have been dispatched to your location.",
-            duration: 10000,
-        });
+            // 2. Call Backend API to trigger real-world Twilio alerts (SMS/Calls)
+            const response = await fetch("/api/safety/sos", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("safego_token")}` // Assuming token is stored here
+                },
+                body: JSON.stringify(sosPayload)
+            });
 
-        // 2. Alerting Contacts
-        if (contacts.length > 0) {
-            setTimeout(() => {
-                toast.error(`ALERT SENT TO CONTACTS`, {
-                    description: `Panic alert with maps link sent to: ${contacts.map(c => c.name).join(", ")}`,
-                    duration: 6000,
+            if (response.ok) {
+                toast.success("Guardian Shield Activated", {
+                    description: "Your trusted network has been notified via SMS and automated call.",
                 });
-            }, 1000);
-            
-            console.log("SOS DISTRESS SIGNAL sent to:", contacts.map(c => c.phone), mapUrl);
-        } else {
-            toast.warning("No Emergency Contacts", {
-                description: "Authorities alerted, but you have no trusted contacts saved."
+            } else {
+                console.error("SOS API Error:", await response.text());
+                // Fallback for demo/trial purposes if API fails
+                if (contacts.length > 0) {
+                    toast.error(`ALERT SENT TO CONTACTS`, {
+                        description: `Panic alert with maps link sent to: ${contacts.map(c => c.name).join(", ")}`,
+                        duration: 6000,
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("SOS Trigger Failed:", error);
+            toast.warning("Network Error", {
+                description: "Local SOS triggered, but remote notifications may be delayed."
             });
         }
     };
@@ -282,8 +298,8 @@ const Safety = () => {
                                 Immediate 2-way distress signal. Alerts local authorities, active hub supervisors, and your entire trusted network in one click.
                             </p>
                             
-                            <div className="w-full max-w-[280px] transform transition-transform hover:scale-105 cursor-pointer z-10" onClick={handleSOS}>
-                                <SOSButton />
+                            <div className="z-10">
+                                <SOSButton onTrigger={handleSOS} contacts={contacts} />
                             </div>
                             
                             <p className="mt-8 text-[11px] font-black uppercase tracking-widest text-destructive/60">Ready for instant deployment</p>

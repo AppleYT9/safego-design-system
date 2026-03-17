@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
+load_dotenv()  # Ensure all os.environ.get() calls resolve .env values
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,38 +14,30 @@ from app.models import User, UserRole
 from app.utils.security import hash_password
 
 # Import all route modules
-from app.routes import auth, users, drivers, rides, safety, map, admin, websocket
+from app.routes import auth, users, drivers, rides, safety, map, admin, websocket, voice
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup and shutdown events."""
-    # Create all tables
-    Base.metadata.create_all(bind=engine)
-    print("[OK] Database tables created/verified")
-
-    # Auto-seed admin
-    db = SessionLocal()
-    try:
-        existing_admin = db.query(User).filter(User.email == settings.ADMIN_EMAIL).first()
-        if not existing_admin:
-            admin_user = User(
-                full_name="SafeGo Admin",
-                email=settings.ADMIN_EMAIL,
-                phone="+639000000000",
-                hashed_password=hash_password(settings.ADMIN_PASSWORD),
-                role=UserRole.admin,
-                is_active=True,
-                is_verified=True,
-            )
-            db.add(admin_user)
-            db.commit()
-            print(f"[OK] Default admin created: {settings.ADMIN_EMAIL}")
-        else:
-            print(f"[INFO] Admin user already exists: {existing_admin.email}")
-    finally:
-        db.close()
-
+    """Startup and shutdown events (temporarily disabled database setup)."""
+    # Base.metadata.create_all(bind=engine)
+    # db = SessionLocal()
+    # try:
+    #     existing_admin = db.query(User).filter(User.email == settings.ADMIN_EMAIL).first()
+    #     if not existing_admin:
+    #         admin_user = User(
+    #             full_name="SafeGo Admin",
+    #             email=settings.ADMIN_EMAIL,
+    #             phone="+639000000000",
+    #             hashed_password=hash_password(settings.ADMIN_PASSWORD),
+    #             role=UserRole.admin,
+    #             is_active=True,
+    #             is_verified=True,
+    #         )
+    #         db.add(admin_user)
+    #         db.commit()
+    # except Exception: pass
+    # finally: db.close()
     yield
 
     # Shutdown
@@ -84,6 +79,7 @@ app.include_router(safety.router)
 app.include_router(map.router)
 app.include_router(admin.router)
 app.include_router(websocket.router)
+app.include_router(voice.router)
 
 
 @app.get("/")

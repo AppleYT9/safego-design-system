@@ -28,6 +28,7 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
             phone=payload.phone,
             password=payload.password,
             role=payload.role,
+            gender=payload.gender,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

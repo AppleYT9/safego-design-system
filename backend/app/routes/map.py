@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Driver, DriverStatus
+from app.models import Driver, DriverStatus, User, Gender
 from app.schemas import RouteRequest, RouteResponse, NearbyDriverResponse
 from app.services.map_service import get_route
 from app.utils.fare import haversine_distance, estimate_duration
@@ -36,14 +36,22 @@ def get_nearby_drivers(
 ):
     drivers = (
         db.query(Driver)
+        .join(User)
         .filter(
             Driver.status == DriverStatus.approved,
             Driver.is_online == True,
             Driver.current_latitude.isnot(None),
             Driver.current_longitude.isnot(None),
         )
-        .all()
     )
+
+    if mode == "pink":
+        drivers = drivers.filter(User.gender == Gender.female)
+    else:
+        # User requested all other 3 modes to keep mens driver
+        drivers = drivers.filter(User.gender == Gender.male)
+
+    drivers = drivers.all()
 
     nearby = []
     for driver in drivers:

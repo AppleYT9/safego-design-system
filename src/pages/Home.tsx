@@ -598,7 +598,7 @@ const Home = () => {
 
 
       {/* KEY FEATURES */}
-      <section className="section-padding section-alt overflow-hidden">
+      <section id="features" className="section-padding section-alt overflow-hidden">
         <div className="mx-auto max-w-[1400px]">
           <div className="scroll-reveal text-center max-w-2xl mx-auto">
             <span className="caption-label">TAKING CARE OF EVERY CLIENT</span>

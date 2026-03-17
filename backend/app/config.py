@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = "admin@safego.ph"
     ADMIN_PASSWORD: str = "Admin@SafeGo2025"
     OSRM_BASE_URL: str = "http://router.project-osrm.org"
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""
+    OPENAI_API_KEY: str = ""
 
     @property
     def allowed_origins_list(self) -> List[str]:

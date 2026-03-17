@@ -26,6 +26,12 @@ class RideMode(str, enum.Enum):
     elderly = "elderly"
 
 
+class Gender(str, enum.Enum):
+    male = "male"
+    female = "female"
+    other = "other"
+
+
 class DriverStatus(str, enum.Enum):
     pending = "pending"
     approved = "approved"
@@ -85,6 +91,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.passenger)
     preferred_mode = Column(Enum(RideMode), nullable=True, default=RideMode.normal)
+    gender = Column(Enum(Gender), nullable=True, default=Gender.male)
     profile_photo = Column(String(500), nullable=True)
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)

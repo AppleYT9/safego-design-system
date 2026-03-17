@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { SafeGoLogo } from "@/components/SafeGoLogo";
-import { Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
   LayoutDashboard, Car, FileText, DollarSign, Settings, LogOut, Star, Check, Clock,
@@ -687,7 +687,15 @@ const SettingsTab = () => {
 // ───────── Main Component ─────────
 
 const DriverPortal = () => {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
+
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab as TabKey);
+    }
+  }, [location.state]);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // State for ride requests

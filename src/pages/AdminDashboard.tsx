@@ -93,7 +93,7 @@ const AdminDashboard = () => {
         if (Date.now() - booking.timestamp < 5000) {
           addNotification(booking);
           setLiveRides(prev => [
-            { ...booking, lat: 14.5 + Math.random() * 0.1, lng: 121.0 + Math.random() * 0.1 }, 
+            { ...booking, lat: 14.5 + Math.random() * 0.1, lng: 121.0 + Math.random() * 0.1 },
             ...prev
           ]);
           localStorage.removeItem("safego_latest_booking");
@@ -184,13 +184,13 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={() => handleApproveDriver(d.name)}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
                   >
                     <Check size={14} />
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleRejectDriver(d.name)}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all"
                   >
@@ -223,7 +223,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-background p-6">
           <h3 className="font-display text-lg font-bold text-foreground">Ride Volume by Mode</h3>

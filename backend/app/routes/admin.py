@@ -97,7 +97,6 @@ def get_safety_scores(
     db: Session = Depends(get_db),
 ):
     # Return last 6 months of average safety scores
-    from sqlalchemy import extract
     results = (
         db.query(
             func.date_format(Ride.created_at, '%Y-%m').label("month"),

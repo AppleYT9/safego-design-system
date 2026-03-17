@@ -1,13 +1,15 @@
 import { SafeGoLogo } from "@/components/SafeGoLogo";
 import { StatsCard } from "@/components/StatsCard";
 import { modes } from "@/config/modeConfig";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   LayoutDashboard, Car, Shield, Users as UsersIcon, Settings, LogOut,
-  Star, TrendingUp, ArrowRight, User, Lock, Bell, Moon, MapPin
+  Star, TrendingUp, ArrowRight, User, Lock, Bell, Moon, MapPin,
+  Accessibility, Mic, Check
 } from "lucide-react";
+import { useVoiceAssistant } from "@/contexts/VoiceAssistantContext";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard" },
@@ -32,7 +34,15 @@ const statusColors: Record<string, string> = {
 
 const Dashboard = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Dashboard");
+
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state]);
+
   const [myRides, setMyRides] = useState(rides);
 
   const [contacts, setContacts] = useState([
@@ -105,6 +115,13 @@ const Dashboard = () => {
     }, 500);
   };
 
+  const { setVoiceEnabled } = useVoiceAssistant();
+
+  const handleEnablePWD = () => {
+    setVoiceEnabled(true);
+    navigate("/pwd-mode");
+  };
+
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
@@ -125,8 +142,8 @@ const Dashboard = () => {
               key={item.label}
               onClick={() => setActiveTab(item.label)}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${activeTab === item.label
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
             >
               <item.icon size={18} /> {item.label}
@@ -156,6 +173,7 @@ const Dashboard = () => {
               <StatsCard icon={Star} value="Pink" label="Most Used Mode" iconColor="hsl(var(--pink))" iconBg="hsl(var(--pink-light))" />
               <StatsCard icon={TrendingUp} value="8" label="This Month" />
             </div>
+
 
             {/* Quick book */}
             <div className="mt-8">
@@ -373,7 +391,7 @@ const Dashboard = () => {
                   <h4 className="flex items-center gap-2 text-lg font-bold text-foreground">
                     <User size={20} className="text-primary" /> Profile Info
                   </h4>
-                  <button 
+                  <button
                     onClick={handleSaveProfile}
                     disabled={isSavingProfile}
                     className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:brightness-110 active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
@@ -395,28 +413,28 @@ const Dashboard = () => {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Full Name</label>
-                      <input 
+                      <input
                         value={profile.name}
-                        onChange={(e) => setProfile({...profile, name: e.target.value})}
-                        className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors" 
+                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                        className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors"
                         placeholder="John Doe"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Phone Number</label>
-                      <input 
+                      <input
                         value={profile.phone}
-                        onChange={(e) => setProfile({...profile, phone: e.target.value})}
-                        className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors" 
+                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                        className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors"
                         placeholder="+63 912 345 6789"
                       />
                     </div>
                     <div className="sm:col-span-2">
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">Email Address</label>
-                      <input 
+                      <input
                         value={profile.email}
-                        onChange={(e) => setProfile({...profile, email: e.target.value})}
-                        className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors" 
+                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                        className="w-full rounded-xl border border-border bg-secondary px-4 py-2.5 text-sm outline-none focus:border-primary transition-colors"
                         placeholder="john.doe@example.com"
                       />
                     </div>

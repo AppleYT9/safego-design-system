@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { SafeGoLogo } from "@/components/SafeGoLogo";
+import { ArrowRight } from "lucide-react";
 
 const Splash = () => {
   const navigate = useNavigate();
@@ -32,6 +33,14 @@ const Splash = () => {
 
       {/* Subtle overlay to ensure the logo and text remain readable */}
       <div className="absolute inset-0 bg-black/30" />
+
+      {/* Skip Button */}
+      <button 
+        onClick={() => navigate("/home")}
+        className={`absolute top-8 right-8 z-20 flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white backdrop-blur-xl transition-all hover:bg-white hover:text-black hover:border-white active:scale-95 duration-500 delay-500 ${show ? "opacity-100 translate-x-0" : "opacity-0 translate-x-12"}`}
+      >
+        Skip intro <ArrowRight size={14} strokeWidth={3} />
+      </button>
 
       {/* Logo & Text Overlay */}
       <div

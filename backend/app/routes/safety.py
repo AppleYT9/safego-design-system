@@ -7,9 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, SOSAlert, SOSStatus, SOSSeverity
+from app.models import User, SOSAlert, SOSStatus, SOSSeverity, EmergencyContact
 from app.schemas import SOSCreate, SOSResponse, SOSResolve
 from app.utils.dependencies import get_current_user, get_current_admin
+from app.services.notification_service import notification_service
 
 router = APIRouter(prefix="/api/safety", tags=["safety"])
 
@@ -32,6 +33,33 @@ def trigger_sos(
     db.add(sos)
     db.commit()
     db.refresh(sos)
+
+    # --- Trigger Real-World Alerts via Twilio ---
+    try:
+        # 1. Fetch user's trusted contacts
+        contacts = db.query(EmergencyContact).filter(EmergencyContact.user_id == current_user.id).all()
+        
+        # 2. Prepare location link
+        location_url = f"https://www.google.com/maps?q={payload.latitude},{payload.longitude}"
+        
+        # 3. Notify each contact
+        for contact in contacts:
+            # Send SMS
+            notification_service.send_sos_sms(
+                to_number=contact.phone,
+                user_name=current_user.full_name,
+                location_url=location_url
+            )
+            
+            # (Optional) Trigger automated call
+            notification_service.trigger_sos_call(
+                to_number=contact.phone,
+                user_name=current_user.full_name
+            )
+    except Exception as e:
+        # We don't want to fail the SOS creation even if notifications fail
+        print(f"Failed to send emergency notifications: {e}")
+
     return sos
 
 

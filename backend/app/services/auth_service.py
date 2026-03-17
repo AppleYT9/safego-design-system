@@ -13,6 +13,7 @@ def register_user(
     phone: str,
     password: str,
     role: str = "passenger",
+    gender: str = "male",
 ) -> User:
     """Create a new user in the database."""
     existing = db.query(User).filter((User.email == email) | (User.phone == phone)).first()
@@ -27,6 +28,7 @@ def register_user(
         phone=phone,
         hashed_password=hash_password(password),
         role=UserRole(role),
+        gender=gender,
     )
     db.add(user)
     db.commit()

@@ -1,0 +1,12 @@
+Re-optimizing dependencies because vite config has changed
+
+  [32m[1mVITE[22m v5.4.19[39m  [2mready in [0m[1m1330[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m3000[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.3.1:[1m3000[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://10.208.22.20:[1m3000[22m/[39m
+[2m3:50:16 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/venv/Lib/site-packages/playwright/driver/package/lib/vite/traceViewer/index.html[22m
+[2m3:50:16 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/venv/Lib/site-packages/playwright/driver/package/lib/vite/traceViewer/snapshot.html[22m
+[2m3:50:16 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/venv/Lib/site-packages/playwright/driver/package/lib/vite/traceViewer/uiMode.html[22m
+[2m3:50:16 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/venv/Lib/site-packages/playwright/driver/package/lib/vite/recorder/index.html[22m
+[2m3:50:16 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/venv/Lib/site-packages/playwright/driver/package/lib/vite/htmlReport/index.html[22m

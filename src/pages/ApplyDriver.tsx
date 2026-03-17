@@ -11,7 +11,7 @@ const ApplyDriver = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [files, setFiles] = useState<{[key: number]: File}>({});
+    const [files, setFiles] = useState<{ [key: number]: File }>({});
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
         if (e.target.files && e.target.files[0]) {
@@ -44,7 +44,7 @@ const ApplyDriver = () => {
     return (
         <div ref={revealRef} className="min-h-screen bg-background flex flex-col">
             <Navbar />
-            
+
             <main className="flex-1 flex flex-col pt-24 pb-16 px-4">
                 <div className="max-w-4xl w-full mx-auto">
                     {/* Header */}
@@ -63,7 +63,7 @@ const ApplyDriver = () => {
                     {/* Progress Bar */}
                     <div className="mb-12 relative max-w-2xl mx-auto">
                         <div className="absolute top-1/2 left-0 right-0 h-1 bg-border/50 -translate-y-1/2 rounded-full z-0 overflow-hidden">
-                            <div 
+                            <div
                                 className="h-full bg-primary transition-all duration-500 ease-out"
                                 style={{ width: `${((step - 1) / 2) * 100}%` }}
                             />
@@ -75,16 +75,14 @@ const ApplyDriver = () => {
                                 { id: 3, icon: FileText, label: "Verification" }
                             ].map((s) => (
                                 <div key={s.id} className="flex flex-col items-center">
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md ${
-                                        step >= s.id 
-                                        ? "bg-primary text-primary-foreground border-2 border-primary" 
-                                        : "bg-card text-muted-foreground border-2 border-border/50"
-                                    }`}>
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md ${step >= s.id
+                                            ? "bg-primary text-primary-foreground border-2 border-primary"
+                                            : "bg-card text-muted-foreground border-2 border-border/50"
+                                        }`}>
                                         {step > s.id ? <Check size={20} className="animate-in zoom-in" /> : <s.icon size={20} />}
                                     </div>
-                                    <span className={`mt-3 text-xs font-bold uppercase tracking-wider ${
-                                        step >= s.id ? "text-primary" : "text-muted-foreground"
-                                    }`}>
+                                    <span className={`mt-3 text-xs font-bold uppercase tracking-wider ${step >= s.id ? "text-primary" : "text-muted-foreground"
+                                        }`}>
                                         {s.label}
                                     </span>
                                 </div>
@@ -96,9 +94,9 @@ const ApplyDriver = () => {
                     <div className="bg-card/40 border border-border/60 rounded-[2.5rem] shadow-xl backdrop-blur-xl p-8 sm:p-12 relative overflow-hidden">
                         {/* Decorative blob */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
-                        
+
                         <form onSubmit={handleSubmit} className="relative z-10 space-y-8">
-                            
+
                             {/* Step 1: Personal Profile */}
                             {step === 1 && (
                                 <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-500">
@@ -181,15 +179,15 @@ const ApplyDriver = () => {
                                         <Shield className="text-primary" /> Verification Documents
                                     </h2>
                                     <p className="text-sm text-muted-foreground mb-6">In order to maintain our high safety standards, we require valid documentation for identity and vehicle registration.</p>
-                                    
+
                                     <div className="space-y-4">
                                         {['Driver\'s License (Front & Back)', 'Vehicle Registration (OR/CR)', 'NBI/Police Clearance'].map((docRef, idx) => (
                                             <div key={idx} className="relative border border-border/50 bg-background/30 rounded-2xl p-4 flex items-center gap-4 group cursor-pointer hover:bg-background/80 hover:border-primary/30 transition-all overflow-hidden">
-                                                <input 
-                                                    type="file" 
+                                                <input
+                                                    type="file"
                                                     accept=".pdf,image/*"
                                                     onChange={(e) => handleFileChange(e, idx)}
-                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                                 />
                                                 <div className="w-12 h-12 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
                                                     {files[idx] ? <CheckCircle size={20} /> : <UploadCloud size={20} />}
@@ -232,7 +230,7 @@ const ApplyDriver = () => {
                     </div>
                 </div>
             </main>
-            
+
             <Footer />
         </div>
     );

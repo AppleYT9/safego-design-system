@@ -5,19 +5,27 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.models import Ride, Driver, RideStatus, DriverStatus, RideMode
+from app.models import Ride, Driver, RideStatus, DriverStatus, RideMode, User, Gender
 from app.utils.fare import haversine_distance
 from app.services.map_service import get_route
 
 
 def find_nearest_driver(db: Session, pickup_lat: float, pickup_lng: float, mode: str) -> Optional[Driver]:
     """Find the nearest online + approved driver who is certified for the given mode."""
-    drivers = db.query(Driver).filter(
+    query = db.query(Driver).join(User).filter(
         Driver.status == DriverStatus.approved,
         Driver.is_online == True,
         Driver.current_latitude.isnot(None),
         Driver.current_longitude.isnot(None),
-    ).all()
+    )
+
+    if mode == "pink":
+        query = query.filter(User.gender == Gender.female)
+    else:
+        # All other modes (Normal, Elderly, PWD) keep male drivers
+        query = query.filter(User.gender == Gender.male)
+
+    drivers = query.all()
 
     best_driver = None
     best_distance = float("inf")

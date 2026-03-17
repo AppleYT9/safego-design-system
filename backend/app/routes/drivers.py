@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import User, Driver, Vehicle, DriverDocument, Ride, RideStatus, UserRole
+from app.models import User, Driver, Vehicle, DriverDocument, Ride, RideStatus, UserRole, DocumentStatus
 from app.schemas import (
     DriverRegister,
     DriverResponse,
@@ -210,7 +210,7 @@ def upload_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     doc.file_url = payload.file_url
-    doc.status = "pending"
+    doc.status = DocumentStatus.pending
     db.commit()
     db.refresh(doc)
     return doc

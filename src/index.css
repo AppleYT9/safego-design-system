@@ -126,20 +126,75 @@
 }
 
 
-.sos-pulse {
-  animation: pulse-red 2s infinite;
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4), inset 0 2px 4px rgba(255,255,255,0.3), 0 10px 20px rgba(0,0,0,0.2); }
+  50% { box-shadow: 0 0 0 20px rgba(239, 68, 68, 0), inset 0 2px 4px rgba(255,255,255,0.3), 0 10px 20px rgba(0,0,0,0.2); }
 }
 
-@keyframes pulse-red {
+.buzzer-3d {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff5e5e 0%, #d40000 50%, #8b0000 100%);
+  border: 12px solid #5a0000;
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.5),
+    0 10px 20px rgba(0, 0, 0, 0.3),
+    inset 0 -15px 30px rgba(0, 0, 0, 0.4),
+    inset 0 15px 30px rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  z-index: 10;
+}
 
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-  }
+.buzzer-3d:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
 
-  50% {
-    box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
-  }
+.buzzer-3d:active {
+  transform: translateY(8px) scale(0.96);
+  box-shadow: 
+    0 5px 15px rgba(0, 0, 0, 0.5),
+    inset 0 -5px 10px rgba(0, 0, 0, 0.4),
+    inset 0 5px 15px rgba(255, 255, 255, 0.1);
+  background: radial-gradient(circle at 35% 35%, #e60000 0%, #a00000 50%, #600000 100%);
+}
+
+.buzzer-shadow-ring {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(0, 0, 0, 0.05);
+  z-index: 1;
+}
+
+.buzzer-3d::after {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1), transparent);
+  pointer-events: none;
+}
+
+.sos-label {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 2.2rem;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: -2px;
 }
 
 @keyframes float {
