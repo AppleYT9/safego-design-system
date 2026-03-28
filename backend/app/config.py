@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_PHONE_NUMBER: str = ""
     OPENAI_API_KEY: str = ""
+    SARVAM_API_KEY: str = ""
+    SARVAM_LANGUAGE: str = "en-IN"
 
     @property
     def allowed_origins_list(self) -> List[str]:

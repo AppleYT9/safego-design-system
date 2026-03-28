@@ -20,24 +20,24 @@ from app.routes import auth, users, drivers, rides, safety, map, admin, websocke
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events (temporarily disabled database setup)."""
-    # Base.metadata.create_all(bind=engine)
-    # db = SessionLocal()
-    # try:
-    #     existing_admin = db.query(User).filter(User.email == settings.ADMIN_EMAIL).first()
-    #     if not existing_admin:
-    #         admin_user = User(
-    #             full_name="SafeGo Admin",
-    #             email=settings.ADMIN_EMAIL,
-    #             phone="+639000000000",
-    #             hashed_password=hash_password(settings.ADMIN_PASSWORD),
-    #             role=UserRole.admin,
-    #             is_active=True,
-    #             is_verified=True,
-    #         )
-    #         db.add(admin_user)
-    #         db.commit()
-    # except Exception: pass
-    # finally: db.close()
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        existing_admin = db.query(User).filter(User.email == settings.ADMIN_EMAIL).first()
+        if not existing_admin:
+            admin_user = User(
+                full_name="SafeGo Admin",
+                email=settings.ADMIN_EMAIL,
+                phone="+639000000000",
+                hashed_password=hash_password(settings.ADMIN_PASSWORD),
+                role=UserRole.admin,
+                is_active=True,
+                is_verified=True,
+            )
+            db.add(admin_user)
+            db.commit()
+    except Exception: pass
+    finally: db.close()
     yield
 
     # Shutdown
