@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+from beanie import PydanticObjectId
 
-from app.database import get_db
-from app.models import Driver, DriverStatus, User, Gender
+from app.models import Driver, DriverStatus, User, Gender, Vehicle
 from app.schemas import RouteRequest, RouteResponse, NearbyDriverResponse
 from app.services.map_service import get_route
 from app.utils.fare import haversine_distance, estimate_duration
@@ -28,62 +27,50 @@ async def calculate_route(payload: RouteRequest):
 
 
 @router.get("/nearby-drivers", response_model=List[NearbyDriverResponse])
-def get_nearby_drivers(
+async def get_nearby_drivers(
     latitude: float = Query(...),
     longitude: float = Query(...),
     mode: str = Query(default="normal"),
-    db: Session = Depends(get_db),
 ):
-    drivers = (
-        db.query(Driver)
-        .join(User)
-        .filter(
-            Driver.status == DriverStatus.approved,
-            Driver.is_online == True,
-            Driver.current_latitude.isnot(None),
-            Driver.current_longitude.isnot(None),
-        )
-    )
-
-    if mode == "pink":
-        drivers = drivers.filter(User.gender == Gender.female)
-    else:
-        # User requested all other 3 modes to keep mens driver
-        drivers = drivers.filter(User.gender == Gender.male)
-
-    drivers = drivers.all()
+    drivers = await Driver.find(
+        Driver.status == DriverStatus.approved,
+        Driver.is_online == True,
+        Driver.current_latitude != None,
+        Driver.current_longitude != None,
+    ).to_list()
 
     nearby = []
     for driver in drivers:
+        user = await User.get(driver.user_id)
+        if not user:
+            continue
+
+        if mode == "pink" and user.gender != Gender.female:
+            continue
+        if mode != "pink" and user.gender != Gender.male:
+            continue
+
         certified = driver.certified_modes or ["normal"]
         if mode not in certified and mode != "normal":
             continue
 
         dist = haversine_distance(latitude, longitude, driver.current_latitude, driver.current_longitude)
-        if dist > 50:  # Skip drivers > 50km away
+        if dist > 50:
             continue
 
         eta = estimate_duration(dist)
-
-        vehicle_brief = None
-        if driver.vehicle:
-            vehicle_brief = {
-                "make": driver.vehicle.make,
-                "model": driver.vehicle.model,
-                "plate_number": driver.vehicle.plate_number,
-            }
+        vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
 
         nearby.append(NearbyDriverResponse(
-            driver_id=driver.id,
-            driver_name=driver.user.full_name if driver.user else "Unknown",
+            driver_id=str(driver.id),
+            driver_name=user.full_name,
             latitude=driver.current_latitude,
             longitude=driver.current_longitude,
             distance_km=round(dist, 2),
             eta_minutes=eta,
             average_rating=driver.average_rating or 0.0,
-            vehicle=vehicle_brief,
+            vehicle={"make": vehicle.make, "model": vehicle.model, "plate_number": vehicle.plate_number} if vehicle else None,
         ))
 
-    # Sort by distance
     nearby.sort(key=lambda d: d.distance_km)
     return nearby[:20]

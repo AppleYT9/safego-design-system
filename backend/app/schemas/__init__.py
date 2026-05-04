@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Optional, List, Any
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ==================== AUTH ====================
@@ -26,11 +26,11 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     role: str
-    user_id: int
+    user_id: str  # MongoDB ObjectId as string
 
 
 class UserResponse(BaseModel):
-    id: int
+    id: str = Field(..., alias="_id")
     full_name: str
     email: str
     phone: str
@@ -43,7 +43,7 @@ class UserResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class UserBrief(BaseModel):
@@ -64,7 +64,7 @@ class VehicleCreate(BaseModel):
 
 
 class VehicleResponse(BaseModel):
-    id: int
+    id: str = Field(..., alias="_id")
     make: str
     model: str
     year: int
@@ -74,7 +74,7 @@ class VehicleResponse(BaseModel):
     is_approved: bool
     created_at: Optional[datetime] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class VehicleBrief(BaseModel):
@@ -93,8 +93,8 @@ class DriverRegister(BaseModel):
 
 
 class DriverResponse(BaseModel):
-    id: int
-    user_id: int
+    id: str = Field(..., alias="_id")
+    user_id: str
     license_number: str
     status: str
     is_online: bool
@@ -112,16 +112,16 @@ class DriverResponse(BaseModel):
     user: Optional[UserResponse] = None
     vehicle: Optional[VehicleResponse] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class DriverBrief(BaseModel):
-    id: int
+    id: str = Field(..., alias="_id")
     average_rating: float
     user: Optional[UserBrief] = None
     vehicle: Optional[VehicleBrief] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class DriverEarnings(BaseModel):
@@ -137,18 +137,18 @@ class DriverOnlineStatus(BaseModel):
 
 
 class DriverDocumentResponse(BaseModel):
-    id: int
-    driver_id: int
+    id: str = Field(..., alias="_id")
+    driver_id: str
     document_type: str
     file_url: Optional[str] = None
     status: str
-    reviewed_by: Optional[int] = None
+    reviewed_by: Optional[str] = None
     reviewed_at: Optional[datetime] = None
     notes: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class DocumentUpload(BaseModel):
@@ -156,7 +156,7 @@ class DocumentUpload(BaseModel):
 
 
 class NearbyDriverResponse(BaseModel):
-    driver_id: int
+    driver_id: str
     driver_name: str
     latitude: float
     longitude: float
@@ -194,12 +194,14 @@ class RideRequest(BaseModel):
     destination_latitude: float
     destination_longitude: float
     scheduled_at: Optional[datetime] = None
+    passenger_count: int = 1
+    passenger_details: Optional[List[str]] = Field(default_factory=list)
 
 
 class RideResponse(BaseModel):
-    id: int
-    passenger_id: int
-    driver_id: Optional[int] = None
+    id: str = Field(..., alias="_id")
+    passenger_id: str
+    driver_id: Optional[str] = None
     mode: str
     status: str
     pickup_address: Optional[str] = None
@@ -218,11 +220,13 @@ class RideResponse(BaseModel):
     completed_at: Optional[datetime] = None
     cancelled_at: Optional[datetime] = None
     cancel_reason: Optional[str] = None
+    passenger_count: int = 1
+    passenger_details: Optional[List[str]] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     driver: Optional[DriverBrief] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class RideStatusUpdate(BaseModel):
@@ -236,15 +240,15 @@ class RatingCreate(BaseModel):
 
 
 class RatingResponse(BaseModel):
-    id: int
-    ride_id: int
-    rater_id: int
-    driver_id: int
+    id: str = Field(..., alias="_id")
+    ride_id: str
+    rater_id: str
+    driver_id: str
     score: int
     comment: Optional[str] = None
     created_at: Optional[datetime] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 # ==================== EMERGENCY CONTACTS ====================
@@ -264,8 +268,8 @@ class EmergencyContactUpdate(BaseModel):
 
 
 class EmergencyContactResponse(BaseModel):
-    id: int
-    user_id: int
+    id: str = Field(..., alias="_id")
+    user_id: str
     name: str
     phone: str
     relationship: Optional[str] = Field(None, validation_alias="contact_relationship")
@@ -278,7 +282,7 @@ class EmergencyContactResponse(BaseModel):
 # ==================== SOS ====================
 
 class SOSCreate(BaseModel):
-    ride_id: Optional[int] = None
+    ride_id: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     location_address: Optional[str] = None
@@ -286,20 +290,20 @@ class SOSCreate(BaseModel):
 
 
 class SOSResponse(BaseModel):
-    id: int
-    user_id: int
-    ride_id: Optional[int] = None
+    id: str = Field(..., alias="_id")
+    user_id: str
+    ride_id: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     location_address: Optional[str] = None
     severity: str
     status: str
     notes: Optional[str] = None
-    resolved_by: Optional[int] = None
+    resolved_by: Optional[str] = None
     resolved_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class SOSResolve(BaseModel):
@@ -310,8 +314,8 @@ class SOSResolve(BaseModel):
 # ==================== NOTIFICATIONS ====================
 
 class NotificationResponse(BaseModel):
-    id: int
-    user_id: int
+    id: str = Field(..., alias="_id")
+    user_id: str
     title: str
     message: str
     type: Optional[str] = None
@@ -319,7 +323,7 @@ class NotificationResponse(BaseModel):
     data: Optional[Any] = None
     created_at: Optional[datetime] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 # ==================== ADMIN ====================
@@ -367,13 +371,13 @@ class VoiceCommandRequest(BaseModel):
 
 
 class VoiceActionResponse(BaseModel):
-    action: str  # "NAVIGATE", "BOOK", "SOS", "LOCATION_SHARE", "UNKNOWN", "TELL_STATUS", "LOGOUT", "BROWSER"
+    action: str
     target: Optional[str] = None
     params: Optional[dict] = None
     plan: Optional[List[dict]] = None
     feedback: str
     audio: Optional[str] = None
-    transcript: Optional[str] = None  # What STT recognized
+    transcript: Optional[str] = None
 
 
 class LocationShareRequest(BaseModel):
@@ -386,4 +390,4 @@ class SOSTriggerRequest(BaseModel):
     latitude: float
     longitude: float
     location_address: Optional[str] = None
-    ride_id: Optional[int] = None
+    ride_id: Optional[str] = None

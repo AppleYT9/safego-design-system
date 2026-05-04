@@ -1,45 +1,42 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
+from beanie import PydanticObjectId
 
-from sqlalchemy.orm import Session
-
-from app.models import Ride, Driver, RideStatus, DriverStatus, RideMode, User, Gender
+from app.models import Ride, Driver, Rating, RideStatus, DriverStatus, RideMode, User, Gender
 from app.utils.fare import haversine_distance
 from app.services.map_service import get_route
 
 
-def find_nearest_driver(db: Session, pickup_lat: float, pickup_lng: float, mode: str) -> Optional[Driver]:
-    """Find the nearest online + approved driver who is certified for the given mode."""
-    query = db.query(Driver).join(User).filter(
+async def find_nearest_driver(pickup_lat: float, pickup_lng: float, mode: str) -> Optional[Driver]:
+    """Find the nearest online + approved driver certified for the given mode."""
+    drivers = await Driver.find(
         Driver.status == DriverStatus.approved,
         Driver.is_online == True,
-        Driver.current_latitude.isnot(None),
-        Driver.current_longitude.isnot(None),
-    )
+        Driver.current_latitude != None,
+        Driver.current_longitude != None,
+    ).to_list()
 
-    if mode == "pink":
-        query = query.filter(User.gender == Gender.female)
-    else:
-        # All other modes (Normal, Elderly, PWD) keep male drivers
-        query = query.filter(User.gender == Gender.male)
-
-    drivers = query.all()
-
-    best_driver = None
-    best_distance = float("inf")
-
+    # Filter by gender for pink mode
+    filtered = []
     for driver in drivers:
-        # Check mode certification
+        user = await User.get(driver.user_id)
+        if not user:
+            continue
+        if mode == "pink" and user.gender != Gender.female:
+            continue
+        if mode != "pink" and user.gender != Gender.male:
+            continue
         certified = driver.certified_modes or []
         if mode not in certified and mode != "normal":
             continue
+        filtered.append(driver)
 
-        dist = haversine_distance(
-            pickup_lat, pickup_lng,
-            driver.current_latitude, driver.current_longitude,
-        )
+    best_driver = None
+    best_distance = float("inf")
+    for driver in filtered:
+        dist = haversine_distance(pickup_lat, pickup_lng, driver.current_latitude, driver.current_longitude)
         if dist < best_distance:
             best_distance = dist
             best_driver = driver
@@ -48,24 +45,20 @@ def find_nearest_driver(db: Session, pickup_lat: float, pickup_lng: float, mode:
 
 
 async def create_ride(
-    db: Session,
-    passenger_id: int,
+    passenger_id: PydanticObjectId,
     mode: str,
-    pickup_address: str | None,
+    pickup_address: Optional[str],
     pickup_latitude: float,
     pickup_longitude: float,
-    destination_address: str | None,
+    destination_address: Optional[str],
     destination_latitude: float,
     destination_longitude: float,
-    scheduled_at: datetime | None = None,
+    scheduled_at: Optional[datetime] = None,
+    passenger_count: int = 1,
+    passenger_details: Optional[List[str]] = None,
 ) -> Ride:
     """Create a ride request and attempt to match a driver."""
-    # Get route info
-    route_info = await get_route(
-        pickup_latitude, pickup_longitude,
-        destination_latitude, destination_longitude,
-        mode,
-    )
+    route_info = await get_route(pickup_latitude, pickup_longitude, destination_latitude, destination_longitude, mode)
 
     ride = Ride(
         passenger_id=passenger_id,
@@ -83,44 +76,42 @@ async def create_ride(
         safety_score=route_info["safety_score"],
         route_polyline=route_info["route_polyline"],
         scheduled_at=scheduled_at,
+        passenger_count=passenger_count,
+        passenger_details=passenger_details or [],
     )
 
-    # Try to match a driver
-    driver = find_nearest_driver(db, pickup_latitude, pickup_longitude, mode)
+    driver = await find_nearest_driver(pickup_latitude, pickup_longitude, mode)
     if driver:
         ride.driver_id = driver.id
         ride.status = RideStatus.matched
 
-    db.add(ride)
-    db.commit()
-    db.refresh(ride)
+    await ride.insert()
     return ride
 
 
-def complete_ride(db: Session, ride: Ride) -> Ride:
+async def complete_ride(ride: Ride) -> Ride:
     """Mark a ride as completed and update driver stats."""
     ride.status = RideStatus.completed
     ride.completed_at = datetime.now(timezone.utc)
 
     if ride.driver_id:
-        driver = db.query(Driver).filter(Driver.id == ride.driver_id).first()
+        driver = await Driver.get(ride.driver_id)
         if driver:
             driver.total_rides = (driver.total_rides or 0) + 1
             driver.today_rides = (driver.today_rides or 0) + 1
             driver.today_earnings = (driver.today_earnings or 0) + (ride.fare_amount or 0)
+            await driver.save()
 
-    db.commit()
-    db.refresh(ride)
+    await ride.save()
     return ride
 
 
-def update_driver_rating(db: Session, driver_id: int):
+async def update_driver_rating(driver_id: PydanticObjectId):
     """Recalculate the average rating for a driver from all ratings."""
-    from app.models import Rating
-    ratings = db.query(Rating).filter(Rating.driver_id == driver_id).all()
+    ratings = await Rating.find(Rating.driver_id == driver_id).to_list()
     if ratings:
         avg = sum(r.score for r in ratings) / len(ratings)
-        driver = db.query(Driver).filter(Driver.id == driver_id).first()
+        driver = await Driver.get(driver_id)
         if driver:
             driver.average_rating = round(avg, 2)
-            db.commit()
+            await driver.save()

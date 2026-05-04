@@ -7,13 +7,16 @@ import { Phone, MapPin, Navigation, HelpCircle, ShieldAlert, X } from "lucide-re
 // framer-motion removed to avoid dependency issues
 
 const PWDMode: React.FC = () => {
-  const { isListening, startListening, stopListening, speak, lastCommand, setVoiceEnabled } = useVoiceAssistant();
+  const { isListening, isSpeaking, startListening, stopListening, speak, lastCommand, setVoiceEnabled } = useVoiceAssistant();
   const navigate = useNavigate();
 
   useEffect(() => {
     // Enable continuous listening and speak welcome
     setVoiceEnabled(true);
     speak("Safe Go - PWD Mode enabled. Voice Assistance is now active. I am listening for your commands.");
+    // Auto-start listening after a short delay
+    const t = setTimeout(() => startListening(), 2000);
+    return () => clearTimeout(t);
   }, []);
 
   const handleSOS = () => {
@@ -79,9 +82,9 @@ const PWDMode: React.FC = () => {
 
             <div className="flex flex-col gap-4 bg-zinc-800 p-6 rounded-2xl border-4 border-yellow-400 mt-4">
                 <div className="flex justify-between items-center">
-                    <p className="text-3xl font-bold">{isListening ? "I'M LISTENING..." : "MODE STATUS"}</p>
+                    <p className="text-3xl font-bold">{isListening ? "I'M LISTENING..." : isSpeaking ? "I'M SPEAKING..." : "MODE STATUS"}</p>
                     <div 
-                        className={`w-12 h-12 rounded-full ${isListening ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)] animate-pulse' : 'bg-zinc-500'}`}
+                        className={`w-12 h-12 rounded-full ${isListening ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)] animate-pulse' : isSpeaking ? 'bg-purple-500 animate-pulse' : 'bg-zinc-500'}`}
                     ></div>
                 </div>
                 {lastCommand && (

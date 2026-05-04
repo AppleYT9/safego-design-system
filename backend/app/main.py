@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.database import engine, Base, SessionLocal
+from app.database import init_db, close_db
 from app.models import User, UserRole
 from app.utils.security import hash_password
 
@@ -19,11 +19,13 @@ from app.routes import auth, users, drivers, rides, safety, map, admin, websocke
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup and shutdown events (temporarily disabled database setup)."""
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
+    """Startup and shutdown events."""
+    # Initialize MongoDB + Beanie
+    await init_db()
+
+    # Seed admin user if not exists
     try:
-        existing_admin = db.query(User).filter(User.email == settings.ADMIN_EMAIL).first()
+        existing_admin = await User.find_one(User.email == settings.ADMIN_EMAIL)
         if not existing_admin:
             admin_user = User(
                 full_name="SafeGo Admin",
@@ -34,13 +36,15 @@ async def lifespan(app: FastAPI):
                 is_active=True,
                 is_verified=True,
             )
-            db.add(admin_user)
-            db.commit()
-    except Exception: pass
-    finally: db.close()
+            await admin_user.insert()
+            print("[SEED] Admin user created")
+    except Exception as e:
+        print(f"[SEED] Admin seed skipped: {e}")
+
     yield
 
     # Shutdown
+    await close_db()
     print("[BYE] SafeGo backend shutting down")
 
 

@@ -5,7 +5,7 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "mysql+pymysql://root:password@localhost:3306/safego_db"
+    DATABASE_URL: str = "mongodb://localhost:27017/safego_db"
     SECRET_KEY: str = "safego-super-secret-key-change-me-in-production-2025"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60

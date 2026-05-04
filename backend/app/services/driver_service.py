@@ -1,43 +1,35 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import List
-
-from sqlalchemy.orm import Session
+from beanie import PydanticObjectId
 
 from app.models import (
     Driver, Vehicle, DriverDocument, DriverStatus, DocumentType, DocumentStatus, User
 )
 
 
-def create_driver_profile(
-    db: Session,
+async def create_driver_profile(
     user: User,
     license_number: str,
     vehicle_data: dict,
 ) -> Driver:
     """Create a driver profile, vehicle record, and default document slots."""
-    # Check if driver profile already exists
-    existing = db.query(Driver).filter(Driver.user_id == user.id).first()
+    existing = await Driver.find_one(Driver.user_id == user.id)
     if existing:
         raise ValueError("Driver profile already exists for this user")
 
-    # Check license uniqueness
-    existing_license = db.query(Driver).filter(Driver.license_number == license_number).first()
+    existing_license = await Driver.find_one(Driver.license_number == license_number)
     if existing_license:
         raise ValueError("License number already registered")
 
-    # Create driver
     driver = Driver(
         user_id=user.id,
         license_number=license_number,
         status=DriverStatus.pending,
         certified_modes=["normal"],
     )
-    db.add(driver)
-    db.flush()
+    await driver.insert()
 
-    # Create vehicle
     vehicle = Vehicle(
         driver_id=driver.id,
         make=vehicle_data["make"],
@@ -47,17 +39,14 @@ def create_driver_profile(
         plate_number=vehicle_data["plate_number"],
         is_wheelchair_accessible=vehicle_data.get("is_wheelchair_accessible", False),
     )
-    db.add(vehicle)
+    await vehicle.insert()
 
-    # Create default document slots
     for doc_type in DocumentType:
         doc = DriverDocument(
             driver_id=driver.id,
             document_type=doc_type,
             status=DocumentStatus.upload_required,
         )
-        db.add(doc)
+        await doc.insert()
 
-    db.commit()
-    db.refresh(driver)
     return driver

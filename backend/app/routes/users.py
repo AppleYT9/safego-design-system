@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from typing import List
 
+from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
-from app.database import get_db
 from app.models import User, EmergencyContact, Notification
 from app.schemas import (
     UserResponse,
@@ -20,31 +19,26 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 
 @router.get("/me", response_model=UserResponse)
-def get_my_profile(current_user: User = Depends(get_current_user)):
-    return current_user
+async def get_my_profile(current_user: User = Depends(get_current_user)):
+    return _user_to_response(current_user)
 
 
 # ==================== EMERGENCY CONTACTS ====================
 
 @router.get("/me/emergency-contacts", response_model=List[EmergencyContactResponse])
-def list_emergency_contacts(
+async def list_emergency_contacts(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
-    contacts = (
-        db.query(EmergencyContact)
-        .filter(EmergencyContact.user_id == current_user.id)
-        .order_by(EmergencyContact.is_primary.desc(), EmergencyContact.id)
-        .all()
-    )
-    return contacts
+    contacts = await EmergencyContact.find(
+        EmergencyContact.user_id == current_user.id
+    ).sort(-EmergencyContact.is_primary).to_list()
+    return [_ec_to_response(c) for c in contacts]
 
 
 @router.post("/me/emergency-contacts", response_model=EmergencyContactResponse, status_code=201)
-def add_emergency_contact(
+async def add_emergency_contact(
     payload: EmergencyContactCreate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
     contact = EmergencyContact(
         user_id=current_user.id,
@@ -53,23 +47,19 @@ def add_emergency_contact(
         contact_relationship=payload.relationship,
         is_primary=payload.is_primary,
     )
-    db.add(contact)
-    db.commit()
-    db.refresh(contact)
-    return contact
+    await contact.insert()
+    return _ec_to_response(contact)
 
 
 @router.put("/me/emergency-contacts/{contact_id}", response_model=EmergencyContactResponse)
-def update_emergency_contact(
-    contact_id: int,
+async def update_emergency_contact(
+    contact_id: str,
     payload: EmergencyContactUpdate,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
-    contact = (
-        db.query(EmergencyContact)
-        .filter(EmergencyContact.id == contact_id, EmergencyContact.user_id == current_user.id)
-        .first()
+    contact = await EmergencyContact.find_one(
+        EmergencyContact.id == PydanticObjectId(contact_id),
+        EmergencyContact.user_id == current_user.id,
     )
     if not contact:
         raise HTTPException(status_code=404, detail="Emergency contact not found")
@@ -83,42 +73,77 @@ def update_emergency_contact(
     if payload.is_primary is not None:
         contact.is_primary = payload.is_primary
 
-    db.commit()
-    db.refresh(contact)
-    return contact
+    await contact.save()
+    return _ec_to_response(contact)
 
 
 @router.delete("/me/emergency-contacts/{contact_id}", status_code=204)
-def delete_emergency_contact(
-    contact_id: int,
+async def delete_emergency_contact(
+    contact_id: str,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
-    contact = (
-        db.query(EmergencyContact)
-        .filter(EmergencyContact.id == contact_id, EmergencyContact.user_id == current_user.id)
-        .first()
+    contact = await EmergencyContact.find_one(
+        EmergencyContact.id == PydanticObjectId(contact_id),
+        EmergencyContact.user_id == current_user.id,
     )
     if not contact:
         raise HTTPException(status_code=404, detail="Emergency contact not found")
 
-    db.delete(contact)
-    db.commit()
+    await contact.delete()
     return None
 
 
 # ==================== NOTIFICATIONS ====================
 
 @router.get("/me/notifications", response_model=List[NotificationResponse])
-def list_notifications(
+async def list_notifications(
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
 ):
-    notifs = (
-        db.query(Notification)
-        .filter(Notification.user_id == current_user.id)
-        .order_by(Notification.created_at.desc())
-        .limit(50)
-        .all()
-    )
-    return notifs
+    notifs = await Notification.find(
+        Notification.user_id == current_user.id
+    ).sort(-Notification.created_at).limit(50).to_list()
+    return [_notif_to_response(n) for n in notifs]
+
+
+# ---------- Helpers ----------
+
+def _user_to_response(user: User) -> dict:
+    return {
+        "_id": str(user.id),
+        "full_name": user.full_name,
+        "email": user.email,
+        "phone": user.phone,
+        "role": user.role.value if hasattr(user.role, "value") else user.role,
+        "preferred_mode": user.preferred_mode.value if user.preferred_mode and hasattr(user.preferred_mode, "value") else user.preferred_mode,
+        "gender": user.gender.value if user.gender and hasattr(user.gender, "value") else user.gender,
+        "profile_photo": user.profile_photo,
+        "is_active": user.is_active,
+        "is_verified": user.is_verified,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+    }
+
+
+def _ec_to_response(c: EmergencyContact) -> dict:
+    return {
+        "_id": str(c.id),
+        "user_id": str(c.user_id),
+        "name": c.name,
+        "phone": c.phone,
+        "contact_relationship": c.contact_relationship,
+        "is_primary": c.is_primary,
+        "created_at": c.created_at,
+    }
+
+
+def _notif_to_response(n: Notification) -> dict:
+    return {
+        "_id": str(n.id),
+        "user_id": str(n.user_id),
+        "title": n.title,
+        "message": n.message,
+        "type": n.type,
+        "is_read": n.is_read,
+        "data": n.data,
+        "created_at": n.created_at,
+    }

@@ -3,57 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
-// WAV encoder utilities
-// ---------------------------------------------------------------------------
-function encodeWAV(samples: Float32Array, sampleRate: number): ArrayBuffer {
-  const dataLen = samples.length * 2;
-  const buf = new ArrayBuffer(44 + dataLen);
-  const view = new DataView(buf);
-  const str = (offset: number, s: string) => {
-    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i));
-  };
-  str(0, "RIFF");
-  view.setUint32(4, 36 + dataLen, true);
-  str(8, "WAVE");
-  str(12, "fmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);  // PCM
-  view.setUint16(22, 1, true);  // Mono
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  str(36, "data");
-  view.setUint32(40, dataLen, true);
-  for (let i = 0, off = 44; i < samples.length; i++, off += 2) {
-    const s = Math.max(-1, Math.min(1, samples[i]));
-    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
-  }
-  return buf;
-}
-
-function downsample(buf: Float32Array, fromRate: number, toRate: number): Float32Array {
-  if (fromRate === toRate) return buf;
-  const ratio = fromRate / toRate;
-  const out = new Float32Array(Math.round(buf.length / ratio));
-  for (let i = 0; i < out.length; i++) {
-    out[i] = buf[Math.round(i * ratio)];
-  }
-  return out;
-}
-
-// ---------------------------------------------------------------------------
 // Context types
 // ---------------------------------------------------------------------------
 interface VoiceAssistantContextType {
   isListening: boolean;
   isProcessing: boolean;
-  isSpeakingCustomAudio: boolean;
+  isSpeaking: boolean;
   audioLevel: number;
   transcript: string;
   lastCommand: string;
   lastFeedback: string;
-  lastCommandParams: any;
   voiceEnabled: boolean;
   startListening: () => void;
   stopListening: () => void;
@@ -63,104 +22,227 @@ interface VoiceAssistantContextType {
 
 const VoiceAssistantContext = createContext<VoiceAssistantContextType | undefined>(undefined);
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-const VOICE_API_URL = `${API_URL}/api/voice`;
+// GEMINI CONFIG (REST VERSION)
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
+const VOICE_API_URL = `${API_BASE}/api/voice`;
 
 // ---------------------------------------------------------------------------
-// Provider
+// Provider using Web Speech API + Gemini Flash
 // ---------------------------------------------------------------------------
 export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isListening, setIsListening]               = useState(false);
-  const [isProcessing, setIsProcessing]             = useState(false);
-  const [isSpeakingCustomAudio, setIsSpeakingAudio] = useState(false);
-  const [audioLevel, setAudioLevel]                 = useState(0);
-  const [transcript, setTranscript]                 = useState("");
-  const [lastCommand, setLastCommand]               = useState("");
-  const [lastFeedback, setLastFeedback]             = useState("");
-  const [lastCommandParams, setLastCommandParams]   = useState<any>(null);
-  const [voiceEnabled, setVoiceEnabledState]        = useState(
+  const [isListening, setIsListening]   = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSpeaking, setIsSpeaking]     = useState(false);
+  const [transcript, setTranscript]     = useState("");
+  const [lastCommand, setLastCommand]   = useState("");
+  const [lastFeedback, setLastFeedback] = useState("");
+  const [voiceEnabled, setVoiceEnabledState] = useState(
     () => localStorage.getItem("voice_assistant_enabled") === "true"
   );
 
-  const navigate        = useNavigate();
-  const stopFnRef       = useRef<(() => void) | null>(null);
-  const animFrameRef    = useRef<number | null>(null);
+  const navigate = useNavigate();
+  const recognitionRef = useRef<any>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const submitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Initialize Speech Recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = "en-IN"; // Set to Indian English for the project
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setTranscript("Listening...");
+      };
+
+      recognition.onresult = (event: any) => {
+        const result = event.results[event.results.length - 1];
+        const text = result[0].transcript;
+        setTranscript(text);
+
+        // Clear previous "auto-submit" timer
+        if (submitTimeoutRef.current) clearTimeout(submitTimeoutRef.current);
+
+        if (result.isFinal) {
+          handleFinalTranscript(text);
+        } else {
+          // If not final, wait 2s of silence to auto-submit
+          submitTimeoutRef.current = setTimeout(() => {
+             handleFinalTranscript(text);
+          }, 2000);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error("[Voice] STT Error:", event.error);
+        if (event.error === "no-speech" && window.location.pathname === "/pwd-mode") {
+          // Restart if no speech detected ONLY in PWD mode (Hands-free)
+          console.log("[Voice] Auto-restarting in PWD Mode due to silence...");
+          stopListening();
+          setTimeout(() => startListening(), 1000);
+        } else {
+          setIsListening(false);
+          setTranscript("");
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
 
   // ---------------------------------------------------------------------------
-  // Browser TTS fallback
+  // Text to Speech (Browser API)
   // ---------------------------------------------------------------------------
   const speak = (text: string) => {
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 0.9;
-    u.onstart = () => setIsSpeakingAudio(true);
-    u.onend   = () => setIsSpeakingAudio(false);
-    window.speechSynthesis.speak(u);
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    
+    // Auto-select a clear English voice if available
+    const getBestVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      return voices.find(v => v.lang.includes("en-IN")) || 
+             voices.find(v => v.lang.includes("en-GB")) ||
+             voices.find(v => v.lang.includes("en-US")) || 
+             voices[0];
+    };
+
+    const bestVoice = getBestVoice();
+    if (bestVoice) utterance.voice = bestVoice;
+
+    console.log("[Voice] Synthesis Result:", text);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const startListening = () => {
+    if (!recognitionRef.current || isListening) return;
+    try {
+      recognitionRef.current.start();
+      // Auto-stop after 5s of total silence if nothing captured
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        if (isListening && !transcript) {
+          stopListening();
+        }
+      }, 5000);
+    } catch (e) {
+      console.error("[Voice] Start failed:", e);
+    }
+  };
+
+  // Preload voices
+  useEffect(() => {
+    const handleVoicesChanged = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", handleVoicesChanged);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", handleVoicesChanged);
+  }, []);
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (submitTimeoutRef.current) {
+      clearTimeout(submitTimeoutRef.current);
+      submitTimeoutRef.current = null;
+    }
   };
 
   // ---------------------------------------------------------------------------
-  // Helper: play response from API
+  // Handle Voice Command via Gemini Flash
   // ---------------------------------------------------------------------------
-  const handleApiResponse = (data: any) => {
-    const { action, target, feedback, params, audio, transcript: heard } = data;
-    if (heard) setLastCommand(heard);
-    setLastFeedback(feedback);
-    setLastCommandParams(params ?? null);
-
-    if (audio) {
-      try {
-        setIsSpeakingAudio(true);
-        const snd = new Audio(`data:audio/wav;base64,${audio}`);
-        snd.onended = () => {
-          setIsSpeakingAudio(false);
-          if (voiceEnabled) {
-             // Auto-restart listening after a small delay for natural interaction
-             setTimeout(() => startListening(), 500);
-          }
-        };
-        snd.onerror = () => { 
-          setIsSpeakingAudio(false); 
-          speak(feedback); 
-          if (voiceEnabled) setTimeout(() => startListening(), 1000);
-        };
-        snd.play().catch(() => { 
-          setIsSpeakingAudio(false); 
-          speak(feedback); 
-          if (voiceEnabled) setTimeout(() => startListening(), 1000);
-        });
-      } catch {
-        setIsSpeakingAudio(false);
-        speak(feedback);
-        if (voiceEnabled) setTimeout(() => startListening(), 1000);
-      }
-    } else {
-      speak(feedback);
-      // Browser TTS fallback also needs auto-restart logic if we wanted full coverage,
-      // but browser TTS is mostly a fallback here.
+  const handleFinalTranscript = async (text: string) => {
+    const lower = text.toLowerCase();
+    
+    // Fast Path: Emergency Keywords (Hardcoded as requested)
+    if (lower.includes("help") || lower.includes("police") || lower.includes("danger") || lower.includes("emergency")) {
+      handleAction({ action: "SOS", feedback: "Triggering emergency SOS now! Help is on the way." });
+      return;
     }
+    if (lower.includes("location") || lower.includes("where am i")) {
+       handleAction({ action: "LOCATION_SHARE", feedback: "Sharing your live location with your trusted contacts now." });
+       return;
+    }
+
+    // AI Path: Gemini Flash for Intent Verification
+    setIsProcessing(true);
+    setLastCommand(text);
+    console.log("[Voice] Gemini Request:", text);
+    try {
+      const prompt = `You are the brain of SafeGo, an Indian ride safety app. 
+      Convert the user command into a JSON action. 
+      Possible actions: NAVIGATE, LOGOUT, SOS, LOCATION_SHARE, UNKNOWN.
+      Possible targets: /pwd-mode, /book/pink, /book/elderly, /book/normal, /dashboard, /safety, /home.
+      Dashboard tabs: "Dashboard", "My Rides", "Safety Reports", "Emergency Contacts", "Settings".
+      
+      User said: "${text}"
+      
+      Respond only with JSON:
+      {
+        "action": "ACTION_NAME",
+        "target": "/path",
+        "feedback": "Spoken English response",
+        "params": { "activeTab": "optional_tab_name" }
+      }`;
+
+      const res = await fetch(GEMINI_URL, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-goog-api-key": GEMINI_API_KEY // Backup auth
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+      if (!res.ok) {
+        const errBody = await res.text();
+        console.error("[Voice] Gemini REST Error Body:", errBody);
+        throw new Error(`Gemini REST failure: ${res.status}`);
+      }
+      const result = await res.json();
+      console.log("[Voice] Gemini Raw Response:", result);
+      const content = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const jsonStr = content.replace(/```json|```/g, "").trim();
+      const actionData = JSON.parse(jsonStr);
+      
+      console.log("[Voice] Executing Action:", actionData.action);
+      handleAction(actionData);
+    } catch (err) {
+      console.error("[Voice] Gemini Error:", err);
+      // Fallback: Just repeat back what we heard if AI fails
+      speak("I understood: " + text + ". But I can't process that right now.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAction = (data: any) => {
+    const { action, target, feedback, params } = data;
+    setLastFeedback(feedback);
+    speak(feedback);
 
     switch (action) {
       case "NAVIGATE":
-        if (target) {
-          if (target.includes("#")) {
-            const [path, hash] = target.split("#");
-            navigate(path, { state: params });
-            // Small delay for navigation to complete before scrolling
-            setTimeout(() => {
-              const el = document.getElementById(hash);
-              if (el) el.scrollIntoView({ behavior: "smooth" });
-            }, 300);
-          } else {
-            navigate(target, { state: params });
-          }
-        }
-        break;
-      case "LOGOUT":
-        ["token", "userEmail", "user_role", "safego_profile"].forEach(k =>
-          localStorage.removeItem(k)
-        );
-        navigate("/home");
+        if (target) navigate(target, { state: params });
         break;
       case "SOS":
         triggerSOS();
@@ -168,180 +250,33 @@ export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ chil
       case "LOCATION_SHARE":
         shareCurrentLocation();
         break;
-      case "BROWSER":
-        toast.info("I'm performing that web operation for you now...");
+      case "LOGOUT":
+        ["token", "userEmail", "user_role", "safego_profile"].forEach(k => localStorage.removeItem(k));
+        navigate("/home");
         break;
     }
   };
 
   // ---------------------------------------------------------------------------
-  // Send WAV blob → backend → OpenAI STT + TTS pipeline
-  // ---------------------------------------------------------------------------
-  const processAudio = async (blob: Blob) => {
-    setIsProcessing(true);
-    setTranscript("Sending to SafeGo AI…");
-    try {
-      const fd = new FormData();
-      fd.append("file", blob, "recording.wav");
-      fd.append("context", JSON.stringify({ 
-        path: window.location.pathname,
-        state: (window as any).history.state?.usr || {} 
-      }));
-
-      const res = await fetch(`${VOICE_API_URL}/process-audio`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token") ?? ""}` },
-        body: fd,
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      handleApiResponse(data);
-    } catch (err) {
-      console.error("[Voice] processAudio error:", err);
-      speak("Could not reach SafeGo AI. Please check your connection.");
-    } finally {
-      setIsProcessing(false);
-      setTranscript("");
-    }
-  };
-
-  // ---------------------------------------------------------------------------
-  // Recording — AudioContext + WAV encoding + silence detection
-  // ---------------------------------------------------------------------------
-  const startListening = async () => {
-    if (isListening || isProcessing) return;
-    setVoiceEnabled(true); // Ensure conversation continues
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
-
-      const audioCtx   = new AudioContext();
-      const sampleRate = audioCtx.sampleRate;
-      const source     = audioCtx.createMediaStreamSource(stream);
-      const analyser   = audioCtx.createAnalyser();
-      analyser.fftSize = 512;
-      const processor  = audioCtx.createScriptProcessor(4096, 1, 1);
-
-      const chunks: Float32Array[] = [];
-      let silenceTimer: ReturnType<typeof setTimeout> | null = null;
-      let stopped = false;
-
-      // Cleanup + process
-      const stop = () => {
-        if (stopped) return;
-        stopped = true;
-
-        if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-        if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null; }
-
-        source.disconnect();
-        processor.disconnect();
-        stream.getTracks().forEach(t => t.stop());
-        audioCtx.close().catch(() => {});
-
-        stopFnRef.current = null;
-        setIsListening(false);
-        setAudioLevel(0);
-
-        if (chunks.length === 0) { setTranscript(""); return; }
-
-        setTranscript("Processing…");
-
-        // Merge PCM chunks
-        const total  = chunks.reduce((a, c) => a + c.length, 0);
-        const merged = new Float32Array(total);
-        let off = 0;
-        for (const c of chunks) { merged.set(c, off); off += c.length; }
-
-        // Downsample → 16 kHz → WAV
-        const resampled = downsample(merged, sampleRate, 16000);
-        const wavBuf    = encodeWAV(resampled, 16000);
-        const blob      = new Blob([wavBuf], { type: "audio/wav" });
-        processAudio(blob);
-      };
-
-      // Collect PCM samples
-      processor.onaudioprocess = (e) => {
-        chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-      };
-
-      // Audio level + silence detection loop
-      const levelData = new Uint8Array(analyser.frequencyBinCount);
-      const tick = () => {
-        if (stopped) return;
-        analyser.getByteFrequencyData(levelData);
-        const avg   = levelData.reduce((a, b) => a + b, 0) / levelData.length;
-        const level = Math.min(avg / 80, 1);
-        setAudioLevel(level);
-
-        // Debug: Log recording progress occasionally
-        // if (chunks.length % 50 === 0) console.log("[Voice] Audio Level:", level.toFixed(3), "Chunks:", chunks.length);
-
-        // Silence → auto-stop after 2.0 s (increased from 1.5s) for better stability
-        // Threshold lowered to 0.015 for more sensitivity to quiet speech
-        if (level < 0.015 && chunks.length > 5) {
-          if (!silenceTimer) silenceTimer = setTimeout(stop, 2000);
-        } else if (level >= 0.015) {
-          if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-        }
-
-        animFrameRef.current = requestAnimationFrame(tick);
-      };
-
-      source.connect(analyser);
-      source.connect(processor);
-      processor.connect(audioCtx.destination);
-
-      stopFnRef.current = stop;
-      setIsListening(true);
-      setTranscript("Listening…");
-      animFrameRef.current = requestAnimationFrame(tick);
-
-      // Safety: hard-stop after 15 s
-      setTimeout(() => { if (!stopped) stop(); }, 15_000);
-
-    } catch (err: any) {
-      console.error("[Voice] Mic error:", err);
-      if (err.name === "NotAllowedError") {
-        toast.error("Microphone access denied. Please allow mic in browser settings.");
-      } else {
-        toast.error("Could not start microphone. Please try again.");
-      }
-    }
-  };
-
-  const stopListening = () => {
-    if (stopFnRef.current) {
-      stopFnRef.current();
-    } else {
-      setIsListening(false);
-      setTranscript("");
-    }
-  };
-
-  // ---------------------------------------------------------------------------
-  // SOS + location share
+  // Backend Integration for Actions (SOS, Location)
   // ---------------------------------------------------------------------------
   const triggerSOS = async () => {
-    if (!navigator.geolocation) { speak("Unable to get location for SOS."); return; }
     navigator.geolocation.getCurrentPosition(async (pos) => {
       try {
         await fetch(`${VOICE_API_URL}/sos-trigger`, {
           method: "POST",
-          headers: {
+          headers: { 
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
+            Authorization: `Bearer ${localStorage.getItem("token") ?? ""}` 
           },
           body: JSON.stringify({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
             location_address: "Current Location",
-            ride_id: null,
           }),
         });
-        toast.error("SOS Alert triggered! Help is on the way.");
-      } catch { speak("Failed to trigger SOS alert."); }
+        toast.error("SOS Alert triggered!");
+      } catch { speak("Failed to reach emergency services."); }
     });
   };
 
@@ -350,68 +285,38 @@ export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ chil
       try {
         await fetch(`${VOICE_API_URL}/location-share`, {
           method: "POST",
-          headers: {
+          headers: { 
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
+            Authorization: `Bearer ${localStorage.getItem("token") ?? ""}` 
           },
           body: JSON.stringify({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
         });
-        toast.info("Your location has been shared with emergency contacts.");
+        toast.info("Location shared.");
       } catch { speak("Failed to share location."); }
     });
   };
 
-  // ---------------------------------------------------------------------------
-  // Ride status poller
-  // ---------------------------------------------------------------------------
-  const [currentRideStatus, setCurrentRideStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | undefined;
-    const path = window.location.pathname;
-
-    if (path === "/pwd-mode" || path.includes("/ride/tracking") || path.includes("/book")) {
-      const pollStatus = async () => {
-        if (!localStorage.getItem("token")) return;
-        try {
-          const res = await fetch(`${VOICE_API_URL}/ride-status`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-          });
-          if (!res.ok) return;
-          const data = await res.json();
-          if (!data) return;
-          const newStatus = data.status;
-          if (newStatus !== currentRideStatus) {
-            let msg = `Update: Your ride is now ${newStatus.replace(/_/g, " ")}.`;
-            if (newStatus === "driver_arriving") msg = "Your driver is arriving soon!";
-            if (newStatus === "in_progress")     msg = "Ride started. You are on your way.";
-            if (newStatus === "completed")       msg = "You have arrived. Thank you for riding with SafeGo!";
-            speak(msg);
-            setCurrentRideStatus(newStatus);
-          }
-        } catch { /* silent */ }
-      };
-      pollStatus();
-      interval = setInterval(pollStatus, 15_000);
-    }
-
-    return () => { if (interval) clearInterval(interval); };
-  }, [currentRideStatus, window.location.pathname]);
-
-  // ---------------------------------------------------------------------------
-  // setVoiceEnabled
-  // ---------------------------------------------------------------------------
   const setVoiceEnabled = (val: boolean) => {
     setVoiceEnabledState(val);
     localStorage.setItem("voice_assistant_enabled", String(val));
     if (!val) stopListening();
   };
 
+  // DEBUG TRIGGER (For testing without a real mic)
+  useEffect(() => {
+    (window as any).__SAFEGO_DEBUG_VOICE = (text: string) => {
+      console.log("[Voice] DEBUG: Mocking transcript ->", text);
+      handleFinalTranscript(text);
+    };
+    return () => { delete (window as any).__SAFEGO_DEBUG_VOICE; };
+  }, []);
+
   return (
     <VoiceAssistantContext.Provider
       value={{
-        isListening, isProcessing, isSpeakingCustomAudio, audioLevel,
-        transcript, lastCommand, lastFeedback, lastCommandParams,
+        isListening, isProcessing, isSpeaking,
+        audioLevel: 0,
+        transcript, lastCommand, lastFeedback,
         voiceEnabled, startListening, stopListening, speak, setVoiceEnabled,
       }}
     >

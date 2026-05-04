@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { SafeGoLogo } from "@/components/SafeGoLogo";
 import { AlertCircle, Loader2 } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 const AuthPage = () => {
   const location = useLocation();

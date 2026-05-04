@@ -11,6 +11,19 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    // Proxy /api/* and /docs to the FastAPI backend
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy) => {
+          proxy.on("error", (err) => {
+            console.error("[Vite Proxy] Backend unreachable:", err.message);
+          });
+        },
+      },
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

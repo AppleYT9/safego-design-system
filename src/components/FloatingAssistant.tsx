@@ -28,7 +28,7 @@ export const FloatingAssistant: React.FC = () => {
   const {
     isListening,
     isProcessing,
-    isSpeakingCustomAudio,
+    isSpeaking,
     audioLevel,
     transcript,
     lastFeedback,
@@ -56,7 +56,7 @@ export const FloatingAssistant: React.FC = () => {
 
   // Bubble visibility
   useEffect(() => {
-    const active = transcript || isProcessing || isSpeakingCustomAudio;
+    const active = transcript || isProcessing || isSpeaking || isListening;
     if (active) {
       setShowBubble(true);
     } else if (lastFeedback) {
@@ -67,17 +67,16 @@ export const FloatingAssistant: React.FC = () => {
       const t = setTimeout(() => setShowBubble(false), 1000);
       return () => clearTimeout(t);
     }
-  }, [transcript, isProcessing, isSpeakingCustomAudio, lastFeedback]);
+  }, [transcript, isProcessing, isSpeaking, lastFeedback]);
 
   // Hide on PWD mode (has its own full-screen UI)
   if (window.location.pathname === "/pwd-mode") return null;
 
   const handleButtonClick = () => {
-    if (isProcessing || isSpeakingCustomAudio) return; // Busy — ignore
+    if (isProcessing || isSpeaking) return; // Busy — ignore
     if (isListening) {
       stopListening();
     } else {
-      setVoiceEnabled(true);
       startListening();
     }
   };
@@ -87,7 +86,7 @@ export const FloatingAssistant: React.FC = () => {
   // State labels
   const bubbleLabel = isProcessing
     ? "SafeGo AI is thinking"
-    : isSpeakingCustomAudio
+    : isSpeaking
     ? "SafeGo AI Speaking"
     : isListening
     ? `Listening  ${formatTime(recordingTime)}`
@@ -95,25 +94,25 @@ export const FloatingAssistant: React.FC = () => {
     ? "SafeGo AI"
     : "SafeGo AI";
 
-  const bubbleContent = transcript
+  const bubbleContent = transcript && isListening
     ? transcript
     : isProcessing
-    ? "Sending audio to SafeGo AI…"
-    : isSpeakingCustomAudio || lastFeedback
+    ? "Gemini Flash is analyzing..."
+    : isSpeaking || lastFeedback
     ? lastFeedback
     : "Tap the mic to speak a command";
 
   return (
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 pointer-events-none">
       {/* Info / feedback bubble */}
-      {(showBubble || isListening || isProcessing || isSpeakingCustomAudio) && (
+      {(showBubble || isListening || isProcessing || isSpeaking) && (
         <div
           className={cn(
             "max-w-[260px] mb-2 px-5 py-3 rounded-[24px] backdrop-blur-xl border shadow-[0_20px_40px_rgba(0,0,0,0.12)]",
             "animate-in slide-in-from-bottom-4 zoom-in-75 duration-300 pointer-events-auto",
             "bg-white/90 border-white/20",
             isProcessing        && "ring-2 ring-primary/30",
-            isSpeakingCustomAudio && "ring-2 ring-purple-400/40",
+            isSpeaking          && "ring-2 ring-purple-400/40",
             isListening         && "ring-2 ring-red-400/40"
           )}
         >
@@ -121,7 +120,7 @@ export const FloatingAssistant: React.FC = () => {
           <div className="flex items-center gap-2 mb-2">
             {isProcessing ? (
               <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
-            ) : isSpeakingCustomAudio ? (
+            ) : isSpeaking ? (
               <Volume2 className="h-4 w-4 text-purple-500 animate-pulse shrink-0" />
             ) : isListening ? (
               <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0" />
@@ -133,26 +132,13 @@ export const FloatingAssistant: React.FC = () => {
             </span>
           </div>
 
-          {/* Waveform shown while listening */}
-          {isListening && audioLevel > 0 && (
-            <div className="mb-2 flex justify-center">
-              <div className="flex gap-[3px] items-center h-5">
-                {[0.4, 0.7, 1.0, 0.8, 0.5, 0.9, 0.3].map((f, i) => (
-                  <div
-                    key={i}
-                    className="w-[3px] rounded-full bg-red-400 transition-all duration-75"
-                    style={{ height: `${Math.max(2, audioLevel * f * 20)}px` }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Waveform hidden as WebSpeech doesn't provide raw PCM levels easily */}
 
           {/* Content */}
           <p
             className={cn(
               "text-[15px] font-semibold leading-tight tracking-tight",
-              isSpeakingCustomAudio ? "text-purple-600" : "text-primary",
+              isSpeaking ? "text-purple-600" : "text-primary",
               isListening && !transcript && "text-muted-foreground italic"
             )}
           >
@@ -165,7 +151,7 @@ export const FloatingAssistant: React.FC = () => {
       <button
         id="voice-assistant-btn"
         onClick={handleButtonClick}
-        disabled={isProcessing || isSpeakingCustomAudio}
+        disabled={isProcessing || isSpeaking}
         aria-label={isListening ? "Stop recording" : "Start voice assistant"}
         className={cn(
           "h-20 w-20 rounded-full flex items-center justify-center",
@@ -173,7 +159,7 @@ export const FloatingAssistant: React.FC = () => {
           "disabled:opacity-80 disabled:cursor-not-allowed",
           isListening
             ? "bg-red-500 shadow-[0_0_35px_rgba(239,68,68,0.55)] ring-4 ring-white scale-105"
-            : isSpeakingCustomAudio
+            : isSpeaking
             ? "bg-purple-600 shadow-[0_0_35px_rgba(147,51,234,0.5)] ring-4 ring-white"
             : isProcessing
             ? "bg-primary/80 shadow-[0_20px_40px_rgba(0,0,0,0.3)]"
@@ -186,7 +172,7 @@ export const FloatingAssistant: React.FC = () => {
             "absolute inset-0 opacity-50 blur-xl transition-all duration-700",
             isListening
               ? "bg-red-400 scale-150 animate-pulse"
-              : isSpeakingCustomAudio
+              : isSpeaking
               ? "bg-purple-500 scale-125 animate-pulse"
               : isProcessing
               ? "bg-primary scale-110 animate-pulse"
@@ -200,8 +186,8 @@ export const FloatingAssistant: React.FC = () => {
         {/* Icon */}
         <div className="relative z-10 flex flex-col items-center">
           {isListening ? (
-            <WaveformBars level={audioLevel} />
-          ) : isSpeakingCustomAudio ? (
+             <Mic className="h-9 w-9 text-white animate-pulse" />
+          ) : isSpeaking ? (
             <Volume2 className="h-9 w-9 text-white animate-pulse" />
           ) : isProcessing ? (
             <Loader2 className="h-9 w-9 text-white animate-spin" />

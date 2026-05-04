@@ -1,26 +1,24 @@
 from __future__ import annotations
 from typing import Optional
 
+from beanie import PydanticObjectId
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app.models import User, Driver, UserRole
+from app.models import User, UserRole
 from app.utils.security import decode_access_token
 
 security_scheme = HTTPBearer()
 
 
-def get_current_user(
+async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-    db: Session = Depends(get_db),
 ) -> User:
     token = credentials.credentials
-    
+
     # Development Shortcut: Allow dummy tokens
     if token in ["google-dummy-token", "admin-dummy-token", "dummy-token"]:
-        user = db.query(User).first()
+        user = await User.find_one()
         if user:
             return user
         raise HTTPException(status_code=404, detail="No users in database to use as dummy")
@@ -37,7 +35,7 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload",
         )
-    user = db.query(User).filter(User.id == int(user_id)).first()
+    user = await User.get(PydanticObjectId(user_id))
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -51,7 +49,7 @@ def get_current_user(
     return user
 
 
-def get_current_passenger(user: User = Depends(get_current_user)) -> User:
+async def get_current_passenger(user: User = Depends(get_current_user)) -> User:
     if user.role not in (UserRole.passenger, UserRole.admin):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -60,7 +58,7 @@ def get_current_passenger(user: User = Depends(get_current_user)) -> User:
     return user
 
 
-def get_current_driver(user: User = Depends(get_current_user)) -> User:
+async def get_current_driver(user: User = Depends(get_current_user)) -> User:
     if user.role not in (UserRole.driver, UserRole.admin):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -69,7 +67,7 @@ def get_current_driver(user: User = Depends(get_current_user)) -> User:
     return user
 
 
-def get_current_admin(user: User = Depends(get_current_user)) -> User:
+async def get_current_admin(user: User = Depends(get_current_user)) -> User:
     if user.role != UserRole.admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -78,13 +76,12 @@ def get_current_admin(user: User = Depends(get_current_user)) -> User:
     return user
 
 
-def get_optional_user(
+async def get_optional_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
-    db: Session = Depends(get_db),
 ) -> Optional[User]:
     if not credentials:
         return None
     try:
-        return get_current_user(credentials, db)
+        return await get_current_user(credentials)
     except Exception:
         return None

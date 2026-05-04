@@ -1,4 +1,4 @@
-import { useParams, Link, useLocation } from "react-router-dom";
+import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { getModeConfig, modes } from "@/config/modeConfig";
 import type { RideMode } from "@/config/modeConfig";
 import { Navbar } from "@/components/Navbar";
@@ -6,7 +6,7 @@ import { useVoiceAssistant } from "@/contexts/VoiceAssistantContext";
 import { SafetyScoreBar } from "@/components/SafetyScoreBar";
 import {
   ArrowLeft, Star, MessageCircle, Shield, Loader2, CheckCircle2,
-  MapPin, Navigation, Car, AlertCircle, Locate, Send, X
+  MapPin, Navigation, Car, AlertCircle, Locate, Send, X, Users
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
@@ -370,6 +370,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
 const BookingPage = () => {
   const { mode: modeId } = useParams<{ mode: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const voiceState = location.state as { pickup?: string, destination?: string, auto_search?: boolean, auto_confirm?: boolean };
 
   const mode = getModeConfig((modeId as RideMode) || "normal");
@@ -392,6 +393,12 @@ const BookingPage = () => {
   const [isLocatingAddress, setIsLocatingAddress] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number, lng: number } | null>(null);
   const [triggerRoute, setTriggerRoute] = useState<{ from: string, to: string } | null>(null);
+  const [passengers, setPassengers] = useState(1);
+  const [passengerDetails, setPassengerDetails] = useState<string[]>([]);
+  const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [destinationCoords, setDestinationCoords] = useState<{lat: number, lng: number} | null>(null);
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   const handleUseCurrentLocation = () => {
     setIsLocatingAddress(true);
@@ -399,6 +406,7 @@ const BookingPage = () => {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         setMapCenter({ lat: latitude, lng: longitude }); // Tell map to fly here
+        setPickupCoords({ lat: latitude, lng: longitude });
 
         try {
           // Free reverse geocoding using Nominatim (no API key required)
@@ -511,11 +519,13 @@ const BookingPage = () => {
 
   const selectPickup = (place: any) => {
     setPickup(place.display_name);
+    setPickupCoords({ lat: parseFloat(place.lat), lng: parseFloat(place.lon) });
     setShowPickupDropdown(false);
   };
 
   const selectDest = (place: any) => {
     setDestination(place.display_name);
+    setDestinationCoords({ lat: parseFloat(place.lat), lng: parseFloat(place.lon) });
     setShowDestDropdown(false);
   };
 
@@ -586,31 +596,57 @@ const BookingPage = () => {
     }, 1500);
   };
 
-  const handleConfirmRide = () => {
-    const bookingData = {
-      id: `R-${Math.floor(Math.random() * 9000 + 1000)}`,
-      passenger: "Guest User",
-      mode: mode.name.replace(" Mode", ""),
-      driver: selectedDriver?.name || "Driver",
-      route: `${pickup} → ${destination}`,
-      status: "In Progress",
-      type: "booking",
-      timestamp: Date.now()
-    };
-
-    const newRide = { ...bookingData, date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }), rating: 0 };
+  const handleConfirmRide = async () => {
+    // Collect coordinates from triggerRoute/Nominatim if needed, 
+    // but for now we'll send a real request to the backend.
+    
+    // We need to get coordinates for the pickup/dest 
+    // Usually these would be stored in state after handleFindRoute
+    // For now, let's assume we use defaults or fetched ones.
+    
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please login to book a ride");
+      navigate("/login");
+      return;
+    }
 
     try {
-      const saved = localStorage.getItem("safego_rides");
-      localStorage.setItem("safego_rides", JSON.stringify([newRide, ...(saved ? JSON.parse(saved) : [])]));
+      setAskStatus("asking");
+      
+      const payload = {
+        mode: mode.id,
+        pickup_address: pickup,
+        pickup_latitude: pickupCoords?.lat || mapCenter?.lat || 22.3,
+        pickup_longitude: pickupCoords?.lng || mapCenter?.lng || 73.19,
+        destination_address: destination,
+        destination_latitude: destinationCoords?.lat || (mapCenter?.lat || 22.3) + 0.05,
+        destination_longitude: destinationCoords?.lng || (mapCenter?.lng || 73.19) + 0.05,
+        passenger_count: passengers,
+        passenger_details: passengerDetails.filter(d => d.trim() !== "")
+      };
 
-      // Emit event for Admin Dashboard
-      localStorage.setItem("safego_latest_booking", JSON.stringify(bookingData));
-      window.dispatchEvent(new Event("storage"));
-    } catch (_) { }
+      const res = await fetch(`${API_URL}/api/rides/request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
 
-    setFlowState("confirmed");
-    leftRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      if (!res.ok) throw new Error("Failed to create ride");
+      const rideData = await res.json();
+
+      setAskStatus("accepted");
+      setFlowState("confirmed");
+      leftRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      
+    } catch (err) {
+      console.error(err);
+      setAskStatus("rejected");
+      alert("Error booking ride. Please try again.");
+    }
   };
 
   const handleCompleteRide = () => {
@@ -795,6 +831,60 @@ const BookingPage = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Passengers Selector */}
+                  <div className="mt-6 flex items-center justify-between p-4 rounded-3xl bg-secondary/30 border border-border/40 transition-all hover:bg-secondary/40">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-2xl bg-background shadow-sm ring-1 ring-border/50">
+                        <Users size={20} style={{ color: mode.accent }} />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className="text-sm font-black text-foreground leading-none">Passengers</label>
+                        <p className="text-[10px] text-muted-foreground font-bold mt-1 uppercase tracking-tight">How many people?</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 bg-background rounded-2xl p-1.5 shadow-sm border border-border/50">
+                      <button
+                        onClick={() => setPassengers(Math.max(1, passengers - 1))}
+                        className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-secondary transition-all text-foreground text-lg active:scale-90"
+                      >
+                        -
+                      </button>
+                      <div className="h-10 w-10 flex items-center justify-center">
+                        <span className="text-sm font-black text-foreground">{passengers}</span>
+                      </div>
+                      <button
+                        onClick={() => setPassengers(Math.min(4, passengers + 1))}
+                        className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-secondary transition-all text-foreground text-lg active:scale-90"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {passengers > 1 && (
+                    <div className="mt-4 p-6 rounded-[2rem] border border-border/40 bg-card premium-shadow animate-in fade-in slide-in-from-top-2 duration-300">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Passenger Details</h4>
+                      <div className="space-y-3">
+                        {Array.from({ length: passengers - 1 }).map((_, i) => (
+                          <div key={i} className="flex flex-col gap-1.5">
+                            <label className="text-[10px] font-bold text-muted-foreground ml-1">Passenger {i + 2} Name</label>
+                            <input 
+                              type="text" 
+                              placeholder={`Enter name for passenger ${i + 2}`}
+                              className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30"
+                              value={passengerDetails[i] || ""}
+                              onChange={(e) => {
+                                const newDetails = [...passengerDetails];
+                                newDetails[i] = e.target.value;
+                                setPassengerDetails(newDetails);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* ── 2. Mode Selector ── */}
@@ -876,20 +966,39 @@ const BookingPage = () => {
 
                 {/* ── Pink extras ── */}
                 {mode.id === "pink" && (
-                  <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
-                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                      <Shield size={16} className="text-[hsl(var(--pink))]" /> Safety Preferences
-                    </h3>
-                    <div className="grid grid-cols-1 gap-2">
-                      {["Prefer Female Driver", "Share Live Location with Emergency Contact", "Enable Auto SOS in unsafe situations"].map((n, i) => (
-                        <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-3 hover:bg-secondary cursor-pointer transition-all text-xs font-semibold text-foreground/90">
-                          <input type="checkbox" defaultChecked={i === 0} className="accent-[hsl(var(--pink))] h-4 w-4 cursor-pointer" />
-                          {n}
-                        </label>
-                      ))}
+                  <div className="flex flex-col gap-4">
+                    <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
+                      <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                        <Shield size={16} className="text-[hsl(var(--pink))]" /> Safety Preferences
+                      </h3>
+                      <div className="grid grid-cols-1 gap-2">
+                        {["Prefer Female Driver", "Share Live Location with Emergency Contact", "Enable Auto SOS in unsafe situations"].map((n, i) => (
+                          <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-3 hover:bg-secondary cursor-pointer transition-all text-xs font-semibold text-foreground/90">
+                            <input type="checkbox" defaultChecked={i === 0} className="accent-[hsl(var(--pink))] h-4 w-4 cursor-pointer" />
+                            {n}
+                          </label>
+                        ))}
+                      </div>
+                      <h3 className="text-sm font-bold text-foreground mt-6 mb-3">Emergency Contact</h3>
+                      <input type="tel" placeholder="Emergency contact number" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                     </div>
-                    <h3 className="text-sm font-bold text-foreground mt-6 mb-3">Emergency Contact</h3>
-                    <input type="tel" placeholder="Emergency contact number" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
+
+                    {/* Pink Mode Policy Notice */}
+                    <div className="rounded-[2rem] border border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/20 p-5 animate-in fade-in zoom-in-95 duration-500">
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <AlertCircle size={18} className="text-amber-600 dark:text-amber-500" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-1">Important Pink Mode Policy</h4>
+                          <p className="text-[11px] font-medium leading-relaxed text-amber-800/80 dark:text-amber-200/60">
+                            Pink Mode is a female-focused safety service. If male passengers accompany the traveler, 
+                            the driver reserves the right to cancel the ride on the spot if they feel uncomfortable. 
+                            Please ensure all travelers are disclosed.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 

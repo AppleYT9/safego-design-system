@@ -2,13 +2,10 @@ from __future__ import annotations
 
 import enum
 from datetime import datetime, timezone
+from typing import Optional, List, Any
 
-from sqlalchemy import (
-    Column, Integer, String, Float, Boolean, Text, DateTime, Enum, ForeignKey, JSON, UniqueConstraint
-)
-from sqlalchemy.orm import relationship
-
-from app.database import Base
+from beanie import Document, Indexed, PydanticObjectId
+from pydantic import Field
 
 
 # ---------- ENUMS ----------
@@ -79,212 +76,166 @@ def _utcnow():
     return datetime.now(timezone.utc)
 
 
-# ---------- MODELS ----------
+# ---------- MODELS (Beanie Documents) ----------
 
-class User(Base):
-    __tablename__ = "users"
+class User(Document):
+    full_name: str
+    email: Indexed(str, unique=True)  # type: ignore
+    phone: Indexed(str, unique=True)  # type: ignore
+    hashed_password: str
+    role: UserRole = UserRole.passenger
+    preferred_mode: Optional[RideMode] = RideMode.normal
+    gender: Optional[Gender] = Gender.male
+    profile_photo: Optional[str] = None
+    is_active: bool = True
+    is_verified: bool = False
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    full_name = Column(String(255), nullable=False)
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    phone = Column(String(50), unique=True, nullable=False, index=True)
-    hashed_password = Column(String(255), nullable=False)
-    role = Column(Enum(UserRole), nullable=False, default=UserRole.passenger)
-    preferred_mode = Column(Enum(RideMode), nullable=True, default=RideMode.normal)
-    gender = Column(Enum(Gender), nullable=True, default=Gender.male)
-    profile_photo = Column(String(500), nullable=True)
-    is_active = Column(Boolean, default=True)
-    is_verified = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=_utcnow)
-    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
-
-    # relationships
-    driver_profile = relationship("Driver", back_populates="user", uselist=False)
-    rides = relationship("Ride", back_populates="passenger", foreign_keys="[Ride.passenger_id]")
-    emergency_contacts = relationship("EmergencyContact", back_populates="user")
-    notifications = relationship("Notification", back_populates="user")
-    sos_alerts = relationship("SOSAlert", back_populates="user", foreign_keys="[SOSAlert.user_id]")
-    ratings = relationship("Rating", back_populates="rater", foreign_keys="[Rating.rater_id]")
+    class Settings:
+        name = "users"
 
 
-class Driver(Base):
-    __tablename__ = "drivers"
+class Driver(Document):
+    user_id: PydanticObjectId
+    license_number: Indexed(str, unique=True)  # type: ignore
+    status: DriverStatus = DriverStatus.pending
+    is_online: bool = False
+    current_latitude: Optional[float] = None
+    current_longitude: Optional[float] = None
+    average_rating: float = 0.0
+    total_rides: int = 0
+    today_rides: int = 0
+    today_earnings: float = 0.0
+    acceptance_rate: float = 100.0
+    certified_modes: List[str] = Field(default_factory=lambda: ["normal"])
+    approved_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
-    license_number = Column(String(100), unique=True, nullable=False)
-    status = Column(Enum(DriverStatus), nullable=False, default=DriverStatus.pending)
-    is_online = Column(Boolean, default=False)
-    current_latitude = Column(Float, nullable=True)
-    current_longitude = Column(Float, nullable=True)
-    average_rating = Column(Float, default=0.0)
-    total_rides = Column(Integer, default=0)
-    today_rides = Column(Integer, default=0)
-    today_earnings = Column(Float, default=0.0)
-    acceptance_rate = Column(Float, default=100.0)
-    certified_modes = Column(JSON, default=lambda: ["normal"])
-    approved_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=_utcnow)
-    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
-
-    # relationships
-    user = relationship("User", back_populates="driver_profile")
-    vehicle = relationship("Vehicle", back_populates="driver", uselist=False)
-    documents = relationship("DriverDocument", back_populates="driver")
-    rides = relationship("Ride", back_populates="driver", foreign_keys="[Ride.driver_id]")
-    ratings = relationship("Rating", back_populates="driver", foreign_keys="[Rating.driver_id]")
+    class Settings:
+        name = "drivers"
 
 
-class Vehicle(Base):
-    __tablename__ = "vehicles"
+class Vehicle(Document):
+    driver_id: PydanticObjectId
+    make: str
+    model: str
+    year: int
+    color: str
+    plate_number: Indexed(str, unique=True)  # type: ignore
+    is_wheelchair_accessible: bool = False
+    is_approved: bool = False
+    created_at: datetime = Field(default_factory=_utcnow)
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    driver_id = Column(Integer, ForeignKey("drivers.id"), unique=True, nullable=False)
-    make = Column(String(100), nullable=False)
-    model = Column(String(100), nullable=False)
-    year = Column(Integer, nullable=False)
-    color = Column(String(50), nullable=False)
-    plate_number = Column(String(50), unique=True, nullable=False)
-    is_wheelchair_accessible = Column(Boolean, default=False)
-    is_approved = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=_utcnow)
-
-    # relationships
-    driver = relationship("Driver", back_populates="vehicle")
+    class Settings:
+        name = "vehicles"
 
 
-class DriverDocument(Base):
-    __tablename__ = "driver_documents"
+class DriverDocument(Document):
+    driver_id: PydanticObjectId
+    document_type: DocumentType
+    file_url: Optional[str] = None
+    status: DocumentStatus = DocumentStatus.upload_required
+    reviewed_by: Optional[PydanticObjectId] = None
+    reviewed_at: Optional[datetime] = None
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    driver_id = Column(Integer, ForeignKey("drivers.id"), nullable=False)
-    document_type = Column(Enum(DocumentType), nullable=False)
-    file_url = Column(String(500), nullable=True)
-    status = Column(Enum(DocumentStatus), nullable=False, default=DocumentStatus.upload_required)
-    reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    reviewed_at = Column(DateTime, nullable=True)
-    notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=_utcnow)
-    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
-
-    # relationships
-    driver = relationship("Driver", back_populates="documents")
-    reviewer = relationship("User", foreign_keys=[reviewed_by])
+    class Settings:
+        name = "driver_documents"
 
 
-class Ride(Base):
-    __tablename__ = "rides"
+class Ride(Document):
+    passenger_id: PydanticObjectId
+    driver_id: Optional[PydanticObjectId] = None
+    mode: RideMode = RideMode.normal
+    status: RideStatus = RideStatus.pending
+    pickup_address: Optional[str] = None
+    pickup_latitude: float
+    pickup_longitude: float
+    destination_address: Optional[str] = None
+    destination_latitude: float
+    destination_longitude: float
+    distance_km: Optional[float] = None
+    duration_minutes: Optional[float] = None
+    fare_amount: Optional[float] = None
+    safety_score: Optional[int] = None
+    route_polyline: Optional[str] = None
+    scheduled_at: Optional[datetime] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    cancel_reason: Optional[str] = None
+    passenger_count: int = 1
+    passenger_details: Optional[List[str]] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=_utcnow)
+    updated_at: datetime = Field(default_factory=_utcnow)
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    passenger_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    driver_id = Column(Integer, ForeignKey("drivers.id"), nullable=True)
-    mode = Column(Enum(RideMode), nullable=False, default=RideMode.normal)
-    status = Column(Enum(RideStatus), nullable=False, default=RideStatus.pending)
-    pickup_address = Column(String(500), nullable=True)
-    pickup_latitude = Column(Float, nullable=False)
-    pickup_longitude = Column(Float, nullable=False)
-    destination_address = Column(String(500), nullable=True)
-    destination_latitude = Column(Float, nullable=False)
-    destination_longitude = Column(Float, nullable=False)
-    distance_km = Column(Float, nullable=True)
-    duration_minutes = Column(Float, nullable=True)
-    fare_amount = Column(Float, nullable=True)
-    safety_score = Column(Integer, nullable=True)
-    route_polyline = Column(Text, nullable=True)
-    scheduled_at = Column(DateTime, nullable=True)
-    started_at = Column(DateTime, nullable=True)
-    completed_at = Column(DateTime, nullable=True)
-    cancelled_at = Column(DateTime, nullable=True)
-    cancel_reason = Column(String(500), nullable=True)
-    created_at = Column(DateTime, default=_utcnow)
-    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
-
-    # relationships
-    passenger = relationship("User", back_populates="rides", foreign_keys=[passenger_id])
-    driver = relationship("Driver", back_populates="rides", foreign_keys=[driver_id])
-    rating = relationship("Rating", back_populates="ride", uselist=False)
-    location_history = relationship("RideLocationHistory", back_populates="ride")
-    sos_alerts = relationship("SOSAlert", back_populates="ride")
+    class Settings:
+        name = "rides"
 
 
-class RideLocationHistory(Base):
-    __tablename__ = "ride_location_history"
+class RideLocationHistory(Document):
+    ride_id: PydanticObjectId
+    latitude: float
+    longitude: float
+    recorded_at: datetime = Field(default_factory=_utcnow)
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    ride_id = Column(Integer, ForeignKey("rides.id"), nullable=False)
-    latitude = Column(Float, nullable=False)
-    longitude = Column(Float, nullable=False)
-    recorded_at = Column(DateTime, default=_utcnow)
-
-    # relationships
-    ride = relationship("Ride", back_populates="location_history")
+    class Settings:
+        name = "ride_location_history"
 
 
-class Rating(Base):
-    __tablename__ = "ratings"
+class Rating(Document):
+    ride_id: PydanticObjectId
+    rater_id: PydanticObjectId
+    driver_id: PydanticObjectId
+    score: int
+    comment: Optional[str] = None
+    created_at: datetime = Field(default_factory=_utcnow)
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    ride_id = Column(Integer, ForeignKey("rides.id"), unique=True, nullable=False)
-    rater_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    driver_id = Column(Integer, ForeignKey("drivers.id"), nullable=False)
-    score = Column(Integer, nullable=False)
-    comment = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=_utcnow)
-
-    # relationships
-    ride = relationship("Ride", back_populates="rating")
-    rater = relationship("User", back_populates="ratings", foreign_keys=[rater_id])
-    driver = relationship("Driver", back_populates="ratings", foreign_keys=[driver_id])
+    class Settings:
+        name = "ratings"
 
 
-class EmergencyContact(Base):
-    __tablename__ = "emergency_contacts"
+class EmergencyContact(Document):
+    user_id: PydanticObjectId
+    name: str
+    phone: str
+    contact_relationship: Optional[str] = None
+    is_primary: bool = False
+    created_at: datetime = Field(default_factory=_utcnow)
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    name = Column(String(255), nullable=False)
-    phone = Column(String(50), nullable=False)
-    contact_relationship = Column("relationship", String(100), nullable=True)
-    is_primary = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=_utcnow)
-
-    # relationships
-    user = relationship("User", back_populates="emergency_contacts")
+    class Settings:
+        name = "emergency_contacts"
 
 
-class SOSAlert(Base):
-    __tablename__ = "sos_alerts"
+class SOSAlert(Document):
+    user_id: PydanticObjectId
+    ride_id: Optional[PydanticObjectId] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    location_address: Optional[str] = None
+    severity: SOSSeverity = SOSSeverity.critical
+    status: SOSStatus = SOSStatus.active
+    notes: Optional[str] = None
+    resolved_by: Optional[PydanticObjectId] = None
+    resolved_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=_utcnow)
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    ride_id = Column(Integer, ForeignKey("rides.id"), nullable=True)
-    latitude = Column(Float, nullable=True)
-    longitude = Column(Float, nullable=True)
-    location_address = Column(String(500), nullable=True)
-    severity = Column(Enum(SOSSeverity), nullable=False, default=SOSSeverity.critical)
-    status = Column(Enum(SOSStatus), nullable=False, default=SOSStatus.active)
-    notes = Column(Text, nullable=True)
-    resolved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    resolved_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=_utcnow)
-
-    # relationships
-    user = relationship("User", back_populates="sos_alerts", foreign_keys=[user_id])
-    ride = relationship("Ride", back_populates="sos_alerts")
-    resolver = relationship("User", foreign_keys=[resolved_by])
+    class Settings:
+        name = "sos_alerts"
 
 
-class Notification(Base):
-    __tablename__ = "notifications"
+class Notification(Document):
+    user_id: PydanticObjectId
+    title: str
+    message: str
+    type: Optional[str] = None
+    is_read: bool = False
+    data: Optional[Any] = None
+    created_at: datetime = Field(default_factory=_utcnow)
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    title = Column(String(255), nullable=False)
-    message = Column(Text, nullable=False)
-    type = Column(String(50), nullable=True)
-    is_read = Column(Boolean, default=False)
-    data = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=_utcnow)
-
-    # relationships
-    user = relationship("User", back_populates="notifications")
+    class Settings:
+        name = "notifications"

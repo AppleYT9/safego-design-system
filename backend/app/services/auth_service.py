@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from sqlalchemy.orm import Session
-
 from app.models import User, UserRole
 from app.utils.security import hash_password, verify_password, create_access_token
 
 
-def register_user(
-    db: Session,
+async def register_user(
     full_name: str,
     email: str,
     phone: str,
@@ -16,10 +13,12 @@ def register_user(
     gender: str = "male",
 ) -> User:
     """Create a new user in the database."""
-    existing = db.query(User).filter((User.email == email) | (User.phone == phone)).first()
-    if existing:
-        if existing.email == email:
-            raise ValueError("Email already registered")
+    existing_email = await User.find_one(User.email == email)
+    if existing_email:
+        raise ValueError("Email already registered")
+
+    existing_phone = await User.find_one(User.phone == phone)
+    if existing_phone:
         raise ValueError("Phone number already registered")
 
     user = User(
@@ -30,15 +29,13 @@ def register_user(
         role=UserRole(role),
         gender=gender,
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    await user.insert()
     return user
 
 
-def authenticate_user(db: Session, email: str, password: str) -> User | None:
+async def authenticate_user(email: str, password: str) -> User | None:
     """Verify email+password and return the user or None."""
-    user = db.query(User).filter(User.email == email).first()
+    user = await User.find_one(User.email == email)
     if user is None:
         return None
     if not verify_password(password, user.hashed_password):
