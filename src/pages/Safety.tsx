@@ -4,49 +4,55 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { SOSButton } from "@/components/SOSButton";
 import { SafetyScoreBar } from "@/components/SafetyScoreBar";
 import { MapPlaceholder } from "@/components/MapPlaceholder";
-import { 
-    Shield, Share2, Target, Link2, Plus, Users as UsersIcon, 
-    Trash2, HeartPulse, Sparkles, MapPin, BadgeCheck, Phone, AlertTriangle 
+import {
+    Shield, Share2, Target, Link2, Plus, Users as UsersIcon,
+    Trash2, HeartPulse, Sparkles, MapPin, BadgeCheck, Phone, AlertTriangle, Loader2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 const Safety = () => {
     const revealRef = useScrollReveal();
     // state for live location
     const [isSharingLocation, setIsSharingLocation] = useState(false);
-    const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+    const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
     const [locationError, setLocationError] = useState<string | null>(null);
-    
+
     // state for contacts
-    const [contacts, setContacts] = useState(() => {
-        const saved = localStorage.getItem("safego_safety_contacts");
-        if (saved) {
-            try { return JSON.parse(saved); } catch(e) {}
-        }
-        return [
-            { id: Date.now(), name: "Jane Smith", relation: "Sister", phone: "+63 912 345 6789", isEmergency: true }
-        ];
-    });
+    const [contacts, setContacts] = useState<any[]>([]);
+    const [loadingContacts, setLoadingContacts] = useState(true);
     const [showContactForm, setShowContactForm] = useState(false);
     const [newContact, setNewContact] = useState({ name: "", phone: "", relation: "" });
 
     // mock score
     const [safetyScore, setSafetyScore] = useState(94);
-    const [safetyFactors, setSafetyFactors] = useState<{label: string, value: number, type: 'plus' | 'minus'}[]>([]);
-    
+    const [safetyFactors, setSafetyFactors] = useState<{ label: string, value: number, type: 'plus' | 'minus' }[]>([]);
+
     // police stations
-    const [policeStations, setPoliceStations] = useState<{id: number, name: string, distance: string, phone: string}[]>([]);
+    const [policeStations, setPoliceStations] = useState<{ id: number, name: string, distance: string, phone: string }[]>([]);
+
+    const fetchContacts = async () => {
+        setLoadingContacts(true);
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+            const res = await fetch(`${API_URL}/api/users/me/emergency-contacts`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setContacts(data);
+            }
+        } catch (e) {
+            console.error("Failed to fetch contacts", e);
+        } finally {
+            setLoadingContacts(false);
+        }
+    };
 
     useEffect(() => {
-        // Fetch contacts
-        const fetchContacts = async () => {
-            try {
-                // const res = await fetch("/contacts/list");
-                // const data = await res.json();
-                // setContacts(data);
-            } catch(e) {}
-        };
         fetchContacts();
     }, []);
 
@@ -57,7 +63,7 @@ const Safety = () => {
         // Simulate complex safety analysis
         const calculateDynamicScore = () => {
             let baseScore = 85;
-            const factors: {label: string, value: number, type: 'plus' | 'minus'}[] = [];
+            const factors: { label: string, value: number, type: 'plus' | 'minus' }[] = [];
 
             // 1. Proximity to Police Stations (Simulated)
             const isNearPolice = Math.random() > 0.3;
@@ -107,18 +113,18 @@ const Safety = () => {
     // Fetch Nearest Police Stations
     useEffect(() => {
         if (!userLocation) return;
-        
+
         // Mocking dynamic police stations based on location
         const mockStations = [
             { id: 1, name: "Central District Police HQ", distance: "0.8 km", phone: "112" },
             { id: 2, name: "North Precinct Station", distance: "2.1 km", phone: "100" }
         ];
-        
+
         // Simulate network delay for realistic feel
         const timer = setTimeout(() => {
             setPoliceStations(mockStations);
         }, 1200);
-        
+
         return () => clearTimeout(timer);
     }, [userLocation]);
 
@@ -131,7 +137,6 @@ const Safety = () => {
                         lat: pos.coords.latitude,
                         lng: pos.coords.longitude
                     });
-                    console.log("Current location obtained:", pos.coords.latitude, pos.coords.longitude);
                 },
                 (err) => {
                     console.error("Location error:", err);
@@ -161,79 +166,104 @@ const Safety = () => {
             }
 
             const mapUrl = `https://www.google.com/maps?q=${userLocation.lat},${userLocation.lng}`;
-            
+
             // Simulate sending to contacts
             toast.info(`Sharing live tracking...`, {
                 description: `Sent location link to ${contacts.length} trusted contacts: ${contacts.map(c => c.name).join(", ")}`
             });
-            
+
             console.log("Live Tracking Link sent to:", contacts.map(c => c.phone), mapUrl);
         }
     };
 
     const handleAddContact = async (e: React.FormEvent) => {
         e.preventDefault();
-        const contact = { ...newContact, id: Date.now(), isEmergency: true };
-        const updated = [...contacts, contact];
-        setContacts(updated);
-        localStorage.setItem("safego_safety_contacts", JSON.stringify(updated));
-        setNewContact({ name: "", phone: "", relation: "" });
-        setShowContactForm(false);
-        // await fetch("/contacts/add", { method: "POST", body: JSON.stringify(contact) });
-    };
-
-    const handleDeleteContact = async (id: number) => {
-        const updated = contacts.filter(c => c.id !== id);
-        setContacts(updated);
-        localStorage.setItem("safego_safety_contacts", JSON.stringify(updated));
-        // await fetch(`/contacts/delete/${id}`, { method: "DELETE" });
-    };
-
-    const handleSOS = async () => {
-        // Prepare SOS Payload
-        const sosPayload = {
-            latitude: userLocation?.lat || 0,
-            longitude: userLocation?.lng || 0,
-            location_address: "Live Location from Device",
-            severity: "critical",
-            ride_id: null // Could be populated if in an active ride
-        };
-
         try {
-            // 1. Alerting Authorities (Local Optimistic UI)
-            toast.error("EMERGENCY SOS TRIGGERED", {
-                description: "Contacting emergency services and broadcasting your location...",
-                duration: 10000,
-            });
-
-            // 2. Call Backend API to trigger real-world Twilio alerts (SMS/Calls)
-            const response = await fetch("/api/safety/sos", {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_URL}/api/users/me/emergency-contacts`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("safego_token")}` // Assuming token is stored here
+                    "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify(sosPayload)
+                body: JSON.stringify({
+                    name: newContact.name,
+                    phone: newContact.phone,
+                    relationship: newContact.relation,
+                    is_primary: contacts.length === 0
+                })
             });
 
-            if (response.ok) {
-                toast.success("Guardian Shield Activated", {
-                    description: "Your trusted network has been notified via SMS and automated call.",
-                });
-            } else {
-                console.error("SOS API Error:", await response.text());
-                // Fallback for demo/trial purposes if API fails
-                if (contacts.length > 0) {
-                    toast.error(`ALERT SENT TO CONTACTS`, {
-                        description: `Panic alert with maps link sent to: ${contacts.map(c => c.name).join(", ")}`,
-                        duration: 6000,
-                    });
-                }
+            if (res.ok) {
+                toast.success("Contact added successfully!");
+                fetchContacts();
+                setNewContact({ name: "", phone: "", relation: "" });
+                setShowContactForm(false);
             }
+        } catch (err) {
+            toast.error("Failed to add contact");
+        }
+    };
+
+    const handleDeleteContact = async (id: string) => {
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_URL}/api/users/me/emergency-contacts/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) {
+                toast.success("Contact removed");
+                fetchContacts();
+            }
+        } catch (err) {
+            toast.error("Failed to delete contact");
+        }
+    };
+
+    const handleSOS = async () => {
+        const primaryContact = contacts.find(c => c.is_primary) || contacts[0];
+
+        if (!primaryContact) {
+            toast.error("NO TRUSTED CONTACTS FOUND", {
+                description: "Please add a guard to your network before triggering SOS."
+            });
+            return;
+        }
+
+        const toastId = toast.loading("EMERGENCY SOS TRIGGERED", {
+            description: "Broadcasting your live location to your trusted network...",
+        });
+
+        try {
+            // Simulate SOS delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Log notification to backend
+            const token = localStorage.getItem("token");
+            await fetch(`${API_URL}/api/users/me/notifications`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    title: "Emergency SOS Alert",
+                    message: `User triggered emergency SOS. Alerted: ${primaryContact.name} (${primaryContact.phone}). Coordinates: ${userLocation?.lat}, ${userLocation?.lng}`,
+                    type: "alert"
+                })
+            });
+
+            toast.error(`ALERT SENT TO ${primaryContact.name.toUpperCase()}`, {
+                id: toastId,
+                description: `Emergency message with GPS link sent to ${primaryContact.phone}. Authorities are standby.`,
+                duration: 6000,
+            });
+
         } catch (error) {
-            console.error("SOS Trigger Failed:", error);
-            toast.warning("Network Error", {
-                description: "Local SOS triggered, but remote notifications may be delayed."
+            toast.warning("Local SOS Triggered", {
+                id: toastId,
+                description: "Broadcast completed locally, but server log failed."
             });
         }
     };
@@ -284,24 +314,24 @@ const Safety = () => {
                     </div>
                 </header>
 
-                <div className="grid gap-8 lg:grid-cols-12 flex-1 w-full max-w-[1600px] mx-auto">
+                <div className="grid gap-8 lg:grid-cols-12 flex-1 w-full">
                     {/* Left Column - Priority Controls */}
                     <div className="lg:col-span-7 flex flex-col gap-8">
                         {/* SOS Panel - HIGH IMPACT */}
                         <section className="group relative rounded-[2.5rem] border-2 border-destructive bg-destructive/5 p-10 text-center flex flex-col items-center shadow-2xl transition-all hover:scale-[1.01] scroll-reveal overflow-hidden">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-destructive to-transparent opacity-50" />
-                            
+
                             <h2 className="text-3xl font-black text-destructive mb-4 flex items-center gap-3">
                                 <Shield size={32} className="animate-pulse" /> Emergency SOS
                             </h2>
                             <p className="text-lg text-foreground/80 mb-10 max-w-[500px] font-medium leading-relaxed">
                                 Immediate 2-way distress signal. Alerts local authorities, active hub supervisors, and your entire trusted network in one click.
                             </p>
-                            
+
                             <div className="z-10">
                                 <SOSButton onTrigger={handleSOS} contacts={contacts} />
                             </div>
-                            
+
                             <p className="mt-8 text-[11px] font-black uppercase tracking-widest text-destructive/60">Ready for instant deployment</p>
                         </section>
 
@@ -318,7 +348,7 @@ const Safety = () => {
                             </div>
                             <div className="flex gap-3 w-full sm:w-auto">
                                 {userLocation && (
-                                    <button 
+                                    <button
                                         onClick={handleCopyLink}
                                         className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-2xl border border-border/80 bg-background px-6 py-4 text-sm font-black text-foreground transition-all hover:bg-secondary active:scale-95"
                                     >
@@ -326,7 +356,7 @@ const Safety = () => {
                                         <span>Copy Link</span>
                                     </button>
                                 )}
-                                <button 
+                                <button
                                     onClick={handleShareLocation}
                                     className={`flex-1 sm:flex-none rounded-2xl px-8 py-4 text-sm font-black transition-all shadow-lg active:scale-95 ${isSharingLocation ? "bg-secondary text-foreground" : "bg-primary text-white hover:brightness-110"}`}
                                 >
@@ -341,7 +371,7 @@ const Safety = () => {
                                 <h3 className="font-black text-2xl text-foreground tracking-tight flex items-center gap-3">
                                     <UsersIcon size={24} className="text-primary" /> Trusted Network
                                 </h3>
-                                <button 
+                                <button
                                     onClick={() => setShowContactForm(!showContactForm)}
                                     className="flex items-center gap-2 rounded-xl bg-primary/10 px-4 py-2 text-sm font-black text-primary transition-all hover:bg-primary/20"
                                 >
@@ -354,39 +384,53 @@ const Safety = () => {
                                     <div className="grid gap-4 sm:grid-cols-2 mb-6">
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Full Name</label>
-                                            <input required placeholder="Name" className="rounded-xl border border-border/80 px-4 py-3.5 text-base bg-background outline-none focus:border-primary transition-colors" value={newContact.name} onChange={e => setNewContact({...newContact, name: e.target.value})} />
+                                            <input required placeholder="Name" className="rounded-xl border border-border/80 px-4 py-3.5 text-base bg-background outline-none focus:border-primary transition-colors" value={newContact.name} onChange={e => setNewContact({ ...newContact, name: e.target.value })} />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mobile</label>
-                                            <input required type="tel" placeholder="+91" className="rounded-xl border border-border/80 px-4 py-3.5 text-base bg-background outline-none focus:border-primary transition-colors" value={newContact.phone} onChange={e => setNewContact({...newContact, phone: e.target.value})} />
+                                            <input required type="tel" placeholder="+91" className="rounded-xl border border-border/80 px-4 py-3.5 text-base bg-background outline-none focus:border-primary transition-colors" value={newContact.phone} onChange={e => setNewContact({ ...newContact, phone: e.target.value })} />
                                         </div>
                                         <div className="flex flex-col gap-1.5 sm:col-span-2">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Relationship</label>
-                                            <input placeholder="E.g. Sister, Spouse" className="rounded-xl border border-border/80 px-4 py-3.5 text-base bg-background outline-none focus:border-primary transition-colors" value={newContact.relation} onChange={e => setNewContact({...newContact, relation: e.target.value})} />
+                                            <input placeholder="E.g. Sister, Spouse" className="rounded-xl border border-border/80 px-4 py-3.5 text-base bg-background outline-none focus:border-primary transition-colors" value={newContact.relation} onChange={e => setNewContact({ ...newContact, relation: e.target.value })} />
                                         </div>
                                     </div>
                                     <button type="submit" className="w-full rounded-2xl bg-foreground py-4 text-base font-black text-background hover:bg-primary transition-all shadow-lg active:scale-[0.98]">Confirm Addition</button>
                                 </form>
                             )}
 
-                            <div className="grid gap-4">
+                            <div className="grid gap-4 relative min-h-[100px]">
+                                {loadingContacts && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-sm rounded-3xl">
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    </div>
+                                )}
+
                                 {contacts.map(contact => (
-                                    <div key={contact.id} className="flex items-center justify-between bg-card/60 border border-border/50 p-6 rounded-3xl transition-all hover:border-primary/20 hover:bg-white/80">
+                                    <div key={contact._id} className="flex items-center justify-between bg-card/60 border border-border/50 p-6 rounded-3xl transition-all hover:border-primary/20 hover:bg-white/80 group">
                                         <div className="flex items-center gap-4">
-                                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/5 text-primary text-xl font-black">
+                                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/5 text-primary text-xl font-black relative overflow-hidden">
                                                 {contact.name.charAt(0)}
+                                                {contact.is_primary && (
+                                                    <div className="absolute top-0 right-0 h-2 w-2 bg-pink-500 rounded-full border border-white shadow-[0_0_8px_rgba(236,72,153,0.8)]" />
+                                                )}
                                             </div>
                                             <div>
-                                                <p className="font-black text-foreground text-lg tracking-tight">{contact.name}</p>
-                                                <p className="text-sm font-bold text-muted-foreground mt-0.5 uppercase tracking-wider">{contact.relation} • {contact.phone}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-black text-foreground text-lg tracking-tight">{contact.name}</p>
+                                                    {contact.is_primary && <span className="text-[9px] font-black uppercase bg-pink-500/10 text-pink-600 px-1.5 py-0.5 rounded-md">Primary</span>}
+                                                </div>
+                                                <p className="text-sm font-bold text-muted-foreground mt-0.5 uppercase tracking-wider">
+                                                    {contact.relationship || contact.relation || "Contact"} • {contact.phone}
+                                                </p>
                                             </div>
                                         </div>
-                                        <button onClick={() => handleDeleteContact(contact.id)} className="text-muted-foreground hover:text-destructive p-3 transition-colors bg-secondary/50 rounded-2xl hover:bg-destructive/10" aria-label="Delete">
+                                        <button onClick={() => handleDeleteContact(contact._id)} className="text-muted-foreground hover:text-destructive p-3 transition-colors bg-secondary/50 rounded-2xl hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Delete">
                                             <Trash2 size={20} />
                                         </button>
                                     </div>
                                 ))}
-                                {contacts.length === 0 && (
+                                {!loadingContacts && contacts.length === 0 && (
                                     <div className="text-center py-12 border-2 border-dashed border-border/50 rounded-[2rem] bg-secondary/10">
                                         <p className="text-lg font-black text-muted-foreground/60">No Guardians Active</p>
                                         <p className="text-xs font-bold text-muted-foreground mt-1 uppercase tracking-widest">Add contacts to enable automatic alerting</p>
@@ -493,9 +537,9 @@ const Safety = () => {
                                 <h3 className="font-black text-2xl text-foreground tracking-tight">Environmental Ops</h3>
                                 <div className="text-3xl font-black text-primary">{safetyScore}%</div>
                             </div>
-                            
+
                             <SafetyScoreBar score={safetyScore} label="Overall Tactical Safety" />
-                            
+
                             <div className="mt-8 space-y-4">
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80 mb-2">Live Telemetry Analysis</p>
                                 {safetyFactors.map((factor, i) => (

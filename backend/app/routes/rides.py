@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import List, Optional
 from beanie import PydanticObjectId
+from beanie.operators import In
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -107,7 +108,12 @@ async def get_active_ride(current_user: User = Depends(get_current_user)):
 
 @router.get("/me", response_model=List[RideResponse])
 async def get_my_rides(current_user: User = Depends(get_current_user)):
-    rides = await Ride.find(Ride.passenger_id == current_user.id).sort(-Ride.created_at).to_list()
+    # Only show rides that have NOT been soft-deleted by the user
+    rides = await Ride.find(
+        Ride.passenger_id == current_user.id,
+        Ride.is_deleted_by_user == False
+    ).sort(-Ride.created_at).to_list()
+    
     result = []
     for ride in rides:
         db = await _load_driver_brief(ride.driver_id)
@@ -185,3 +191,29 @@ async def rate_ride(ride_id: str, payload: RatingCreate, current_user: User = De
         "comment": rating.comment,
         "created_at": rating.created_at,
     }
+
+
+@router.delete("/history", status_code=status.HTTP_204_NO_CONTENT)
+async def clear_ride_history(current_user: User = Depends(get_current_user)):
+    """
+    Soft-delete all ride history for the current user.
+    Sets is_deleted_by_user=True but keeps the data in MongoDB.
+    """
+    await Ride.find(Ride.passenger_id == current_user.id).update({"$set": {"is_deleted_by_user": True}})
+    return None
+
+
+@router.delete("/history/bulk", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_selected_rides(
+    ride_ids: List[str],
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Soft-delete specific rides from history.
+    """
+    ids = [PydanticObjectId(rid) for rid in ride_ids]
+    await Ride.find(
+        Ride.passenger_id == current_user.id,
+        In(Ride.id, ids)
+    ).update({"$set": {"is_deleted_by_user": True}})
+    return None

@@ -119,7 +119,6 @@ async def toggle_online_status(payload: DriverOnlineStatus, current_user: User =
     await driver.save()
     return await _driver_dict(driver)
 
-
 @router.get("/me/available-rides", response_model=List[RideResponse])
 async def get_available_rides(current_user: User = Depends(get_current_driver)):
     driver = await Driver.find_one(Driver.user_id == current_user.id)
@@ -131,6 +130,21 @@ async def get_available_rides(current_user: User = Depends(get_current_driver)):
     certified = driver.certified_modes or ["normal"]
     available = [r for r in rides if r.mode.value in certified or r.mode.value == "normal"]
     return [await _ride_dict(r) for r in available]
+
+
+@router.get("/me/history", response_model=List[RideResponse])
+async def get_driver_history(current_user: User = Depends(get_current_driver)):
+    """
+    Get all ride history for the current driver.
+    Note: is_deleted_by_user only hides the ride for the passenger.
+    Drivers can always see their ride history.
+    """
+    driver = await Driver.find_one(Driver.user_id == current_user.id)
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver profile not found")
+    
+    rides = await Ride.find(Ride.driver_id == driver.id).sort(-Ride.created_at).to_list()
+    return [await _ride_dict(r) for r in rides]
 
 
 @router.post("/me/rides/{ride_id}/accept", response_model=RideResponse)
@@ -188,3 +202,39 @@ async def upload_document(doc_id: str, payload: DocumentUpload, current_user: Us
     doc.updated_at = datetime.now(timezone.utc)
     await doc.save()
     return _doc_dict(doc)
+@router.get("/me/activity", response_model=List[dict])
+async def get_driver_activity(current_user: User = Depends(get_current_driver)):
+    driver = await Driver.find_one(Driver.user_id == current_user.id)
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver profile not found")
+    
+    activity = []
+    
+    # 1. Recent completed rides
+    rides = await Ride.find(Ride.driver_id == driver.id, Ride.status == RideStatus.completed).sort(-Ride.completed_at).limit(5).to_list()
+    for r in rides:
+        activity.append({
+            "text": f"Completed ride to {r.destination_address}",
+            "time": r.completed_at.strftime("%I:%M %p") if r.completed_at else "Just now",
+            "type": "ride"
+        })
+        
+    # 2. Verified documents
+    docs = await DriverDocument.find(DriverDocument.driver_id == driver.id, DriverDocument.status == DocumentStatus.verified).sort(-DriverDocument.updated_at).limit(3).to_list()
+    for d in docs:
+        activity.append({
+            "text": f"Document approved: {d.document_type.value.replace('_', ' ').title()}",
+            "time": d.updated_at.strftime("%I:%M %p") if d.updated_at else "Today",
+            "type": "document"
+        })
+        
+    # 3. High ratings
+    ratings = await Rating.find(Rating.driver_id == driver.id, Rating.score >= 4).sort(-Rating.created_at).limit(3).to_list()
+    for r in ratings:
+        activity.append({
+            "text": f"{r.score}-star rating received",
+            "time": r.created_at.strftime("%I:%M %p") if r.created_at else "Today",
+            "type": "rating"
+        })
+        
+    return sorted(activity, key=lambda x: x["time"], reverse=True)[:10]

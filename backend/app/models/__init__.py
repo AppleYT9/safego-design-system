@@ -170,6 +170,7 @@ class Ride(Document):
     cancel_reason: Optional[str] = None
     passenger_count: int = 1
     passenger_details: Optional[List[str]] = Field(default_factory=list)
+    is_deleted_by_user: bool = False  # Soft delete flag
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)
 

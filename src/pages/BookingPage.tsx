@@ -395,8 +395,8 @@ const BookingPage = () => {
   const [triggerRoute, setTriggerRoute] = useState<{ from: string, to: string } | null>(null);
   const [passengers, setPassengers] = useState(1);
   const [passengerDetails, setPassengerDetails] = useState<string[]>([]);
-  const [pickupCoords, setPickupCoords] = useState<{lat: number, lng: number} | null>(null);
-  const [destinationCoords, setDestinationCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [pickupCoords, setPickupCoords] = useState<{ lat: number, lng: number } | null>(null);
+  const [destinationCoords, setDestinationCoords] = useState<{ lat: number, lng: number } | null>(null);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -599,11 +599,11 @@ const BookingPage = () => {
   const handleConfirmRide = async () => {
     // Collect coordinates from triggerRoute/Nominatim if needed, 
     // but for now we'll send a real request to the backend.
-    
+
     // We need to get coordinates for the pickup/dest 
     // Usually these would be stored in state after handleFindRoute
     // For now, let's assume we use defaults or fetched ones.
-    
+
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Please login to book a ride");
@@ -613,7 +613,7 @@ const BookingPage = () => {
 
     try {
       setAskStatus("asking");
-      
+
       const payload = {
         mode: mode.id,
         pickup_address: pickup,
@@ -641,7 +641,7 @@ const BookingPage = () => {
       setAskStatus("accepted");
       setFlowState("confirmed");
       leftRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-      
+
     } catch (err) {
       console.error(err);
       setAskStatus("rejected");
@@ -869,8 +869,8 @@ const BookingPage = () => {
                         {Array.from({ length: passengers - 1 }).map((_, i) => (
                           <div key={i} className="flex flex-col gap-1.5">
                             <label className="text-[10px] font-bold text-muted-foreground ml-1">Passenger {i + 2} Name</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               placeholder={`Enter name for passenger ${i + 2}`}
                               className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30"
                               value={passengerDetails[i] || ""}
@@ -992,8 +992,8 @@ const BookingPage = () => {
                         <div>
                           <h4 className="text-xs font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-1">Important Pink Mode Policy</h4>
                           <p className="text-[11px] font-medium leading-relaxed text-amber-800/80 dark:text-amber-200/60">
-                            Pink Mode is a female-focused safety service. If male passengers accompany the traveler, 
-                            the driver reserves the right to cancel the ride on the spot if they feel uncomfortable. 
+                            Pink Mode is a female-focused safety service. If male passengers accompany the traveler,
+                            the driver reserves the right to cancel the ride on the spot if they feel uncomfortable.
                             Please ensure all travelers are disclosed.
                           </p>
                         </div>

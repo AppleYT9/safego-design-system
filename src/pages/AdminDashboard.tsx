@@ -369,7 +369,7 @@ const AdminDashboard = () => {
         <div className="lg:col-span-2 relative overflow-hidden rounded-[2.5rem] border border-border bg-[#0f172a] shadow-inner group">
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "30px 30px" }} />
           {liveRides.map((ride, i) => (
-            <div key={ride.id + i} className="absolute flex flex-col items-center gap-1 transition-all duration-[3000ms] ease-in-out" style={{ top: `${(ride.lat % 1) * 800 + 40}%`, left: `${(ride.lng % 1) * 800 + 40}%` }}>
+            <div key={ride.id + i} className="absolute flex flex-col items-center gap-1 transition-all duration-[3s] ease-in-out" style={{ top: `${(ride.lat % 1) * 800 + 40}%`, left: `${(ride.lng % 1) * 800 + 40}%` }}>
               <div className="group relative">
                 <div className="absolute -inset-1 rounded-full bg-primary/20 animate-ping" />
                 <div className="h-8 w-8 rounded-full border-2 border-white bg-primary flex items-center justify-center text-white cursor-pointer hover:scale-125 transition-all"><Car size={14} /></div>

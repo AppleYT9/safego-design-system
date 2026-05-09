@@ -4,7 +4,7 @@ import { SafeGoLogo } from "./SafeGoLogo";
 export const Footer = () => {
   return (
     <footer className="border-t border-border bg-background">
-      <div className="mx-auto max-w-7xl px-4 pt-16 pb-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full px-6 pt-16 pb-8 sm:px-10 lg:px-16">
         <div className="grid gap-8 md:grid-cols-4">
           <div>
             <SafeGoLogo size={22} />

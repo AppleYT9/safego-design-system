@@ -46,6 +46,13 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    gender: Optional[str] = None
+    preferred_mode: Optional[str] = None
+
+
 class UserBrief(BaseModel):
     full_name: str
 

@@ -200,7 +200,7 @@ const DriveWithUs = () => {
                     <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
                 </div>
 
-                <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-col-reverse items-center gap-12 px-6 lg:flex-row lg:gap-20 sm:px-8 lg:px-12">
+                <div className="relative z-10 mx-auto flex w-full items-center gap-12 px-6 lg:flex-row lg:gap-20 sm:px-10 lg:px-16">
                     {/* Left Content */}
                     <div className="flex-1 scroll-reveal">
                         <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-primary shadow-sm backdrop-blur-md transition-all hover:bg-primary/10">
@@ -388,7 +388,7 @@ const DriveWithUs = () => {
                 <div className="absolute inset-0 pointer-events-none opacity-[0.05]"
                     style={{ backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`, backgroundSize: '32px 32px' }}></div>
 
-                <div className="mx-auto max-w-7xl relative">
+                <div className="mx-auto w-full relative px-6 sm:px-10 lg:px-16">
                     <div className="text-center scroll-reveal mb-16">
                         <span className="caption-label">Ecosystem Excellence</span>
                         <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">
@@ -418,7 +418,7 @@ const DriveWithUs = () => {
 
             {/* EQUAL OPPORTUNITY — SAAS STYLE DASHBOARD LOOK */}
             <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background overflow-hidden">
-                <div className="mx-auto max-w-[1400px]">
+                <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
                     <div className="relative rounded-[3rem] border border-white/10 bg-[#0f172a] p-12 lg:p-20 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] overflow-hidden">
                         {/* High-tech background elements */}
                         <div className="absolute top-0 right-0 w-full h-full pointer-events-none overflow-hidden">
@@ -479,7 +479,7 @@ const DriveWithUs = () => {
 
             {/* REQUIREMENTS - GRID CARDS */}
             <section id="requirements" className="py-28 px-4 sm:px-6 lg:px-8 bg-secondary/20">
-                <div className="mx-auto max-w-7xl">
+                <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
                     <div className="text-center scroll-reveal mb-20">
                         <span className="caption-label">The Blueprint</span>
                         <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">Membership <span className="text-primary">Criteria.</span></h2>
@@ -508,7 +508,7 @@ const DriveWithUs = () => {
 
             {/* SPECIAL MODE TRAINING */}
             <section className="section-padding bg-background">
-                <div className="mx-auto max-w-7xl">
+                <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
                     <div className="text-center scroll-reveal">
                         <span className="caption-label">SPECIALIZED TRAINING</span>
                         <h2 className="mt-3 font-display text-4xl font-bold text-foreground sm:text-5xl">Mode-Specific Certifications</h2>
@@ -552,7 +552,7 @@ const DriveWithUs = () => {
 
             {/* HIRING PROCESS - SAAS VERTICAL TIMELINE */}
             <section className="py-28 px-4 sm:px-6 lg:px-12 bg-secondary/30 relative">
-                <div className="mx-auto max-w-6xl relative">
+                <div className="mx-auto w-full relative px-6 sm:px-10 lg:px-16">
                     <div className="text-center scroll-reveal mb-24">
                         <span className="caption-label">Fast Track Activation</span>
                         <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">Onboarding <span className="text-primary">Flow.</span></h2>
@@ -598,7 +598,7 @@ const DriveWithUs = () => {
 
             {/* DRIVER TESTIMONIALS - MARQUEE */}
             <section className="py-24 bg-background overflow-hidden relative">
-                <div className="mx-auto max-w-7xl text-center scroll-reveal relative z-20 mb-16">
+                <div className="mx-auto w-full text-center scroll-reveal relative z-20 mb-16 px-6 sm:px-10 lg:px-16">
                     <span className="caption-label">COMMUNITY VOICES</span>
                     <h2 className="mt-4 font-display text-4xl font-bold text-foreground sm:text-5xl">Hear From Our Drivers</h2>
                     <p className="mt-4 text-lg text-muted-foreground">Real stories from real SafeGo partners</p>

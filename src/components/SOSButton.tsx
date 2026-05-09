@@ -3,16 +3,17 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 
 interface Contact {
-  id: number;
+  _id: string;
   name: string;
-  relation: string;
+  relationship: string;
   phone: string;
-  isEmergency: boolean;
+  is_primary: boolean;
+  relation?: string; // fallback
 }
 
 interface SOSButtonProps {
   onTrigger?: () => void;
-  contacts?: Contact[];
+  contacts?: any[];
 }
 
 export const SOSButton = ({ onTrigger, contacts = [] }: SOSButtonProps) => {
@@ -69,7 +70,7 @@ export const SOSButton = ({ onTrigger, contacts = [] }: SOSButtonProps) => {
                       {contacts.length > 0 ? (
                         contacts.map(contact => (
                           <a 
-                            key={contact.id}
+                            key={contact._id || contact.id}
                             href={`tel:${contact.phone}`}
                             className="flex items-center justify-between bg-secondary/50 p-4 rounded-2xl border border-border/40 hover:bg-destructive hover:text-white transition-all group"
                           >
@@ -79,7 +80,7 @@ export const SOSButton = ({ onTrigger, contacts = [] }: SOSButtonProps) => {
                               </div>
                               <div className="text-left">
                                 <p className="font-bold text-sm tracking-tight leading-none">{contact.name}</p>
-                                <p className="text-[10px] font-bold uppercase mt-1 opacity-60 tracking-wider font-mono">{contact.relation} • {contact.phone}</p>
+                                <p className="text-[10px] font-bold uppercase mt-1 opacity-60 tracking-wider font-mono">{contact.relationship || contact.relation} • {contact.phone}</p>
                               </div>
                             </div>
                             <Phone size={18} className="mr-2" />

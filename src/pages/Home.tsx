@@ -275,7 +275,7 @@ const Home = () => {
           <rect width="100%" height="100%" fill="url(#hero-map)" />
         </svg>
 
-        <div className="mx-auto flex w-full max-w-[1400px] flex-col-reverse items-center gap-12 px-6 py-20 lg:flex-row lg:gap-16 sm:px-8 lg:px-12">
+        <div className="mx-auto flex w-full items-center gap-12 px-6 py-20 lg:flex-row lg:gap-16 sm:px-10 lg:px-16">
           {/* Left */}
           <div className="flex-1 scroll-reveal">
             <h1 className="mt-8 font-display text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
@@ -390,7 +390,7 @@ const Home = () => {
 
       {/* RIDE MODES */}
       <section className="section-padding section-alt">
-        <div className="mx-auto max-w-[1400px]">
+        <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
           <div className="text-center scroll-reveal">
             <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Choose Your Safe Ride</h2>
             <p className="mt-3 text-lg text-muted-foreground">Tailored safety experiences for every passenger</p>
@@ -410,7 +410,7 @@ const Home = () => {
 
       {/* APP SHOWCASE */}
       <section className="section-padding bg-background">
-        <div className="mx-auto flex max-w-[1400px] flex-col items-center gap-16 lg:flex-row">
+        <div className="mx-auto flex w-full flex-col items-center gap-16 lg:flex-row px-6 sm:px-10 lg:px-16">
           {/* Left text */}
           <div className="flex-1 scroll-reveal">
             <span className="caption-label">SEAMLESS MOBILE EXPERIENCE</span>
@@ -479,7 +479,7 @@ const Home = () => {
           <path d="M0 150 C 250 50, 750 250, 1000 150" fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray="12 12" />
         </svg>
 
-        <div className="mx-auto max-w-[1400px] relative z-10">
+        <div className="mx-auto w-full relative z-10 px-6 sm:px-10 lg:px-16">
           <div className="text-center scroll-reveal">
             <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl">How SafeGo Works</h2>
             <p className="mt-3 text-lg text-muted-foreground">From booking to arrival, every step is protected</p>
@@ -599,7 +599,7 @@ const Home = () => {
 
       {/* KEY FEATURES */}
       <section id="features" className="section-padding section-alt overflow-hidden">
-        <div className="mx-auto max-w-[1400px]">
+        <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
           <div className="scroll-reveal text-center max-w-2xl mx-auto">
             <span className="caption-label">TAKING CARE OF EVERY CLIENT</span>
             <h2 className="mt-3 font-display text-4xl font-bold text-foreground sm:text-5xl">Key Features</h2>
@@ -651,7 +651,7 @@ const Home = () => {
 
       {/* DARK CTA BANNER */}
       <section className="px-4 py-16 sm:px-6 lg:px-8">
-        <div className="relative mx-auto max-w-[1400px] overflow-hidden rounded-[2.5rem] bg-foreground px-8 py-20 text-center sm:px-16 premium-shadow">
+        <div className="relative mx-auto w-full overflow-hidden rounded-[2.5rem] bg-foreground px-8 py-20 text-center sm:px-16 premium-shadow">
           {/* Decorative arcs */}
           <svg className="absolute right-0 top-0 h-full w-1/2 opacity-[0.06]" viewBox="0 0 200 200">
             <circle cx="200" cy="100" r="80" fill="none" stroke="white" strokeWidth="0.5" />

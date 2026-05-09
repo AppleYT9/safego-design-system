@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.models import User, EmergencyContact, Notification
 from app.schemas import (
     UserResponse,
+    UserUpdate,
     EmergencyContactCreate,
     EmergencyContactUpdate,
     EmergencyContactResponse,
@@ -20,6 +21,24 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 @router.get("/me", response_model=UserResponse)
 async def get_my_profile(current_user: User = Depends(get_current_user)):
+    return _user_to_response(current_user)
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_my_profile(
+    payload: UserUpdate,
+    current_user: User = Depends(get_current_user),
+):
+    if payload.full_name is not None:
+        current_user.full_name = payload.full_name
+    if payload.phone is not None:
+        current_user.phone = payload.phone
+    if payload.gender is not None:
+        current_user.gender = payload.gender
+    if payload.preferred_mode is not None:
+        current_user.preferred_mode = payload.preferred_mode
+
+    await current_user.save()
     return _user_to_response(current_user)
 
 

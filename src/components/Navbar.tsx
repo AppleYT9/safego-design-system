@@ -12,7 +12,7 @@ const navLinks = [
   { label: "Dashboard", to: "/dashboard" },
 ];
 
-export const Navbar = ({ fullWidth = false }: { fullWidth?: boolean }) => {
+export const Navbar = ({ fullWidth = true }: { fullWidth?: boolean }) => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -27,7 +27,7 @@ export const Navbar = ({ fullWidth = false }: { fullWidth?: boolean }) => {
     <nav
       className={`sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl transition-all ${scrolled ? "shadow-sm" : ""}`}
     >
-      <div className={`relative flex h-20 w-full items-center mx-auto ${fullWidth ? "px-4 sm:px-6 lg:px-8" : "max-w-[1400px] px-6 sm:px-8 lg:px-12"}`}>
+      <div className={`relative flex h-20 w-full items-center ${fullWidth ? "px-6 sm:px-10 lg:px-16" : "max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12"}`}>
         {/* Logo */}
         <Link to="/home" className="flex-shrink-0">
           <SafeGoLogo size={24} />
@@ -103,27 +103,27 @@ export const Navbar = ({ fullWidth = false }: { fullWidth?: boolean }) => {
             <div className="flex gap-3">
               {localStorage.getItem("token") ? (
                 <>
-                <button
-                  onClick={() => {
-                    localStorage.removeItem("token");
-                    setOpen(false);
-                    window.location.href = "/login";
-                  }}
-                  className="rounded-full bg-[#ef4444] hover:bg-[#dc2626] px-5 py-2 text-sm font-bold text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:shadow-[0_0_25px_rgba(239,68,68,0.6)] hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" onClick={() => setOpen(false)} className="rounded-full border-2 border-foreground px-5 py-2 text-sm font-semibold">
-                  Login
-                </Link>
-                <Link to="/signup" onClick={() => setOpen(false)} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">
-                  Sign Up
-                </Link>
-              </>
-            )}
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem("token");
+                      setOpen(false);
+                      window.location.href = "/login";
+                    }}
+                    className="rounded-full bg-[#ef4444] hover:bg-[#dc2626] px-5 py-2 text-sm font-bold text-white transition-all shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:shadow-[0_0_25px_rgba(239,68,68,0.6)] hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setOpen(false)} className="rounded-full border-2 border-foreground px-5 py-2 text-sm font-semibold">
+                    Login
+                  </Link>
+                  <Link to="/signup" onClick={() => setOpen(false)} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
