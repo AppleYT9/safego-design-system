@@ -108,18 +108,39 @@ const Dashboard = () => {
   const fetchContacts = async () => {
     setLoadingContacts(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+      // 1. Load from LocalStorage first (Guest Persistence)
+      const localStored = localStorage.getItem("local_emergency_contacts");
+      const localContacts = localStored ? JSON.parse(localStored) : [];
 
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setContacts(localContacts);
+        return;
+      }
+
+      // 2. Fetch from Backend if logged in
       const res = await fetch(`${API_URL}/api/users/me/emergency-contacts`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
-        const data = await res.json();
-        setContacts(data);
+        const serverData = await res.json();
+        
+        // 3. Merge: Prioritize server data, but keep local ones that aren't synced yet
+        const combined = [...serverData];
+        localContacts.forEach((lc: any) => {
+          if (!combined.find(sc => sc.phone === lc.phone)) {
+            combined.push(lc);
+          }
+        });
+        setContacts(combined);
+      } else {
+        setContacts(localContacts);
       }
     } catch (err) {
       console.error("Failed to fetch contacts", err);
+      // Fallback to local
+      const localStored = localStorage.getItem("local_emergency_contacts");
+      if (localStored) setContacts(JSON.parse(localStored));
     } finally {
       setLoadingContacts(false);
     }
@@ -284,53 +305,86 @@ const Dashboard = () => {
     }
   };
 
+  const [isSubmittingContact, setIsSubmittingContact] = useState(false);
+
   const handleAddContact = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newContact.name || !newContact.phone) return;
+    if (!newContact.name || !newContact.phone || isSubmittingContact) return;
+
+    setIsSubmittingContact(true);
+    const toastId = toast.loading(editIndex !== null ? "Updating contact..." : "Saving contact...");
+
+    // Local state update for immediate feedback
+    const tempId = editIndex !== null ? contacts[editIndex]._id : `temp-${Date.now()}`;
+    const contactData = {
+      _id: tempId,
+      name: newContact.name,
+      phone: newContact.phone,
+      contact_relationship: newContact.relation,
+      is_primary: newContact.isEmergency
+    };
+
+    if (editIndex === null) {
+      const updated = [...contacts, contactData];
+      setContacts(updated);
+      localStorage.setItem("local_emergency_contacts", JSON.stringify(updated.filter(c => c._id.startsWith('temp-'))));
+    } else {
+      const updated = contacts.map((c, i) => i === editIndex ? { ...c, ...contactData } : c);
+      setContacts(updated);
+      localStorage.setItem("local_emergency_contacts", JSON.stringify(updated.filter(c => c._id.startsWith('temp-'))));
+    }
+
+    setNewContact({ name: "", relation: "", phone: "", isEmergency: false });
+    setShowContactForm(false);
+    setEditIndex(null);
 
     try {
       const token = localStorage.getItem("token");
-      let res;
-      if (editIndex !== null) {
-        const contactId = contacts[editIndex]._id;
-        res = await fetch(`${API_URL}/api/users/me/emergency-contacts/${contactId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            name: newContact.name,
-            phone: newContact.phone,
-            relationship: newContact.relation,
-            is_primary: newContact.isEmergency
-          })
-        });
-      } else {
-        res = await fetch(`${API_URL}/api/users/me/emergency-contacts`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            name: newContact.name,
-            phone: newContact.phone,
-            relationship: newContact.relation,
-            is_primary: newContact.isEmergency
-          })
-        });
-      }
+      if (token) {
+        let res;
+        if (editIndex !== null) {
+          res = await fetch(`${API_URL}/api/users/me/emergency-contacts/${tempId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: contactData.name,
+              phone: contactData.phone,
+              relationship: contactData.contact_relationship,
+              is_primary: contactData.is_primary
+            })
+          });
+        } else {
+          res = await fetch(`${API_URL}/api/users/me/emergency-contacts`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: contactData.name,
+              phone: contactData.phone,
+              relationship: contactData.contact_relationship,
+              is_primary: contactData.is_primary
+            })
+          });
+        }
 
-      if (res.ok) {
-        toast.success(editIndex !== null ? "Contact updated" : "Contact added");
-        fetchContacts();
-        setNewContact({ name: "", relation: "", phone: "", isEmergency: false });
-        setShowContactForm(false);
-        setEditIndex(null);
+        if (res.ok) {
+          toast.success("Contact synced to cloud", { id: toastId });
+          fetchContacts();
+        } else {
+          toast.success("Saved to local session", { id: toastId });
+        }
+      } else {
+        toast.success("Saved to local session", { id: toastId });
       }
     } catch (err) {
-      toast.error("Failed to save contact");
+      toast.success("Saved locally", { id: toastId });
+    } finally {
+      setIsSubmittingContact(false);
     }
   };
 
@@ -348,15 +402,25 @@ const Dashboard = () => {
 
   const handleDeleteContact = async (contactId: string) => {
     if (!confirm("Delete this contact?")) return;
+    
+    // Optimistic delete
+    const updated = contacts.filter(c => c._id !== contactId);
+    setContacts(updated);
+    localStorage.setItem("local_emergency_contacts", JSON.stringify(updated.filter(c => c._id.startsWith('temp-'))));
+
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/api/users/me/emergency-contacts/${contactId}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (res.ok) {
-        toast.success("Contact deleted");
-        fetchContacts();
+      if (token && !contactId.startsWith('temp-')) {
+        const res = await fetch(`${API_URL}/api/users/me/emergency-contacts/${contactId}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          toast.success("Contact removed from cloud");
+          fetchContacts();
+        }
+      } else {
+        toast.success("Contact removed");
       }
     } catch (err) {
       toast.error("Failed to delete contact");
@@ -897,7 +961,12 @@ const Dashboard = () => {
                   </label>
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <button type="submit" className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all">
+                  <button 
+                    type="submit" 
+                    disabled={isSubmittingContact}
+                    className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isSubmittingContact && <Loader2 className="h-4 w-4 animate-spin" />}
                     {editIndex !== null ? "Update Contact" : "Save Contact"}
                   </button>
                 </div>

@@ -19,6 +19,7 @@ async def get_current_user(
     # Development Shortcut: Allow dummy tokens
     if token in ["google-dummy-token", "admin-dummy-token", "dummy-token"]:
         user = await User.find_one()
+        print(f"DEBUG: Dummy token used. User found: {user}")
         if user:
             return user
         raise HTTPException(status_code=404, detail="No users in database to use as dummy")

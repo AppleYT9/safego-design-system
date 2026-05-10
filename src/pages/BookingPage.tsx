@@ -597,12 +597,13 @@ const BookingPage = () => {
   };
 
   const handleConfirmRide = async () => {
-    // Collect coordinates from triggerRoute/Nominatim if needed, 
-    // but for now we'll send a real request to the backend.
-
-    // We need to get coordinates for the pickup/dest 
-    // Usually these would be stored in state after handleFindRoute
-    // For now, let's assume we use defaults or fetched ones.
+    // Broadcast booking to Admin Command Center
+    localStorage.setItem('safego_new_booking', JSON.stringify({
+      id: 'RID_' + Math.floor(Math.random() * 1000),
+      passenger: 'User Node #88',
+      driver: selectedDriver?.name || 'Assigned Pilot',
+      timestamp: new Date().toISOString()
+    }));
 
     const token = localStorage.getItem("token");
     if (!token) {

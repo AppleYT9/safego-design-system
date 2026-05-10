@@ -36,17 +36,40 @@ const Safety = () => {
     const fetchContacts = async () => {
         setLoadingContacts(true);
         try {
+            // 1. Load from LocalStorage first (Guest Persistence)
+            const localStored = localStorage.getItem("local_emergency_contacts");
+            const localContacts = localStored ? JSON.parse(localStored) : [];
+
             const token = localStorage.getItem("token");
-            if (!token) return;
+            if (!token) {
+                setContacts(localContacts);
+                return;
+            }
+
+            // 2. Fetch from Backend if logged in
             const res = await fetch(`${API_URL}/api/users/me/emergency-contacts`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {
-                const data = await res.json();
-                setContacts(data);
+                const serverData = await res.json();
+
+                // 3. Merge: Prioritize server data, but keep local ones that aren't synced yet
+                // For simplicity in this demo, we'll just combine them and filter duplicates by phone
+                const combined = [...serverData];
+                localContacts.forEach((lc: any) => {
+                    if (!combined.find(sc => sc.phone === lc.phone)) {
+                        combined.push(lc);
+                    }
+                });
+                setContacts(combined);
+            } else {
+                setContacts(localContacts);
             }
         } catch (e) {
             console.error("Failed to fetch contacts", e);
+            // Fallback to local
+            const localStored = localStorage.getItem("local_emergency_contacts");
+            if (localStored) setContacts(JSON.parse(localStored));
         } finally {
             setLoadingContacts(false);
         }
@@ -176,48 +199,96 @@ const Safety = () => {
         }
     };
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const handleAddContact = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
+        const toastId = toast.loading("Saving to your trusted network...");
+
+        // Create a temporary ID for local display (Optimistic Update)
+        const tempId = `temp-${Date.now()}`;
+        const contactData = {
+            _id: tempId,
+            name: newContact.name,
+            phone: newContact.phone,
+            relationship: newContact.relation,
+            is_primary: contacts.length === 0
+        };
+
+        // IMMEDIATELY update UI as requested ("just save and display")
+        const updatedContacts = [...contacts, contactData];
+        setContacts(updatedContacts);
+
+        // PERSIST to localStorage for guest flow
+        localStorage.setItem("local_emergency_contacts", JSON.stringify(updatedContacts.filter(c => c._id.startsWith('temp-'))));
+
+        setNewContact({ name: "", phone: "", relation: "" });
+        setShowContactForm(false);
+
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`${API_URL}/api/users/me/emergency-contacts`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    name: newContact.name,
-                    phone: newContact.phone,
-                    relationship: newContact.relation,
-                    is_primary: contacts.length === 0
-                })
-            });
 
-            if (res.ok) {
-                toast.success("Contact added successfully!");
-                fetchContacts();
-                setNewContact({ name: "", phone: "", relation: "" });
-                setShowContactForm(false);
+            // Still try to save to backend if token exists, but don't block the UI if it's missing
+            if (token) {
+                const res = await fetch(`${API_URL}/api/users/me/emergency-contacts`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: contactData.name,
+                        phone: contactData.phone,
+                        relationship: contactData.relationship,
+                        is_primary: contactData.is_primary
+                    })
+                });
+
+                if (res.ok) {
+                    toast.success("Contact secured in cloud!", { id: toastId });
+                    // Refresh with real server data/IDs
+                    fetchContacts();
+                } else {
+                    toast.success("Saved to local session.", { id: toastId, description: "Backend sync skipped (Guest Mode)." });
+                }
+            } else {
+                toast.success("Saved to local session.", { id: toastId, description: "Note: Login to sync across devices." });
             }
         } catch (err) {
-            toast.error("Failed to add contact");
+            console.warn("Backend sync failed, but contact is kept locally:", err);
+            toast.success("Saved locally.", { id: toastId });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleDeleteContact = async (id: string) => {
+        // Optimistic delete
+        const updated = contacts.filter(c => c._id !== id);
+        setContacts(updated);
+
+        // Update local storage
+        localStorage.setItem("local_emergency_contacts", JSON.stringify(updated.filter(c => c._id.startsWith('temp-'))));
+
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`${API_URL}/api/users/me/emergency-contacts/${id}`, {
-                method: "DELETE",
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            if (res.ok) {
+            if (token && !id.startsWith('temp-')) {
+                const res = await fetch(`${API_URL}/api/users/me/emergency-contacts/${id}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    toast.success("Contact removed from cloud");
+                    fetchContacts();
+                }
+            } else {
                 toast.success("Contact removed");
-                fetchContacts();
             }
         } catch (err) {
-            toast.error("Failed to delete contact");
+            console.error("Failed to delete contact", err);
         }
     };
 
@@ -395,7 +466,20 @@ const Safety = () => {
                                             <input placeholder="E.g. Sister, Spouse" className="rounded-xl border border-border/80 px-4 py-3.5 text-base bg-background outline-none focus:border-primary transition-colors" value={newContact.relation} onChange={e => setNewContact({ ...newContact, relation: e.target.value })} />
                                         </div>
                                     </div>
-                                    <button type="submit" className="w-full rounded-2xl bg-foreground py-4 text-base font-black text-background hover:bg-primary transition-all shadow-lg active:scale-[0.98]">Confirm Addition</button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="w-full rounded-2xl bg-foreground py-4 text-base font-black text-background hover:bg-primary transition-all shadow-lg active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <Loader2 className="h-5 w-5 animate-spin" />
+                                                <span>Adding...</span>
+                                            </>
+                                        ) : (
+                                            "Confirm Addition"
+                                        )}
+                                    </button>
                                 </form>
                             )}
 
