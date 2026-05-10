@@ -7,16 +7,25 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.models import User, Driver, Vehicle, Ride, SOSAlert, DriverDocument, UserRole, DriverStatus, RideStatus, RideMode, SOSStatus, DocumentStatus
-from app.schemas import AdminStats, RidesByMode, SafetyScoreStat, DriverApproval, DocumentReview, UserResponse, DriverResponse, RideResponse, SOSResponse, DriverDocumentResponse, UserToggleActive
+from app.schemas import (
+    AdminStats, RidesByMode, SafetyScoreStat, DriverApproval, DocumentReview,
+    UserResponse, DriverResponse, RideResponse, SOSResponse, DriverDocumentResponse,
+    UserToggleActive, AdminUserCreate, AdminUserUpdate
+)
 from app.utils.dependencies import get_current_admin
+from app.utils.security import hash_password
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 def _user_dict(u: User) -> dict:
-    return {"_id": str(u.id), "full_name": u.full_name, "email": u.email, "phone": u.phone,
-            "role": u.role.value, "preferred_mode": u.preferred_mode.value if u.preferred_mode else None,
-            "gender": u.gender.value if u.gender else None, "profile_photo": u.profile_photo,
+    full_name = getattr(u, "full_name", getattr(u, "name", "Unknown User"))
+    return {"_id": str(u.id), "full_name": full_name, "email": u.email, "phone": u.phone,
+            "role": u.role.value if hasattr(u.role, "value") else u.role,
+            "position": u.position, "department": u.department,
+            "preferred_mode": u.preferred_mode.value if u.preferred_mode and hasattr(u.preferred_mode, "value") else u.preferred_mode,
+            "gender": u.gender.value if u.gender and hasattr(u.gender, "value") else u.gender,
+            "profile_photo": u.profile_photo,
             "is_active": u.is_active, "is_verified": u.is_verified, "created_at": u.created_at, "updated_at": u.updated_at}
 
 
@@ -105,10 +114,47 @@ async def get_safety_scores(admin: User = Depends(get_current_admin)):
     return stats
 
 
+@router.get("/drivers", response_model=List[DriverResponse])
+async def get_all_drivers(status: Optional[str] = Query(None), q: Optional[str] = Query(None),
+                          page: int = Query(default=1, ge=1), per_page: int = Query(default=20, ge=1, le=100),
+                          admin: User = Depends(get_current_admin)):
+    query = {}
+    if status:
+        query["status"] = status
+    if q:
+        # Search by name requires finding the user first
+        matching_users = await User.find({"full_name": {"$regex": q, "$options": "i"}}).to_list()
+        user_ids = [u.id for u in matching_users]
+        query["user_id"] = {"$in": user_ids}
+        
+    drivers = await Driver.find(query).sort(-Driver.created_at).skip((page - 1) * per_page).limit(per_page).to_list()
+    return [await _driver_dict(d) for d in drivers]
+
+
 @router.get("/drivers/pending", response_model=List[DriverResponse])
 async def get_pending_drivers(admin: User = Depends(get_current_admin)):
     drivers = await Driver.find(Driver.status == DriverStatus.pending).to_list()
     return [await _driver_dict(d) for d in drivers]
+
+
+@router.get("/drivers/{driver_id}/dossier")
+async def get_driver_dossier(driver_id: str, admin: User = Depends(get_current_admin)):
+    driver = await Driver.get(PydanticObjectId(driver_id))
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    
+    # Get basic info (User + Vehicle)
+    data = await _driver_dict(driver)
+    
+    # Get documents
+    docs = await DriverDocument.find(DriverDocument.driver_id == driver.id).to_list()
+    data["documents"] = [_doc_dict(d) for d in docs]
+    
+    # Get recent rides
+    rides = await Ride.find(Ride.driver_id == driver.id).sort(-Ride.created_at).limit(10).to_list()
+    data["recent_rides"] = [_ride_dict(r) for r in rides]
+    
+    return data
 
 
 @router.put("/drivers/{driver_id}/approval", response_model=DriverResponse)
@@ -171,11 +217,18 @@ async def get_sos_alerts(status: Optional[str] = Query(None), admin: User = Depe
 
 
 @router.get("/users", response_model=List[UserResponse])
-async def get_all_users(role: Optional[str] = Query(None), page: int = Query(default=1, ge=1),
+async def get_all_users(role: Optional[str] = Query(None), q: Optional[str] = Query(None),
+                        page: int = Query(default=1, ge=1),
                         per_page: int = Query(default=20, ge=1, le=100), admin: User = Depends(get_current_admin)):
     query = {}
     if role:
         query["role"] = role
+    if q:
+        query["$or"] = [
+            {"full_name": {"$regex": q, "$options": "i"}},
+            {"email": {"$regex": q, "$options": "i"}},
+            {"phone": {"$regex": q, "$options": "i"}}
+        ]
     users = await User.find(query).sort(-User.created_at).skip((page - 1) * per_page).limit(per_page).to_list()
     return [_user_dict(u) for u in users]
 
@@ -188,3 +241,87 @@ async def toggle_user_active(user_id: str, payload: UserToggleActive, admin: Use
     user.is_active = payload.is_active
     await user.save()
     return _user_dict(user)
+
+
+@router.post("/users", response_model=UserResponse, status_code=201)
+async def create_user(payload: AdminUserCreate, admin: User = Depends(get_current_admin)):
+    existing_email = await User.find_one(User.email == payload.email)
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    existing_phone = await User.find_one(User.phone == payload.phone)
+    if existing_phone:
+        raise HTTPException(status_code=400, detail="Phone number already registered")
+
+    user = User(
+        full_name=payload.full_name,
+        email=payload.email,
+        phone=payload.phone,
+        hashed_password=hash_password(payload.password),
+        role=UserRole(payload.role),
+        position=payload.position,
+        department=payload.department,
+        gender=payload.gender,
+        is_active=payload.is_active,
+        is_verified=payload.is_verified
+    )
+    await user.insert()
+    return _user_dict(user)
+
+
+@router.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(user_id: str, payload: AdminUserUpdate, admin: User = Depends(get_current_admin)):
+    user = await User.get(PydanticObjectId(user_id))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if payload.full_name is not None:
+        user.full_name = payload.full_name
+    if payload.email is not None:
+        # Check uniqueness if email is changing
+        if payload.email != user.email:
+            existing = await User.find_one(User.email == payload.email)
+            if existing:
+                raise HTTPException(status_code=400, detail="Email already registered")
+        user.email = payload.email
+    if payload.phone is not None:
+        if payload.phone != user.phone:
+            existing = await User.find_one(User.phone == payload.phone)
+            if existing:
+                raise HTTPException(status_code=400, detail="Phone number already registered")
+        user.phone = payload.phone
+    if payload.role is not None:
+        user.role = UserRole(payload.role)
+    if payload.position is not None:
+        user.position = payload.position
+    if payload.department is not None:
+        user.department = payload.department
+    if payload.gender is not None:
+        user.gender = payload.gender
+    if payload.is_active is not None:
+        user.is_active = payload.is_active
+    if payload.is_verified is not None:
+        user.is_verified = payload.is_verified
+
+    await user.save()
+    return _user_dict(user)
+
+
+@router.delete("/users/{user_id}", status_code=204)
+async def delete_user(user_id: str, admin: User = Depends(get_current_admin)):
+    user = await User.get(PydanticObjectId(user_id))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # If user is a driver, we might need to handle Driver record too
+    if user.role == UserRole.driver:
+        driver = await Driver.find_one(Driver.user_id == user.id)
+        if driver:
+            # Delete vehicle too?
+            vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
+            if vehicle:
+                await vehicle.delete()
+            await driver.delete()
+
+    await user.delete()
+    return None

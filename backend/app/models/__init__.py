@@ -1,4 +1,3 @@
-from __future__ import annotations
 
 import enum
 from datetime import datetime, timezone
@@ -13,6 +12,7 @@ from pydantic import Field
 class UserRole(str, enum.Enum):
     passenger = "passenger"
     driver = "driver"
+    staff = "staff"
     admin = "admin"
 
 
@@ -84,6 +84,8 @@ class User(Document):
     phone: Indexed(str, unique=True)  # type: ignore
     hashed_password: str
     role: UserRole = UserRole.passenger
+    position: Optional[str] = None
+    department: Optional[str] = None
     preferred_mode: Optional[RideMode] = RideMode.normal
     gender: Optional[Gender] = Gender.male
     profile_photo: Optional[str] = None

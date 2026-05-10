@@ -26,8 +26,6 @@ async def find_nearest_driver(pickup_lat: float, pickup_lng: float, mode: str) -
             continue
         if mode == "pink" and user.gender != Gender.female:
             continue
-        if mode != "pink" and user.gender != Gender.male:
-            continue
         certified = driver.certified_modes or []
         if mode not in certified and mode != "normal":
             continue

@@ -30,6 +30,8 @@ async def seed_dashboard_data():
             "license_number": "D12-34-567890",
             "status": "approved",
             "is_online": True,
+            "current_latitude": 22.3,
+            "current_longitude": 73.19,
             "average_rating": 4.9,
             "today_rides": 12,
             "today_earnings": 3240.0,
@@ -45,7 +47,9 @@ async def seed_dashboard_data():
             "today_rides": 12,
             "today_earnings": 3240.0,
             "acceptance_rate": 94.0,
-            "is_online": True
+            "is_online": True,
+            "current_latitude": 22.3,
+            "current_longitude": 73.19
         }})
 
     # 2. Insert the 4 ride requests from the image

@@ -1,4 +1,5 @@
 from __future__ import annotations
+print("MAIN STARTING")
 
 from contextlib import asynccontextmanager
 
@@ -128,3 +129,13 @@ def get_modes():
             "icon": "elderly",
         },
     ]
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

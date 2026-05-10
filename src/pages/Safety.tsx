@@ -410,7 +410,7 @@ const Safety = () => {
                                     <div key={contact._id} className="flex items-center justify-between bg-card/60 border border-border/50 p-6 rounded-3xl transition-all hover:border-primary/20 hover:bg-white/80 group">
                                         <div className="flex items-center gap-4">
                                             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/5 text-primary text-xl font-black relative overflow-hidden">
-                                                {contact.name.charAt(0)}
+                                                {contact?.name?.charAt(0) || "?"}
                                                 {contact.is_primary && (
                                                     <div className="absolute top-0 right-0 h-2 w-2 bg-pink-500 rounded-full border border-white shadow-[0_0_8px_rgba(236,72,153,0.8)]" />
                                                 )}

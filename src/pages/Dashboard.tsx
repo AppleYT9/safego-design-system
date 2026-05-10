@@ -175,10 +175,10 @@ const Dashboard = () => {
       toast.error("An error occurred");
     }
   };
-  
+
   const handleTriggerSOS = async () => {
     const primaryContact = contacts.find(c => c.is_primary) || contacts[0];
-    
+
     if (!primaryContact) {
       toast.error("No emergency contacts found! Please add one in the Emergency Contacts tab.");
       setActiveTab("Emergency Contacts");
@@ -186,16 +186,16 @@ const Dashboard = () => {
     }
 
     const toastId = toast.loading(`Triggering SOS Alert to ${primaryContact.name}...`);
-    
+
     try {
       // Simulate API call to send SOS
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       toast.success(`SOS Alert sent successfully to ${primaryContact.name} (${primaryContact.phone})! Emergency services have been notified.`, {
         id: toastId,
         duration: 5000
       });
-      
+
       // Add a notification to the log locally for immediate feedback
       const newNotif = {
         _id: `sos-${Math.random().toString(36).substring(2, 6)}`,
@@ -205,7 +205,7 @@ const Dashboard = () => {
         created_at: new Date().toISOString()
       };
       setNotifications(prev => [newNotif, ...prev]);
-      
+
     } catch (err) {
       toast.error("Failed to send SOS alert. Please try calling emergency services directly.", { id: toastId });
     }
@@ -399,9 +399,12 @@ const Dashboard = () => {
           ))}
         </nav>
         <div className="mt-auto pt-4 border-t border-border/50">
-          <Link to="/home" className="flex items-center justify-center gap-3 rounded-xl bg-[#ef4444] hover:bg-[#dc2626] px-3 py-3 text-sm font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.25)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] active:scale-[0.97]">
+          <button 
+            onClick={() => { localStorage.removeItem("token"); navigate("/home"); }}
+            className="flex items-center justify-center gap-3 rounded-xl bg-[#ef4444] hover:bg-[#dc2626] px-3 py-3 text-sm font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.25)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] active:scale-[0.97] w-full"
+          >
             <LogOut size={18} /> Logout
-          </Link>
+          </button>
         </div>
       </aside>
 
@@ -413,36 +416,36 @@ const Dashboard = () => {
             <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
           </div>
           <div className="flex items-center gap-4">
-             {/* Small network preview */}
-             <div className="hidden md:flex flex-col items-end mr-2">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Trusted Network</span>
-                <div className="flex -space-x-2">
-                  {contacts.slice(0, 4).map((c, i) => (
-                    <div key={i} className="h-8 w-8 rounded-full border-2 border-background bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shadow-sm" title={c.name}>
-                      {c.name[0]}
-                    </div>
-                  ))}
-                  {contacts.length > 4 && (
-                    <div className="h-8 w-8 rounded-full border-2 border-background bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                      +{contacts.length - 4}
-                    </div>
-                  )}
-                  {contacts.length === 0 && (
-                    <div className="text-[10px] text-muted-foreground italic">No contacts linked</div>
-                  )}
-                </div>
-             </div>
-             
-             <button 
-               onClick={handleTriggerSOS}
-               className="flex items-center gap-3 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-6 py-3 text-sm font-black text-white transition-all shadow-[0_8px_16px_rgba(239,68,68,0.25)] hover:shadow-[0_12px_24px_rgba(239,68,68,0.4)] active:scale-95 group"
-             >
-               <div className="relative">
-                 <div className="absolute inset-0 rounded-full bg-white animate-ping opacity-20"></div>
-                 <Shield size={18} className="relative z-10" />
-               </div>
-               <span className="tracking-widest">TRIGGER SOS</span>
-             </button>
+            {/* Small network preview */}
+            <div className="hidden md:flex flex-col items-end mr-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Trusted Network</span>
+              <div className="flex -space-x-2">
+                {contacts.slice(0, 4).map((c, i) => (
+                  <div key={i} className="h-8 w-8 rounded-full border-2 border-background bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shadow-sm" title={c.name}>
+                    {c?.name?.[0] || "?"}
+                  </div>
+                ))}
+                {contacts.length > 4 && (
+                  <div className="h-8 w-8 rounded-full border-2 border-background bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                    +{contacts.length - 4}
+                  </div>
+                )}
+                {contacts.length === 0 && (
+                  <div className="text-[10px] text-muted-foreground italic">No contacts linked</div>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={handleTriggerSOS}
+              className="flex items-center gap-3 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-6 py-3 text-sm font-black text-white transition-all shadow-[0_8px_16px_rgba(239,68,68,0.25)] hover:shadow-[0_12px_24px_rgba(239,68,68,0.4)] active:scale-95 group"
+            >
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-white animate-ping opacity-20"></div>
+                <Shield size={18} className="relative z-10" />
+              </div>
+              <span className="tracking-widest">TRIGGER SOS</span>
+            </button>
           </div>
         </div>
 
@@ -479,7 +482,7 @@ const Dashboard = () => {
             <div className="mt-8">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-display text-lg font-bold text-foreground">Safety Trusted Network</h3>
-                <button 
+                <button
                   onClick={() => setActiveTab("Emergency Contacts")}
                   className="text-xs font-bold text-primary hover:underline"
                 >
@@ -499,7 +502,7 @@ const Dashboard = () => {
                   contacts.slice(0, 5).map((contact, i) => (
                     <div key={i} className="safego-card flex items-center gap-3 p-4 hover:border-primary/30 transition-all">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {contact.name[0]}
+                        {contact?.name?.[0] || "?"}
                       </div>
                       <div className="flex-1 overflow-hidden">
                         <p className="text-sm font-bold text-foreground truncate">{contact.name}</p>
@@ -743,19 +746,19 @@ const Dashboard = () => {
                   contacts.map((contact, i) => (
                     <div key={i} className="flex items-center gap-3 bg-background border border-border rounded-full py-2 pl-2 pr-4 shadow-sm hover:border-primary/30 transition-all">
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                        {contact.name[0]}
+                        {contact?.name?.[0] || "?"}
                       </div>
                       <div className="flex flex-col">
                         <span className="text-xs font-bold text-foreground leading-tight">{contact.name}</span>
                         <span className="text-[10px] text-muted-foreground leading-tight">{contact.phone}</span>
                       </div>
                       {contact.is_primary && (
-                         <div className="ml-1 h-2 w-2 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.6)]" title="Primary SOS"></div>
+                        <div className="ml-1 h-2 w-2 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.6)]" title="Primary SOS"></div>
                       )}
                     </div>
                   ))
                 )}
-                <button 
+                <button
                   onClick={() => setActiveTab("Emergency Contacts")}
                   className="flex items-center gap-2 bg-secondary hover:bg-primary/10 text-muted-foreground hover:text-primary border border-border hover:border-primary/30 rounded-full py-2 px-4 shadow-sm transition-all group"
                 >

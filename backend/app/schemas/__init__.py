@@ -35,6 +35,8 @@ class UserResponse(BaseModel):
     email: str
     phone: str
     role: str
+    position: Optional[str] = None
+    department: Optional[str] = None
     preferred_mode: Optional[str] = None
     gender: Optional[str] = None
     profile_photo: Optional[str] = None
@@ -368,6 +370,31 @@ class DocumentReview(BaseModel):
 
 class UserToggleActive(BaseModel):
     is_active: bool
+
+
+class AdminUserCreate(BaseModel):
+    full_name: str
+    email: str
+    phone: str
+    password: str
+    role: str = "passenger"
+    position: Optional[str] = None
+    department: Optional[str] = None
+    gender: str = "male"
+    is_active: bool = True
+    is_verified: bool = False
+
+
+class AdminUserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    role: Optional[str] = None
+    position: Optional[str] = None
+    department: Optional[str] = None
+    gender: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_verified: Optional[bool] = None
 
 
 # ==================== VOICE & SOS TRIGGER ====================

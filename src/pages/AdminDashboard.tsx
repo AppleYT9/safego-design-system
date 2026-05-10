@@ -1,432 +1,313 @@
 import { SafeGoLogo } from "@/components/SafeGoLogo";
-import { StatsCard } from "@/components/StatsCard";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  LayoutDashboard, Users, Car, MapPin, AlertTriangle, Settings, LogOut,
-  Eye, Check, X, Bell, Navigation, Search, Filter, ShieldCheck, Clock,
-  MoreVertical, ShieldAlert, Phone, Mail, Map, Download, Save, Trash2,
-  ChevronRight, ArrowUpRight, ArrowDownRight, Globe, Shield, Lock
+  LayoutDashboard, Users, Car, MapPin, Settings, LogOut,
+  Check, X, Bell, Navigation, Search, MoreVertical, ShieldAlert, Map, 
+  Download, FileText, Star, Activity, UserCheck, ShieldCheck, Layers, 
+  ArrowUpRight, ChevronRight, Zap, Edit2, Trash2, UserPlus, Save, AlertCircle,
+  BarChart3, PieChart as PieChartIcon, History, Shield, Info, Globe, 
+  Lock, Mail, Phone, User as UserIcon, Loader2, Wifi, WifiOff, Database
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell
+  XAxis, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, YAxis
 } from "recharts";
 
 type AdminTab = "dashboard" | "users" | "drivers" | "live-rides" | "alerts" | "settings";
 
-const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" as AdminTab },
-  { icon: Users, label: "Users", id: "users" as AdminTab },
-  { icon: Car, label: "Drivers", id: "drivers" as AdminTab },
-  { icon: MapPin, label: "Live Rides", id: "live-rides" as AdminTab },
-  { icon: AlertTriangle, label: "Safety Alerts", id: "alerts" as AdminTab },
-  { icon: Settings, label: "Settings", id: "settings" as AdminTab },
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+const navGroups = [
+  {
+    label: "Main",
+    items: [
+      { icon: LayoutDashboard, label: "Intelligence", id: "dashboard" as AdminTab },
+      { icon: MapPin, label: "Live Matrix", id: "live-rides" as AdminTab },
+    ]
+  },
+  {
+    label: "Management",
+    items: [
+      { icon: Users, label: "Identity Hub", id: "users" as AdminTab },
+      { icon: Car, label: "Fleet Assets", id: "drivers" as AdminTab },
+    ]
+  },
+  {
+    label: "Security",
+    items: [
+      { icon: ShieldAlert, label: "Safety Log", id: "alerts" as AdminTab },
+      { icon: Settings, label: "Core System", id: "settings" as AdminTab },
+    ]
+  }
 ];
 
-const barData = [
-  { mode: "Normal", rides: 420 },
-  { mode: "Pink", rides: 310 },
-  { mode: "PWD", rides: 180 },
-  { mode: "Elderly", rides: 240 },
-];
+// --- PREMIUM SaaS UI COMPONENTS ---
 
-const lineData = [
-  { month: "Jan", score: 88 }, { month: "Feb", score: 90 }, { month: "Mar", score: 92 },
-  { month: "Apr", score: 91 }, { month: "May", score: 94 }, { month: "Jun", score: 96 },
-];
+const Card = ({ children, className = "", noPadding = false }: any) => (
+  <div className={`bg-white border border-slate-100 rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] ${noPadding ? "" : "p-8"} ${className}`}>
+    {children}
+  </div>
+);
 
-const initialPendingDrivers = [
-  { name: "Carlos M.", docs: "4/4", date: "Mar 7, 2025", plate: "ABC-123", rating: 4.8 },
-  { name: "Anna L.", docs: "3/4", date: "Mar 6, 2025", plate: "XYZ-789", rating: 4.5 },
-];
-
-const initialAlerts = [
-  { severity: "Critical", time: "2 min ago", location: "Makati Ave", id: "SOS-2891", type: "Panic Button", user: "Maria S." },
-  { severity: "Moderate", time: "18 min ago", location: "QC Circle", id: "SOS-2890", type: "Route Deviation", user: "John R." },
-  { severity: "Low", time: "45 min ago", location: "BGC Stopover", id: "SOS-2889", type: "Extended Stop", user: "David L." },
-];
-
-const initialLiveRides = [
-  { id: "R-4521", passenger: "Maria S.", mode: "Pink", driver: "Ana M.", route: "SM → BGC", status: "In Progress", lat: 14.59, lng: 121.02 },
-  { id: "R-4520", passenger: "David L.", mode: "PWD", driver: "James D.", route: "Home → Hospital", status: "Completed", lat: 14.58, lng: 121.05 },
-  { id: "R-4519", passenger: "John R.", mode: "Normal", driver: "Carlos M.", route: "Makati → QC", status: "In Progress", lat: 14.55, lng: 121.01 },
-];
-
-const initialUsersList = [
-  { id: "U-101", name: "Sarah Jenkins", email: "sarah.j@email.com", rides: 42, joined: "Jan 12, 2024", status: "Active" },
-  { id: "U-102", name: "Mark Wilson", email: "m.wilson@email.com", rides: 12, joined: "Feb 05, 2024", status: "Active" },
-  { id: "U-103", name: "Eliza Smith", email: "eliza.s@email.com", rides: 8, joined: "Mar 01, 2024", status: "Inactive" },
-];
+const Modal = ({ isOpen, onClose, title, children }: any) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="px-10 py-8 flex justify-between items-center border-b border-slate-50">
+          <h2 className="text-2xl font-display font-bold text-slate-900">{title}</h2>
+          <button onClick={onClose} className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 transition-all"><X size={20} /></button>
+        </div>
+        <div className="p-10">{children}</div>
+      </div>
+    </div>
+  );
+};
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [liveRides, setLiveRides] = useState(initialLiveRides);
-  const [pendingDrivers, setPendingDrivers] = useState(initialPendingDrivers);
-  const [showNotificationTray, setShowNotificationTray] = useState(false);
+  const [stats, setStats] = useState<any>(null);
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isBackendAlive, setIsBackendAlive] = useState<boolean | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // MODALS
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any | null>(null);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  
+  const [newUser, setNewUser] = useState({
+    full_name: "", email: "", phone: "", password: "", role: "passenger",
+    position: "Staff", department: "Operations", gender: "other",
+    is_active: true, is_verified: true
+  });
+
   const navigate = useNavigate();
 
-  const handleApproveDriver = (name: string) => {
-    setPendingDrivers(prev => prev.filter(d => d.name !== name));
-    // Optionally add a notification for the approval
-    const note = {
-      id: Date.now(),
-      title: "Driver Approved",
-      message: `${name} has been successfully verified and added to the fleet.`,
-      time: "Just now",
-      icon: Check,
-      color: "text-green-500"
-    };
-    setNotifications(prev => [note, ...prev]);
+  const checkHealth = async () => {
+    try {
+      const res = await fetch(`${API_URL}/`);
+      setIsBackendAlive(res.ok);
+    } catch (err) {
+      setIsBackendAlive(false);
+    }
   };
 
-  const handleRejectDriver = (name: string) => {
-    setPendingDrivers(prev => prev.filter(d => d.name !== name));
+  const fetchStats = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/stats`, { 
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } 
+      });
+      if (res.ok) setStats(await res.json());
+    } catch (err) {}
+  };
+
+  const fetchUsers = async () => {
+    setIsSearching(true);
+    try {
+      const q = searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : "";
+      const res = await fetch(`${API_URL}/api/admin/users${q}`, { 
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } 
+      });
+      if (res.ok) setUsersList(await res.json());
+    } catch (err) {} finally {
+      setIsSearching(false);
+    }
+  };
+
+  // INSTANT SEARCH EFFECT
+  useEffect(() => {
+    if (activeTab === "users") {
+      const delayDebounceFn = setTimeout(() => {
+        fetchUsers();
+      }, 300); // 300ms debounce for "on spot" feel
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [searchQuery]);
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setFormError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify(newUser)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setIsCreateUserOpen(false);
+        setNewUser({ full_name: "", email: "", phone: "", password: "", role: "passenger", position: "Staff", department: "Operations", gender: "other", is_active: true, is_verified: true });
+        fetchUsers();
+        fetchStats();
+      } else {
+        setFormError(data.detail || "System rejected identity deployment.");
+      }
+    } catch (err) {
+      setFormError("CONNECTION ERROR: Verify MongoDB and Terminal are active.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${editingUser._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify(editingUser)
+      });
+      if (res.ok) { setIsEditUserOpen(false); fetchUsers(); }
+    } catch (err) {} finally { setIsSubmitting(false); }
+  };
+
+  const handleDeleteUser = async () => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${userToDelete._id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      });
+      if (res.ok) { setIsDeletingUser(false); fetchUsers(); fetchStats(); }
+    } catch (err) {} finally { setIsSubmitting(false); }
   };
 
   useEffect(() => {
-    const checkBookings = () => {
-      const latest = localStorage.getItem("safego_latest_booking");
-      if (latest) {
-        const booking = JSON.parse(latest);
-        if (Date.now() - booking.timestamp < 5000) {
-          addNotification(booking);
-          setLiveRides(prev => [
-            { ...booking, lat: 14.5 + Math.random() * 0.1, lng: 121.0 + Math.random() * 0.1 },
-            ...prev
-          ]);
-          localStorage.removeItem("safego_latest_booking");
-        }
-      }
-    };
-    const interval = setInterval(checkBookings, 1000);
-    window.addEventListener("storage", checkBookings);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("storage", checkBookings);
-    };
-  }, []);
-
-  const addNotification = (booking: any) => {
-    const newNote = {
-      id: Date.now(),
-      title: "New Ride Booked",
-      message: `${booking.passenger} just booked a ${booking.mode} ride.`,
-      time: "Just now",
-      icon: Navigation,
-      color: "text-primary"
-    };
-    setNotifications(prev => [newNote, ...prev]);
-    setShowNotificationTray(true);
-    setTimeout(() => setShowNotificationTray(false), 5000);
-  };
-
-  const renderDashboard = () => (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Overview</h1>
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <button onClick={() => setShowNotificationTray(!showNotificationTray)} className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background hover:bg-secondary transition-all">
-              <Bell size={20} className="text-muted-foreground" />
-              {notifications.length > 0 && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white ring-2 ring-background">{notifications.length}</span>}
-            </button>
-            {showNotificationTray && (
-              <div className="absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-2xl border border-border bg-background shadow-2xl animate-in fade-in zoom-in-95">
-                <div className="flex items-center justify-between border-b border-border p-4 bg-secondary/30">
-                  <h3 className="text-sm font-bold text-foreground">Notifications</h3>
-                  <button onClick={() => setNotifications([])} className="text-xs font-semibold text-primary hover:underline">Clear all</button>
-                </div>
-                <div className="max-h-96 overflow-y-auto p-2">
-                  {notifications.length > 0 ? (
-                    notifications.map(n => (
-                      <div key={n.id} className="flex gap-4 p-3 rounded-xl hover:bg-secondary/50 transition-colors border-b border-border last:border-0 text-left">
-                        <div className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 ${n.color}`}><n.icon size={16} /></div>
-                        <div>
-                          <p className="text-sm font-bold text-foreground">{n.title}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
-                          <p className="text-[10px] font-medium text-muted-foreground mt-1 opacity-60">{n.time}</p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-8 text-center"><p className="text-sm text-muted-foreground">No new notifications</p></div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-          <button onClick={() => setActiveTab("live-rides")} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all shadow-lg shadow-primary/20">View Live Map</button>
-        </div>
-      </div>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard icon={Users} value="12,450" label="Total Users" iconColor="hsl(var(--purple))" iconBg="hsl(var(--purple-light))" />
-        <StatsCard icon={Car} value="3,200" label="Active Drivers" />
-        <StatsCard icon={MapPin} value={liveRides.length.toString()} label="Live Rides" iconColor="#F59E0B" iconBg="#FEF3C7" />
-        <StatsCard icon={AlertTriangle} value="3" label="Safety Alerts" iconColor="hsl(var(--destructive))" iconBg="hsl(0 84% 60% / 0.1)" />
-      </div>
-
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-background p-6">
-          <h3 className="font-display text-lg font-bold text-foreground">Pending Driver Approvals</h3>
-          <div className="mt-4 flex flex-col gap-3">
-            {pendingDrivers.length > 0 ? pendingDrivers.map((d) => (
-              <div key={d.name} className="flex items-center justify-between rounded-xl border border-border p-4 hover:bg-secondary/20 transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary font-bold text-sm text-foreground">
-                    {d.name.split(" ").map(n => n[0]).join("")}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{d.name}</p>
-                    <p className="text-xs text-muted-foreground">Docs: {d.docs} · {d.date}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleApproveDriver(d.name)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
-                  >
-                    <Check size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleRejectDriver(d.name)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              </div>
-            )) : (
-              <div className="py-8 text-center border-2 border-dashed border-border rounded-xl">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">No pending approvals</p>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="rounded-2xl border border-border bg-background p-6">
-          <h3 className="font-display text-lg font-bold text-foreground">Recent Safety Alerts</h3>
-          <div className="mt-4 flex flex-col gap-3">
-            {initialAlerts.slice(0, 2).map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded-xl border border-border p-4 hover:bg-secondary/20 transition-all">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${a.severity === "Critical" ? "bg-destructive/10 text-destructive" : "bg-amber-100 text-amber-700"}`}>{a.severity}</span>
-                    <span className="text-xs text-muted-foreground">{a.time}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-foreground">{a.type} · {a.user}</p>
-                </div>
-                <button onClick={() => setActiveTab("alerts")} className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary transition-colors"><Eye size={12} /> View</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-background p-6">
-          <h3 className="font-display text-lg font-bold text-foreground">Ride Volume by Mode</h3>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barData}>
-                <XAxis dataKey="mode" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }} cursor={{ fill: "rgba(0,0,0,0.05)" }} />
-                <Bar dataKey="rides" radius={[8, 8, 0, 0]} fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        <div className="rounded-2xl border border-border bg-background p-6">
-          <h3 className="font-display text-lg font-bold text-foreground">Monthly Safety Score</h3>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={lineData}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <YAxis domain={[80, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }} />
-                <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ r: 4, fill: "hsl(var(--primary))", stroke: "white" }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderUsers = () => (
-    <div className="animate-in fade-in slide-in-from-right-4 duration-700">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-2xl font-bold text-foreground">User Management</h1>
-        <div className="flex gap-3">
-          <div className="relative"><Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" /><input placeholder="Search users..." className="h-10 w-64 rounded-xl border border-border bg-background pl-10 pr-4 text-xs font-bold outline-none focus:ring-2 ring-primary/20" /></div>
-          <button className="flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-xs font-bold hover:bg-secondary transition-all"><Filter size={14} /> Filter</button>
-        </div>
-      </div>
-      <div className="rounded-[2rem] border border-border bg-background overflow-hidden shadow-sm">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-border bg-secondary/20 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              <th className="p-5">User</th><th className="p-5">Joined</th><th className="p-5">Total Rides</th><th className="p-5">Status</th><th className="p-5">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {initialUsersList.map(u => (
-              <tr key={u.id} className="hover:bg-secondary/30 transition-colors">
-                <td className="p-5"><div className="flex items-center gap-3"><div className="h-9 w-9 bg-primary/10 text-primary rounded-full flex items-center justify-center font-bold text-sm">{u.name[0]}</div><div><p className="text-sm font-bold">{u.name}</p><p className="text-[11px] text-muted-foreground">{u.email}</p></div></div></td>
-                <td className="p-5 text-sm text-muted-foreground">{u.joined}</td>
-                <td className="p-5 text-sm font-bold">{u.rides}</td>
-                <td className="p-5"><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${u.status === "Active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>{u.status}</span></td>
-                <td className="p-5"><button className="p-2 hover:bg-secondary rounded-lg"><MoreVertical size={16} /></button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const renderDrivers = () => (
-    <div className="animate-in fade-in slide-in-from-left-4 duration-700">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-2xl font-bold text-foreground">Fleet Control</h1>
-        <button className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white shadow-lg shadow-primary/20">+ Add New Driver</button>
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        {initialPendingDrivers.map(d => (
-          <div key={d.name} className="p-6 rounded-[2rem] border border-border bg-background group hover:border-primary transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-secondary rounded-2xl flex items-center justify-center font-black text-lg">{d.name[0]}</div>
-                <div><h4 className="font-bold text-foreground">{d.name}</h4><p className="text-xs text-muted-foreground">Vehicle: {d.plate}</p></div>
-              </div>
-              <span className="h-10 w-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-bold text-xs">⭐ {d.rating}</span>
-            </div>
-            <div className="flex gap-2">
-              <button className="flex-1 rounded-xl bg-secondary py-2 text-xs font-bold hover:bg-primary hover:text-white transition-all">View Dossier</button>
-              <button className="rounded-xl border border-border px-3 py-2"><Mail size={16} /></button>
-              <button className="rounded-xl border border-border px-3 py-2 text-red-500"><Trash2 size={16} /></button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderAlertsList = () => (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-2xl font-bold text-foreground">Safety Command Log</h1>
-        <span className="flex items-center gap-2 rounded-full bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-600 border border-red-500/20"><ShieldAlert size={14} /> 3 Active Alerts</span>
-      </div>
-      <div className="space-y-4">
-        {initialAlerts.map(a => (
-          <div key={a.id} className={`p-6 rounded-[2.5rem] border bg-background flex flex-wrap items-center justify-between gap-6 transition-all hover:scale-[1.01] ${a.severity === "Critical" ? "border-red-500/30" : "border-border"}`}>
-            <div className="flex items-center gap-6">
-              <div className={`h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg ${a.severity === "Critical" ? "bg-red-500 text-white" : "bg-amber-100 text-amber-600"}`}><ShieldAlert size={28} /></div>
-              <div>
-                <h4 className="text-lg font-black text-foreground">{a.type}</h4>
-                <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase opacity-60"><span>{a.id}</span><span>{a.time}</span><span>{a.user}</span></div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right hidden sm:block"><p className="text-sm font-bold">{a.location}</p><p className="text-[10px] text-muted-foreground">Reported from Device</p></div>
-              <button className="rounded-2xl bg-foreground text-background px-6 py-3 text-sm font-black hover:bg-primary transition-all">INTERSCEPT</button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderSettings = () => (
-    <div className="animate-in fade-in slide-in-from-top-4 duration-700 max-w-2xl">
-      <h1 className="font-display text-2xl font-bold text-foreground mb-8">System Configuration</h1>
-      <div className="space-y-6">
-        <div className="p-8 rounded-[2.5rem] border border-border bg-background shadow-sm">
-          <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-6">General Access</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/30"><div className="flex items-center gap-3"><Globe size={18} /><span>Multi-Region Support</span></div><button className="h-6 w-12 rounded-full bg-primary relative"><div className="absolute right-1 top-1 h-4 w-4 rounded-full bg-white" /></button></div>
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/30"><div className="flex items-center gap-3"><Lock size={18} /><span>Two-Factor Authentication</span></div><button className="h-6 w-12 rounded-full bg-slate-300 relative"><div className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white" /></button></div>
-          </div>
-        </div>
-        <div className="p-8 rounded-[2.5rem] border border-border bg-background shadow-sm">
-          <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-6">Security & Protocols</h3>
-          <button className="w-full rounded-2xl bg-primary py-4 text-sm font-black text-white hover:brightness-110 flex items-center justify-center gap-3"><Save size={18} /> SAVE PROTOCOLS</button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderLiveRidesMap = () => (
-    <div className="animate-in fade-in slide-in-from-right-4 duration-700 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-6">
-        <div><h1 className="font-display text-2xl font-bold text-foreground">Fleet Monitor</h1><p className="text-sm text-muted-foreground mt-1">Real-time tracking of active trips.</p></div>
-        <div className="flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-[10px] font-black"><span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> LIVE SYSTEM ACTIVE</div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[600px]">
-        <div className="lg:col-span-2 relative overflow-hidden rounded-[2.5rem] border border-border bg-[#0f172a] shadow-inner group">
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "30px 30px" }} />
-          {liveRides.map((ride, i) => (
-            <div key={ride.id + i} className="absolute flex flex-col items-center gap-1 transition-all duration-[3s] ease-in-out" style={{ top: `${(ride.lat % 1) * 800 + 40}%`, left: `${(ride.lng % 1) * 800 + 40}%` }}>
-              <div className="group relative">
-                <div className="absolute -inset-1 rounded-full bg-primary/20 animate-ping" />
-                <div className="h-8 w-8 rounded-full border-2 border-white bg-primary flex items-center justify-center text-white cursor-pointer hover:scale-125 transition-all"><Car size={14} /></div>
-                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-background border border-border px-3 py-1.5 rounded-xl text-[10px] font-black opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">{ride.passenger}</div>
-              </div>
-            </div>
-          ))}
-          <div className="absolute top-6 left-6 right-6 flex gap-4"><div className="flex-1 relative"><Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" /><input placeholder="Search ride..." className="w-full bg-background/80 backdrop-blur border border-border rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold shadow-xl outline-none" /></div></div>
-          <div className="absolute bottom-6 left-6 flex gap-2"><button className="h-9 w-9 rounded-xl bg-background border border-border flex items-center justify-center shadow-lg"><Map size={16} /></button><button className="h-9 w-9 rounded-xl bg-background border border-border flex items-center justify-center shadow-lg"><Download size={16} /></button></div>
-        </div>
-        <div className="flex flex-col gap-6">
-          <div className="rounded-3xl border border-border bg-background p-6 shadow-sm">
-            <h3 className="font-display text-lg font-bold text-foreground">Fleet Stats</h3>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-secondary/30 border border-border"><p className="text-2xl font-black">{liveRides.length}</p><p className="text-[10px] font-bold text-muted-foreground uppercase">On Trip</p></div>
-              <div className="p-4 rounded-2xl bg-secondary/30 border border-border"><p className="text-2xl font-black">42</p><p className="text-[10px] font-bold text-muted-foreground uppercase">Idle</p></div>
-            </div>
-          </div>
-          <div className="flex-1 rounded-3xl border border-border bg-background p-6 shadow-sm overflow-hidden flex flex-col">
-            <h3 className="font-display text-lg font-bold text-foreground mb-4">Activity Log</h3>
-            <div className="flex-1 overflow-y-auto space-y-3" style={{ scrollbarWidth: "thin" }}>
-              {liveRides.map(r => (
-                <div key={r.id} className="flex gap-3 p-2.5 rounded-xl hover:bg-secondary/40 transition-all border border-transparent hover:border-border">
-                  <div className="h-8 w-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0"><Navigation size={14} /></div>
-                  <div><p className="text-xs font-bold">{r.passenger} <span className="opacity-40 tracking-widest ml-1">{r.mode}</span></p><p className="text-[10px] text-muted-foreground truncate max-w-[140px]">{r.route}</p></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    checkHealth();
+    fetchStats();
+    if (activeTab === "users") fetchUsers();
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
+  }, [activeTab]);
 
   return (
-    <div className="flex min-h-screen bg-secondary/30">
-      <aside className="hidden w-[260px] shrink-0 flex-col bg-[#0b0e14] p-4 lg:flex sticky top-0 h-screen transition-all">
-        <div className="mb-8 px-2 flex flex-col items-center border-b border-white/5 pb-6"><SafeGoLogo size={24} className="[&_span]:text-background [&_svg]:text-primary" /><div className="mt-4 px-3 py-1.5 rounded-full bg-white/5 text-[10px] font-black text-primary/80 uppercase tracking-widest">Command Center</div></div>
-        <nav className="flex flex-col gap-1.5">
-          {navItems.map((item) => (
-            <button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-bold transition-all text-left ${activeTab === item.id ? "bg-primary text-white shadow-xl shadow-primary/20" : "text-slate-400 hover:bg-white/5 hover:text-slate-100"}`}>
-              <item.icon size={19} strokeWidth={activeTab === item.id ? 2.5 : 2} /> {item.label}
-              {activeTab === item.id && <div className="ml-auto h-1.5 w-1.5 rounded-full bg-white" />}
-            </button>
+    <div className="flex h-screen w-full bg-[#f8fafc] text-slate-900 font-sans overflow-hidden">
+      {/* SaaS SIDEBAR */}
+      <aside className="w-[280px] shrink-0 bg-white border-r border-slate-200 flex flex-col p-6 overflow-y-auto">
+        <div className="mb-10 px-4 flex items-center gap-3"><SafeGoLogo size={32} className="[&_span]:text-xl [&_span]:font-black" /></div>
+        <div className="flex-1 space-y-10">
+          {navGroups.map((group) => (
+            <div key={group.label} className="space-y-2">
+              <h4 className="px-4 text-[11px] font-black uppercase tracking-widest text-slate-400">{group.label}</h4>
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all text-sm font-semibold ${activeTab === item.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"}`}><item.icon size={20} />{item.label}</button>
+                ))}
+              </div>
+            </div>
           ))}
-        </nav>
-        <button onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }} className="mt-auto flex items-center gap-3.5 rounded-2xl px-4 py-3.5 text-[13px] font-bold text-red-400 hover:bg-red-400/10 transition-all text-left w-full border border-transparent hover:border-red-400/20"><LogOut size={18} /> Logout Session</button>
+        </div>
+        <div className="mt-auto pt-6 border-t border-slate-100">
+           <div className="px-4 py-3 rounded-2xl bg-slate-50 space-y-2">
+              <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Node Status</span><div className={`h-2.5 w-2.5 rounded-full ${isBackendAlive === true ? 'bg-emerald-500 animate-pulse' : isBackendAlive === false ? 'bg-red-500' : 'bg-slate-300'}`} /></div>
+              <div className="flex items-center gap-2">{isBackendAlive === true ? <Wifi size={14} className="text-emerald-500" /> : <WifiOff size={14} className="text-red-500" />}<span className={`text-[11px] font-bold ${isBackendAlive === true ? 'text-emerald-600' : 'text-red-600'}`}>{isBackendAlive === true ? 'Core Synced' : 'Disconnected'}</span></div>
+           </div>
+           <button onClick={() => { localStorage.removeItem("token"); navigate("/login"); }} className="mt-4 w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all text-sm font-semibold"><LogOut size={20} /> Logout</button>
+        </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto bg-transparent p-6 lg:p-10 relative">
-        {activeTab === "dashboard" && renderDashboard()}
-        {activeTab === "users" && renderUsers()}
-        {activeTab === "drivers" && renderDrivers()}
-        {activeTab === "live-rides" && renderLiveRidesMap()}
-        {activeTab === "alerts" && renderAlertsList()}
-        {activeTab === "settings" && renderSettings()}
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="h-24 bg-white border-b border-slate-200 px-10 flex items-center justify-between shrink-0">
+           <div className="flex items-center gap-6"><h2 className="text-xl font-display font-bold text-slate-900 capitalize">{activeTab.replace("-", " ")}</h2><div className="h-6 w-px bg-slate-100" /><div className="text-[11px] font-black uppercase tracking-widest text-slate-400">SafeGo Console v4.5</div></div>
+           <div className="flex items-center gap-6"><div className="relative"><Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" /><input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Global Search Registry..." className="h-12 w-64 bg-slate-50 rounded-xl pl-12 pr-4 text-xs font-bold outline-none focus:bg-white focus:ring-2 ring-primary/10 transition-all" /></div><button className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 relative"><Bell size={20} /></button><div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-sm">A</div></div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-10 scrollbar-hide">
+           {activeTab === "dashboard" && (
+             <div className="space-y-10 animate-in fade-in duration-700">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                   {[
+                     { label: "Identities", val: stats?.total_users, icon: Users, color: "text-primary", bg: "bg-primary/5" },
+                     { label: "Fleet Hub", val: stats?.total_drivers, icon: Car, color: "text-blue-500", bg: "bg-blue-50" },
+                     { label: "Active Ops", val: stats?.active_rides, icon: Navigation, color: "text-amber-500", bg: "bg-amber-50" },
+                     { label: "SOS Alerts", val: stats?.active_sos_alerts, icon: ShieldAlert, color: "text-red-500", bg: "bg-red-50" }
+                   ].map((s, i) => (
+                     <Card key={i} className="flex flex-col gap-4"><div className={`h-12 w-12 rounded-2xl ${s.bg} ${s.color} flex items-center justify-center`}><s.icon size={24} /></div><div><p className="text-3xl font-display font-bold text-slate-900">{s.val?.toLocaleString() || "0"}</p><p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mt-1">{s.label}</p></div></Card>
+                   ))}
+                </div>
+                <div className="grid gap-8 lg:grid-cols-2">
+                   <Card><h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2"><History size={20} className="text-primary" /> Performance Matrix</h3><div className="h-[300px] w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={[{n:'01',v:400},{n:'02',v:700},{n:'03',v:450},{n:'04',v:900},{n:'05',v:650}]}><defs><linearGradient id="p" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2}/><stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/></linearGradient></defs><Area type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={3} fill="url(#p)" /></AreaChart></ResponsiveContainer></div></Card>
+                   <Card><h3 className="text-lg font-bold text-slate-900 mb-6">Fleet Utilization</h3><div className="h-[300px] w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={[{n:'Normal',v:420},{n:'Pink',v:310},{n:'PWD',v:180},{n:'Elderly',v:240}]}><Bar dataKey="v" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer></div></Card>
+                </div>
+             </div>
+           )}
+
+           {activeTab === "users" && (
+             <div className="space-y-8 animate-in fade-in duration-700">
+                <div className="flex justify-between items-center">
+                   <div><h2 className="text-2xl font-display font-bold text-slate-900">Identity Management</h2><p className="text-sm text-slate-400 mt-1">Manage global identity registry and access layers.</p></div>
+                   <button onClick={() => { setFormError(null); setIsCreateUserOpen(true); }} className="h-12 px-6 rounded-xl bg-primary text-white text-xs font-bold flex items-center gap-2 hover:bg-slate-900 transition-all shadow-lg shadow-primary/20"><UserPlus size={16} /> Create User</button>
+                </div>
+                <Card noPadding className="overflow-hidden">
+                   <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+                      <div className="relative">
+                        <Search size={16} className={`absolute left-4 top-1/2 -translate-y-1/2 ${isSearching ? 'text-primary' : 'text-slate-300'}`} />
+                        <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search Identities..." className="h-10 w-80 bg-white border border-slate-100 rounded-lg pl-10 pr-4 text-xs font-bold outline-none focus:ring-2 ring-primary/10 transition-all" />
+                        {isSearching && <div className="absolute right-4 top-1/2 -translate-y-1/2"><Loader2 size={14} className="animate-spin text-primary" /></div>}
+                      </div>
+                   </div>
+                   <table className="w-full text-left"><thead><tr className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-50"><th className="px-8 py-5">Profile</th><th className="px-8 py-5">Access Layer</th><th className="px-8 py-5">Status</th><th className="px-8 py-5 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-50">
+                      {usersList.length > 0 ? usersList.map(u => (
+                        <tr key={u._id} className="hover:bg-slate-50/30 transition-colors group"><td className="px-8 py-5"><div className="flex items-center gap-4"><div className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-primary">{u.full_name?.[0]}</div><div><p className="text-sm font-bold text-slate-900">{u.full_name}</p><p className="text-[11px] text-slate-400 font-bold">{u.email}</p></div></div></td><td className="px-8 py-5"><span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${u.role === 'admin' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 text-slate-500'}`}>{u.role}</span></td><td className="px-8 py-5"><div className="flex items-center gap-3"><div className={`h-2.5 w-2.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-slate-200'}`} /><span className="text-[11px] font-bold">{u.is_active ? 'Active' : 'Locked'}</span></div></td><td className="px-8 py-5 text-right"><div className="flex justify-end gap-3"><button onClick={() => { setEditingUser(u); setIsEditUserOpen(true); }} className="h-10 w-10 flex items-center justify-center bg-white hover:bg-primary/10 rounded-xl text-slate-400 hover:text-primary transition-all shadow-sm border border-slate-100"><Edit2 size={16} /></button><button onClick={() => { setUserToDelete(u); setIsDeletingUser(true); }} className="h-10 w-10 flex items-center justify-center bg-white hover:bg-red-50 rounded-xl text-slate-400 hover:text-red-500 transition-all shadow-sm border border-slate-100"><Trash2 size={16} /></button></div></td></tr>
+                      )) : (
+                        <tr><td colSpan={4} className="px-8 py-20 text-center text-slate-400 font-bold text-sm">No identities found matching "{searchQuery}"</td></tr>
+                      )}
+                   </tbody></table>
+                </Card>
+             </div>
+           )}
+        </main>
+      </div>
+
+      {/* CREATE MODAL */}
+      <Modal isOpen={isCreateUserOpen} onClose={() => setIsCreateUserOpen(false)} title="Provision New Node">
+         <form onSubmit={handleCreateUser} className="space-y-6">
+            {formError && <div className="p-4 rounded-xl bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-red-100 animate-in slide-in-from-top-2"><AlertCircle size={16} /> {formError}</div>}
+            <div className="grid grid-cols-2 gap-6">
+               <div className="space-y-2"><label className="text-xs font-bold text-slate-500 ml-1">Full Name</label><div className="relative"><UserIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" /><input required value={newUser.full_name} onChange={e => setNewUser({...newUser, full_name: e.target.value})} className="w-full h-12 pl-12 pr-4 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:ring-2 ring-primary/10 outline-none font-bold text-sm transition-all" /></div></div>
+               <div className="space-y-2"><label className="text-xs font-bold text-slate-500 ml-1">Email</label><div className="relative"><Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" /><input required type="email" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} className="w-full h-12 pl-12 pr-4 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:ring-2 ring-primary/10 outline-none font-bold text-sm transition-all" /></div></div>
+               <div className="space-y-2"><label className="text-xs font-bold text-slate-500 ml-1">Phone</label><div className="relative"><Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" /><input required value={newUser.phone} onChange={e => setNewUser({...newUser, phone: e.target.value})} className="w-full h-12 pl-12 pr-4 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:ring-2 ring-primary/10 outline-none font-bold text-sm transition-all" /></div></div>
+               <div className="space-y-2"><label className="text-xs font-bold text-slate-500 ml-1">Secret Key</label><div className="relative"><Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" /><input required type="password" value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} className="w-full h-12 pl-12 pr-4 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:ring-2 ring-primary/10 outline-none font-bold text-sm transition-all" /></div></div>
+               <div className="space-y-2"><label className="text-xs font-bold text-slate-500 ml-1">Role Layer</label><select value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})} className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:ring-2 ring-primary/10 outline-none font-bold text-sm transition-all appearance-none cursor-pointer"><option value="passenger">Passenger (User)</option><option value="staff">Staff</option><option value="admin">Admin</option></select></div>
+               <div className="space-y-2"><label className="text-xs font-bold text-slate-500 ml-1">Gender</label><select value={newUser.gender} onChange={e => setNewUser({...newUser, gender: e.target.value})} className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:ring-2 ring-primary/10 outline-none font-bold text-sm transition-all appearance-none cursor-pointer"><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+            </div>
+            <button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-2xl bg-slate-900 text-white font-bold text-sm shadow-xl hover:bg-primary transition-all flex items-center justify-center gap-3 disabled:opacity-50">
+              {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />} Deploy Identity
+            </button>
+         </form>
+      </Modal>
+
+      {/* EDIT MODAL */}
+      <Modal isOpen={isEditUserOpen} onClose={() => setIsEditUserOpen(false)} title="Update Identity Node">
+         <form onSubmit={handleUpdateUser} className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+               <div className="space-y-2"><label className="text-xs font-bold text-slate-500 ml-1">Full Name</label><input required value={editingUser?.full_name || ""} onChange={e => setEditingUser({...editingUser, full_name: e.target.value})} className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:ring-2 ring-primary/10 outline-none font-bold text-sm transition-all" /></div>
+               <div className="space-y-2"><label className="text-xs font-bold text-slate-500 ml-1">Email</label><input required type="email" value={editingUser?.email || ""} onChange={e => setEditingUser({...editingUser, email: e.target.value})} className="w-full h-12 px-4 rounded-xl bg-slate-50 border border-transparent focus:bg-white focus:ring-2 ring-primary/10 outline-none font-bold text-sm transition-all" /></div>
+               <div className="space-y-2"><label className="text-xs font-bold text-slate-500 ml-1">Status</label><div className="flex gap-4"><button type="button" onClick={() => setEditingUser({...editingUser, is_active: true})} className={`flex-1 h-12 rounded-xl font-bold text-xs transition-all ${editingUser?.is_active ? 'bg-primary text-white' : 'bg-slate-50 text-slate-400'}`}>Active</button><button type="button" onClick={() => setEditingUser({...editingUser, is_active: false})} className={`flex-1 h-12 rounded-xl font-bold text-xs transition-all ${!editingUser?.is_active ? 'bg-red-500 text-white' : 'bg-slate-50 text-slate-400'}`}>Locked</button></div></div>
+            </div>
+            <button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-2xl bg-slate-900 text-white font-bold text-sm shadow-xl hover:bg-primary transition-all flex items-center justify-center gap-3 disabled:opacity-50">
+              {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Commit Changes
+            </button>
+         </form>
+      </Modal>
+
+      {/* DELETE MODAL */}
+      <Modal isOpen={isDeletingUser} onClose={() => setIsDeletingUser(false)} title="De-provision Account">
+         <div className="text-center space-y-6">
+            <div className="h-20 w-20 rounded-3xl bg-red-50 text-red-500 mx-auto flex items-center justify-center"><AlertCircle size={40} /></div>
+            <p className="text-lg font-bold text-slate-900">Permanently delete {userToDelete?.full_name}?</p>
+            <div className="flex gap-4"><button onClick={() => setIsDeletingUser(false)} className="flex-1 h-12 rounded-xl bg-slate-100 text-slate-900 font-bold text-sm">Cancel</button><button onClick={handleDeleteUser} disabled={isSubmitting} className="flex-1 h-12 rounded-xl bg-red-500 text-white font-bold text-sm shadow-lg shadow-red-100 disabled:opacity-50">Delete Identity</button></div>
+         </div>
+      </Modal>
     </div>
   );
 };

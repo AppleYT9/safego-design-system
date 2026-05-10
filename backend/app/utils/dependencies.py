@@ -68,10 +68,10 @@ async def get_current_driver(user: User = Depends(get_current_user)) -> User:
 
 
 async def get_current_admin(user: User = Depends(get_current_user)) -> User:
-    if user.role != UserRole.admin:
+    if user.role not in (UserRole.admin, UserRole.staff):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
+            detail="Admin or Staff access required",
         )
     return user
 
