@@ -14,6 +14,7 @@ import {
   XAxis, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, YAxis
 } from "recharts";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 type AdminTab = "dashboard" | "users" | "drivers" | "live-rides" | "alerts" | "settings";
 
@@ -106,8 +107,41 @@ const AdminDashboard = () => {
   const [isDeletingUser, setIsDeletingUser] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any | null>(null);
 
+  const [selectedLog, setSelectedLog] = useState<any | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fluxRange, setFluxRange] = useState('1H');
+
+  const getFluxData = () => {
+    switch (fluxRange) {
+      case '6H':
+        return [
+          { n: '02:00', demand: 320, capacity: 500 }, { n: '03:00', demand: 450, capacity: 600 },
+          { n: '04:00', demand: 800, capacity: 900 }, { n: '05:00', demand: 600, capacity: 800 },
+          { n: '06:00', demand: 400, capacity: 550 }, { n: '07:00', demand: 550, capacity: 700 }
+        ];
+      case '24H':
+        return [
+          { n: 'Mon', demand: 1200, capacity: 1500 }, { n: 'Tue', demand: 1400, capacity: 1600 },
+          { n: 'Wed', demand: 1100, capacity: 1400 }, { n: 'Thu', demand: 1600, capacity: 1800 },
+          { n: 'Fri', demand: 2100, capacity: 2300 }, { n: 'Sat', demand: 1800, capacity: 2000 },
+          { n: 'Sun', demand: 1500, capacity: 1700 }
+        ];
+      case '7D':
+        return [
+          { n: 'Week 1', demand: 8400, capacity: 10000 }, { n: 'Week 2', demand: 9200, capacity: 11000 },
+          { n: 'Week 3', demand: 7800, capacity: 9500 }, { n: 'Week 4', demand: 10500, capacity: 12000 }
+        ];
+      default:
+        return [
+          { n: '08:00', demand: 400, capacity: 640 }, { n: '08:15', demand: 700, capacity: 850 },
+          { n: '08:30', demand: 450, capacity: 600 }, { n: '08:45', demand: 900, capacity: 1050 },
+          { n: '09:00', demand: 650, capacity: 800 }, { n: '09:15', demand: 1100, capacity: 1250 },
+          { n: '09:30', demand: 850, capacity: 950 }
+        ];
+    }
+  };
 
   const [newUser, setNewUser] = useState({
     full_name: "", email: "", phone: "", password: "", role: "passenger",
@@ -234,6 +268,36 @@ const AdminDashboard = () => {
       });
       if (res.ok) { setIsEditUserOpen(false); fetchUsers(); }
     } catch (err) { } finally { setIsSubmitting(false); }
+  };
+
+  const handleResolveSOS = async (alertId: string, status: 'resolved' | 'false_alarm' = 'resolved') => {
+    // If it's a mock ID (like 'sos1'), handle it locally to prevent backend crashes
+    if (alertId.startsWith('sos')) {
+      addNotification("SIMULATION RESOLVED", `Mock Alert #${alertId.toUpperCase()} cleared from local monitor.`, "info");
+      setSosAlerts(prev => prev.filter(a => a._id !== alertId));
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/sos-alerts/${alertId}/resolve?status=${status}`, {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      });
+      if (res.ok) {
+        addNotification("INCIDENT RESOLVED", `Alert #${alertId.slice(-4).toUpperCase()} has been successfully closed.`, "success");
+        fetchSOS();
+        fetchStats();
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(errorData.detail || "Failed to resolve alert.");
+      }
+    } catch (err) {
+      toast.error("CONNECTION LOST: The safety node is unreachable. Retrying sync...");
+      console.error("SOS Resolution Error:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDeleteUser = async () => {
@@ -425,61 +489,187 @@ const AdminDashboard = () => {
 
               {/* CORE INTELLIGENCE CLUSTER */}
               <div className="grid gap-12 lg:grid-cols-12">
-                {/* DYNAMIC TRAFFIC ANALYTICS */}
-                <Card className="lg:col-span-8 p-10 space-y-10 border-slate-100">
-                  <div className="flex justify-between items-center">
+                {/* DYNAMIC TRAFFIC ANALYTICS - SaaS VERSION */}
+                <Card className="lg:col-span-8 p-0 border-slate-100 flex flex-col overflow-hidden">
+                  <div className="p-10 border-b border-slate-50 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                     <div>
-                      <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3"><Activity size={28} className="text-primary" /> Operational Flux</h3>
-                      <p className="text-sm text-slate-400 font-medium mt-1">Real-time network demand and session distribution.</p>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                        <Activity size={28} className="text-primary" />
+                        Operational Flux
+                      </h3>
+                      <p className="text-sm text-slate-400 font-medium mt-1">Real-time telemetry of mission volume vs. network capacity.</p>
+                    </div>
+                    <div className="flex bg-slate-100 p-1.5 rounded-2xl">
+                      {['1H', '6H', '24H', '7D'].map((range) => (
+                        <button
+                          key={range}
+                          onClick={() => setFluxRange(range)}
+                          className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${fluxRange === range ? 'bg-white text-slate-900 shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                          {range}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="h-[350px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={[
-                        { n: '00:00', v: 400, u: 240 }, { n: '04:00', v: 700, u: 500 },
-                        { n: '08:00', v: 450, u: 300 }, { n: '12:00', v: 900, u: 780 },
-                        { n: '16:00', v: 650, u: 480 }, { n: '20:00', v: 1100, u: 850 },
-                        { n: '23:59', v: 850, u: 600 }
-                      ]}>
-                        <defs>
-                          <linearGradient id="p" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <Area type="monotone" dataKey="v" stroke="hsl(var(--primary))" strokeWidth={5} fill="url(#p)" animationDuration={2000} />
-                      </AreaChart>
-                    </ResponsiveContainer>
+
+                  <div className="p-10 bg-gradient-to-b from-white to-slate-50/50">
+                    <div className="grid grid-cols-3 gap-8 mb-10">
+                      {[
+                        { label: 'Avg Latency', val: fluxRange === '7D' ? '14.8ms' : '12.4ms', trend: 'Optimal', color: 'text-emerald-500' },
+                        { label: 'Throughput', val: fluxRange === '7D' ? '18.2 TB' : '2.4 GB/s', trend: '+14.2%', color: 'text-primary' },
+                        { label: 'Active Nodes', val: fluxRange === '24H' ? '5,821' : '4,102', trend: 'Live', color: 'text-blue-500' }
+                      ].map(m => (
+                        <div key={m.label} className="space-y-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.label}</p>
+                          <div className="flex items-end gap-2">
+                            <span className="text-2xl font-black text-slate-900">{m.val}</span>
+                            <span className={`text-[10px] font-bold mb-1 ${m.color}`}>{m.trend}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="h-[380px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={getFluxData()} barGap={8}>
+                          <XAxis
+                            dataKey="n"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }}
+                            dy={20}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }}
+                            dx={-10}
+                          />
+                          <Tooltip
+                            cursor={{ fill: 'rgba(241, 245, 249, 0.5)' }}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 border-b border-white/5 pb-2">Range Sync: {payload[0].payload.n}</p>
+                                    <div className="space-y-2">
+                                      <div className="flex items-center justify-between gap-8">
+                                        <div className="flex items-center gap-2">
+                                          <div className="h-2 w-2 rounded-full bg-primary" />
+                                          <span className="text-[10px] font-bold text-white/70">Demand</span>
+                                        </div>
+                                        <span className="text-xs font-black text-white">{payload[0].value}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-8">
+                                        <div className="flex items-center gap-2">
+                                          <div className="h-2 w-2 rounded-full bg-slate-700" />
+                                          <span className="text-[10px] font-bold text-white/70">Capacity</span>
+                                        </div>
+                                        <span className="text-xs font-black text-white">{payload[1].value}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Bar
+                            dataKey="demand"
+                            fill="hsl(var(--primary))"
+                            radius={[6, 6, 0, 0]}
+                            barSize={fluxRange === '7D' ? 40 : 20}
+                          />
+                          <Bar
+                            dataKey="capacity"
+                            fill="#e2e8f0"
+                            radius={[6, 6, 0, 0]}
+                            barSize={fluxRange === '7D' ? 40 : 20}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </Card>
 
-                {/* NETWORK PULSE STREAM */}
-                <Card className="lg:col-span-4 p-0 border-slate-100 flex flex-col overflow-hidden bg-slate-900 border-none shadow-2xl shadow-slate-200">
-                  <div className="p-8 border-b border-white/5 flex justify-between items-center">
-                    <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-3"><Globe size={20} className="text-emerald-400" /> Global Incident Monitor</h3>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">Monitoring</span>
+                {/* NETWORK PULSE STREAM - HIGH SaaS VERSION */}
+                <Card className="lg:col-span-4 p-0 border-slate-200/60 flex flex-col overflow-hidden bg-white shadow-2xl shadow-slate-200/50 relative">
+                  <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+                        <Globe size={18} className="animate-spin-slow" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900 tracking-tight">Global Incident Feed</h3>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Real-time Telemetry</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,1)]" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-600">Active Monitoring</span>
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-8 space-y-6 scrollbar-hide">
-                    {/* Map the actual notifications here for real-time visibility */}
-                    {notifications.slice(0, 6).map((log, i) => (
-                      <div key={i} className={`flex gap-4 group cursor-pointer hover:bg-white/5 p-3 rounded-2xl transition-all border ${log.type === 'error' ? 'border-rose-500/20 bg-rose-500/5' : 'border-transparent'}`}>
-                        <div className={`h-2.5 w-2.5 rounded-full mt-1.5 shrink-0 ${log.type === 'error' ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]' : log.type === 'success' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-blue-500'}`} />
-                        <div className="flex-1">
-                          <p className={`text-[12px] font-black uppercase tracking-tight ${log.type === 'error' ? 'text-rose-400' : 'text-white'}`}>{log.title}</p>
-                          <p className="text-[10px] font-medium text-white/40 mt-1 line-clamp-1">{log.description}</p>
-                          <div className="flex justify-between items-center mt-3">
-                            <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Node: {log.id.slice(0, 4)}</span>
-                            <span className="text-[9px] font-medium text-white/10 italic">{log.time}</span>
+
+                  <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide max-h-[500px]">
+                    <AnimatePresence initial={false}>
+                      {notifications.map((log, i) => (
+                        <motion.div
+                          key={log.id}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.4, delay: i * 0.05 }}
+                          onClick={() => setSelectedLog(log)}
+                          className={`p-4 rounded-[1.5rem] transition-all border group relative overflow-hidden cursor-pointer hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] ${log.type === 'error'
+                              ? 'bg-rose-50/50 border-rose-100 hover:border-rose-300'
+                              : log.type === 'success'
+                                ? 'bg-emerald-50/50 border-emerald-100 hover:border-emerald-300'
+                                : 'bg-slate-50/50 border-slate-100 hover:border-primary/20'
+                            }`}
+                        >
+                          {/* Severity Background Glow */}
+                          {log.type === 'error' && (
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-full -mr-10 -mt-10 blur-2xl" />
+                          )}
+
+                          <div className="flex gap-4 relative z-10">
+                            <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center shadow-sm ${log.type === 'error' ? 'bg-rose-500 text-white shadow-rose-200' :
+                                log.type === 'success' ? 'bg-emerald-500 text-white shadow-emerald-200' :
+                                  'bg-slate-900 text-white shadow-slate-200'
+                              }`}>
+                              {log.type === 'error' ? <ShieldAlert size={18} /> :
+                                log.type === 'success' ? <Check size={18} /> :
+                                  <Info size={18} />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start">
+                                <h4 className={`text-[11px] font-black uppercase tracking-tight ${log.type === 'error' ? 'text-rose-600' : 'text-slate-900'
+                                  }`}>{log.title}</h4>
+                                <span className="text-[8px] font-bold text-slate-300 uppercase">{log.time}</span>
+                              </div>
+                              <p className="text-[10px] text-slate-500 font-medium mt-1 leading-relaxed line-clamp-2">
+                                {log.description}
+                              </p>
+                              <div className="mt-3 pt-3 border-t border-slate-200/50 flex items-center justify-between">
+                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">NODE_SYNC_{log.id.slice(0, 4)}</span>
+                                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <span className="text-[8px] font-black text-primary">DRILL DOWN</span>
+                                  <ChevronRight size={10} className="text-primary" />
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    ))}
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
-                  <div className="p-6 bg-white/5 mt-auto">
-                    <button onClick={() => setShowNotifications(true)} className="w-full py-4 rounded-xl bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/20 transition-all border border-white/5">View Full Mission Archive</button>
+
+                  <div className="p-6 bg-slate-50/50 border-t border-slate-100">
+                    <button
+                      onClick={() => setShowNotifications(true)}
+                      className="w-full py-4 rounded-2xl bg-white text-slate-900 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all border border-slate-200 shadow-sm"
+                    >
+                      Audit Full Mission Archive
+                    </button>
                   </div>
                 </Card>
               </div>
@@ -829,98 +1019,156 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <div className="space-y-6">
-                {(sosAlerts.length > 0 ? sosAlerts : [
-                  { _id: 'sos1', severity: 'critical', location_address: 'Corner of Ayala Ave & Paseo de Roxas', user_id: 'USER_9921', ride_id: 'RIDE_882', created_at: new Date().toISOString() },
-                  { _id: 'sos2', severity: 'moderate', location_address: 'Near Gateway Mall, Cubao', user_id: 'USER_1045', ride_id: 'RIDE_441', created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() }
-                ]).map((alert, idx) => (
-                  <Card key={alert._id} className={`p-0 overflow-hidden border-none ring-1 ${alert.severity === 'critical' ? 'ring-rose-200 bg-rose-50/10' : 'ring-orange-200 bg-orange-50/10'} shadow-xl shadow-slate-100`}>
-                    <div className="flex flex-col lg:flex-row">
-                      <div className={`w-full lg:w-2 bg-rose-500 ${alert.severity === 'critical' ? 'bg-rose-500' : 'bg-orange-500'}`} />
-                      <div className="flex-1 p-8">
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
+              <div className="grid gap-8 lg:grid-cols-12">
+                {/* LIVE INCIDENT TABLE - SaaS VERSION */}
+                <div className="lg:col-span-8 space-y-6">
+                  <Card noPadding className="overflow-hidden border-rose-100 shadow-2xl shadow-rose-500/5">
+                    <div className="p-6 bg-rose-50/30 border-b border-rose-100/50 flex justify-between items-center">
+                      <h3 className="text-sm font-black uppercase tracking-widest text-rose-600">Active Incident Matrix</h3>
+                      <div className="flex gap-2">
+                        <span className="px-3 py-1 rounded-full bg-white border border-rose-100 text-[9px] font-bold text-rose-500 uppercase tracking-widest animate-pulse">Live Stream</span>
+                      </div>
+                    </div>
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Severity</th>
+                          <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Node Info</th>
+                          <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Coordinates</th>
+                          <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Intervention</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {(sosAlerts.length > 0 ? sosAlerts : [
+                          { _id: 'sos1', severity: 'critical', location_address: 'Corner of Ayala Ave & Paseo de Roxas', user_id: 'USER_9921', ride_id: 'RIDE_882', created_at: new Date().toISOString() },
+                          { _id: 'sos2', severity: 'moderate', location_address: 'Near Gateway Mall, Cubao', user_id: 'USER_1045', ride_id: 'RIDE_441', created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() }
+                        ]).map((alert, idx) => (
+                          <tr key={alert._id} className="hover:bg-rose-50/20 transition-all group">
+                            <td className="px-8 py-6">
+                              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border ${alert.severity === 'critical' ? 'bg-rose-500/10 border-rose-500/20 text-rose-600' : 'bg-orange-500/10 border-orange-500/20 text-orange-600'
+                                }`}>
+                                <div className={`h-1.5 w-1.5 rounded-full animate-pulse ${alert.severity === 'critical' ? 'bg-rose-500' : 'bg-orange-500'}`} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">{alert.severity}</span>
+                              </div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-slate-900">{alert.user_id}</span>
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mt-1">{alert.ride_id}</span>
+                              </div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+                                  <MapPin size={14} />
+                                </div>
+                                <span className="text-[10px] font-medium text-slate-600 max-w-[150px] line-clamp-1">{alert.location_address}</span>
+                              </div>
+                            </td>
+                            <td className="px-8 py-6 text-right">
+                              <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                                <button
+                                  onClick={() => handleResolveSOS(alert._id, 'resolved')}
+                                  disabled={isSubmitting}
+                                  className="h-9 w-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-lg shadow-slate-200 hover:scale-110 transition-transform disabled:opacity-50"
+                                >
+                                  {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={16} />}
+                                </button>
+                                <button
+                                  onClick={() => handleResolveSOS(alert._id, 'false_alarm')}
+                                  disabled={isSubmitting}
+                                  className="h-9 w-9 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:text-rose-500 hover:border-rose-200 transition-all disabled:opacity-50"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Card>
+
+                  {/* INCIDENT DETAILS - FOCUS VIEW */}
+                  {sosAlerts[0] && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                      <Card className="p-8 border-rose-100 bg-gradient-to-br from-white to-rose-50/30">
+                        <div className="flex justify-between items-start mb-8">
                           <div className="flex items-center gap-6">
-                            <div className={`h-16 w-16 rounded-[2rem] flex items-center justify-center shadow-lg ${alert.severity === 'critical' ? 'bg-rose-500 text-white shadow-rose-200' : 'bg-orange-500 text-white shadow-orange-200'}`}>
-                              <ShieldAlert size={32} className={alert.severity === 'critical' ? 'animate-bounce' : ''} />
+                            <div className="h-20 w-20 rounded-3xl bg-rose-500 flex items-center justify-center text-white shadow-2xl shadow-rose-200 animate-pulse-slow">
+                              <ShieldAlert size={40} />
                             </div>
                             <div>
-                              <div className="flex items-center gap-3">
-                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${alert.severity === 'critical' ? 'bg-rose-100 text-rose-600' : 'bg-orange-100 text-orange-600'}`}>
-                                  {alert.severity.toUpperCase()} INCIDENT
-                                </span>
-                                <span className="text-xs font-bold text-slate-400">#SOS-{alert._id.slice(-4).toUpperCase()}</span>
-                              </div>
-                              <h3 className="text-xl font-bold text-slate-900 mt-2">Emergency Signal Detected</h3>
-                              <p className="text-sm text-slate-500 font-medium mt-1">Manual trigger from passenger mobile node.</p>
+                              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Active Critical Protocol</h3>
+                              <p className="text-sm font-medium text-slate-500 mt-1">Passenger {sosAlerts[0].user_id} • Urgent Intervention Required</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                            <div className="text-right">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Incident Time</p>
-                              <p className="text-xs font-bold text-slate-900">{new Date(alert.created_at).toLocaleTimeString()}</p>
-                            </div>
-                            <div className="h-8 w-px bg-slate-100" />
-                            <div className="text-right">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active For</p>
-                              <p className="text-xs font-bold text-rose-600">00:04:12</p>
-                            </div>
+                          <div className="text-right">
+                            <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Elapsed Time</p>
+                            <p className="text-2xl font-black text-slate-900 mt-1">04:12.82</p>
                           </div>
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <button
+                            onClick={() => handleResolveSOS(sosAlerts[0]._id, 'resolved')}
+                            disabled={isSubmitting}
+                            className="h-14 rounded-2xl bg-rose-500 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-rose-200 hover:bg-rose-600 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                          >
+                            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Navigation size={18} />} Deploy Rapid Response & Resolve
+                          </button>
+                          <button className="h-14 rounded-2xl bg-white border-2 border-slate-900 text-slate-900 font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">
+                            Open Audio Intercept
+                          </button>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  )}
+                </div>
 
-                        <div className="grid lg:grid-cols-3 gap-8 pt-8 border-t border-slate-100">
-                          <div className="space-y-4">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><MapPin size={12} /> Geolocation</h4>
-                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                              <p className="text-xs font-semibold text-slate-700 leading-relaxed">{alert.location_address}</p>
-                              <p className="text-[9px] font-bold text-primary mt-2 uppercase tracking-widest">Coordinates Sync: Verified</p>
-                            </div>
-                          </div>
-                          <div className="space-y-4">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><UserCheck size={12} /> Node Metadata</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                                <p className="text-[9px] font-bold text-slate-400 uppercase">Passenger</p>
-                                <p className="text-xs font-bold text-slate-900 mt-1">{alert.user_id}</p>
-                              </div>
-                              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                                <p className="text-[9px] font-bold text-slate-400 uppercase">Ride ID</p>
-                                <p className="text-xs font-bold text-slate-900 mt-1">{alert.ride_id}</p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="space-y-4">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Zap size={12} /> Emergency Actions</h4>
-                            <div className="flex flex-col gap-2">
-                              <button
-                                onClick={() => addNotification("Safety Team Dispatched", "Unit Sigma-4 responding to coordinates #SOS-SOS1.", "success")}
-                                className="h-10 w-full rounded-xl bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-primary transition-all shadow-lg shadow-slate-100"
-                              >
-                                Dispatch Safety Team
-                              </button>
-                              <div className="grid grid-cols-2 gap-2">
-                                <button
-                                  onClick={() => addNotification("Contacting Driver", "Establishing secure line to vehicle node...", "info")}
-                                  className="h-10 rounded-xl bg-white border border-slate-200 text-slate-600 text-[9px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all"
-                                >
-                                  Contact Driver
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    addNotification("Incident Resolved", "Alert #SOS-SOS1 archived and cleared.", "success");
-                                    if (idx === 0) setSosAlerts([]);
-                                  }}
-                                  className="h-10 rounded-xl bg-white border border-slate-200 text-rose-600 text-[9px] font-bold uppercase tracking-widest hover:bg-rose-50 transition-all"
-                                >
-                                  Dismiss
-                                </button>
-                              </div>
-                            </div>
-                          </div>
+                {/* SAFETY METRICS - SIDEBAR */}
+                <div className="lg:col-span-4 space-y-6">
+                  <Card className="bg-slate-900 border-none p-8 text-white shadow-2xl shadow-slate-200 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 h-40 w-40 bg-rose-500/20 rounded-full -mr-20 -mt-20 blur-[80px]" />
+                    <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] mb-6">Threat Analysis</h4>
+                    <div className="space-y-8 relative z-10">
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <p className="text-4xl font-black tracking-tighter">98.2<span className="text-lg text-white/40 ml-1">%</span></p>
+                          <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest mt-2">Network Integrity</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-emerald-400">+0.4%</p>
+                          <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">vPrev_H</p>
+                        </div>
+                      </div>
+                      <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: '98%' }} className="h-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                        <div>
+                          <p className="text-xs font-bold">1.2ms</p>
+                          <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mt-1">Auth_Latency</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-rose-400">Critical</p>
+                          <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mt-1">Alert_Priority</p>
                         </div>
                       </div>
                     </div>
                   </Card>
-                ))}
+
+                  <Card className="p-8 space-y-6">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Shortcuts</h4>
+                    <div className="space-y-3">
+                      {['Mute All Notifications', 'Broadcast to All Drivers', 'Request Emergency Node Sync'].map(s => (
+                        <button key={s} className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 hover:bg-white hover:shadow-lg transition-all group">
+                          <span className="text-[10px] font-bold text-slate-600 group-hover:text-slate-900">{s}</span>
+                          <ChevronRight size={14} className="text-slate-300 group-hover:text-primary transition-colors" />
+                        </button>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
               </div>
             </div>
           )}
@@ -1013,6 +1261,7 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Legal Full Name</label><div className="relative"><UserIcon size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" /><input required value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full h-14 pl-14 pr-6 rounded-2xl bg-slate-50 border border-transparent focus:bg-white focus:ring-4 ring-primary/5 focus:border-primary/20 outline-none font-bold text-sm transition-all" /></div></div>
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Access Email</label><div className="relative"><Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" /><input required type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} className="w-full h-14 pl-14 pr-6 rounded-2xl bg-slate-50 border border-transparent focus:bg-white focus:ring-4 ring-primary/5 focus:border-primary/20 outline-none font-bold text-sm transition-all" /></div></div>
+            <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Contact Node (Phone)</label><div className="relative"><Phone size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" /><input required type="tel" value={newUser.phone} onChange={e => setNewUser({ ...newUser, phone: e.target.value })} className="w-full h-14 pl-14 pr-6 rounded-2xl bg-slate-50 border border-transparent focus:bg-white focus:ring-4 ring-primary/5 focus:border-primary/20 outline-none font-bold text-sm transition-all" /></div></div>
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Role Architecture</label>
               <div className="grid grid-cols-3 gap-3">
                 {['passenger', 'staff', 'admin'].map(r => (
@@ -1035,6 +1284,14 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label><input required value={editingUser?.full_name || ""} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full h-14 px-6 rounded-2xl bg-slate-50 border border-transparent focus:bg-white focus:ring-4 ring-primary/5 outline-none font-bold text-sm transition-all" /></div>
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email</label><input required type="email" value={editingUser?.email || ""} onChange={e => setEditingUser({ ...editingUser, email: e.target.value })} className="w-full h-14 px-6 rounded-2xl bg-slate-50 border border-transparent focus:bg-white focus:ring-4 ring-primary/5 outline-none font-bold text-sm transition-all" /></div>
+            <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Phone</label><input required type="tel" value={editingUser?.phone || ""} onChange={e => setEditingUser({ ...editingUser, phone: e.target.value })} className="w-full h-14 px-6 rounded-2xl bg-slate-50 border border-transparent focus:bg-white focus:ring-4 ring-primary/5 outline-none font-bold text-sm transition-all" /></div>
+            <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Role Architecture</label>
+              <div className="grid grid-cols-3 gap-3">
+                {['passenger', 'staff', 'admin'].map(r => (
+                  <button key={r} type="button" onClick={() => setEditingUser({ ...editingUser, role: r })} className={`h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${editingUser?.role === r ? 'bg-slate-900 text-white border-slate-900 shadow-xl' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'}`}>{r}</button>
+                ))}
+              </div>
+            </div>
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Identity Status</label><div className="flex gap-4"><button type="button" onClick={() => setEditingUser({ ...editingUser, is_active: true })} className={`flex-1 h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${editingUser?.is_active ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-50 text-slate-400'}`}>Online</button><button type="button" onClick={() => setEditingUser({ ...editingUser, is_active: false })} className={`flex-1 h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${!editingUser?.is_active ? 'bg-red-500 text-white shadow-lg' : 'bg-slate-50 text-slate-400'}`}>Restricted</button></div></div>
           </div>
           <button type="submit" disabled={isSubmitting} className="w-full h-16 rounded-[1.5rem] bg-slate-900 text-white font-black text-sm shadow-2xl hover:bg-primary transition-all flex items-center justify-center gap-4 disabled:opacity-50">
@@ -1050,6 +1307,79 @@ const AdminDashboard = () => {
           <div className="space-y-3"><p className="text-2xl font-black text-slate-900 tracking-tight">Permanently Purge {userToDelete?.full_name}?</p><p className="text-sm text-slate-400 font-bold">This action will permanently revoke all Matrix credentials and delete the entity log. This cannot be reversed.</p></div>
           <div className="flex gap-6"><button onClick={() => setIsDeletingUser(false)} className="flex-1 h-16 rounded-2xl bg-slate-100 text-slate-900 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Cancel</button><button onClick={handleDeleteUser} disabled={isSubmitting} className="flex-1 h-16 rounded-2xl bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-2xl shadow-red-100 hover:bg-red-600 transition-all">Purge Identity</button></div>
         </div>
+      </Modal>
+
+      {/* NODE TELEMETRY MODAL - SaaS DRILL DOWN */}
+      <Modal
+        isOpen={!!selectedLog}
+        onClose={() => setSelectedLog(null)}
+        title="Mission Node Telemetry"
+      >
+        {selectedLog && (
+          <div className="space-y-8">
+            <div className={`p-6 rounded-3xl border flex items-center gap-6 ${selectedLog.type === 'error' ? 'bg-rose-50 border-rose-100' : 'bg-slate-50 border-slate-100'
+              }`}>
+              <div className={`h-16 w-16 rounded-2xl flex items-center justify-center text-white shadow-lg ${selectedLog.type === 'error' ? 'bg-rose-500 shadow-rose-200' : 'bg-slate-900 shadow-slate-200'
+                }`}>
+                {selectedLog.type === 'error' ? <ShieldAlert size={32} /> : <Info size={32} />}
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900">{selectedLog.title}</h3>
+                <p className="text-sm font-medium text-slate-500 mt-1">{selectedLog.description}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Node Identity</p>
+                <div className="flex items-center gap-3">
+                  <Fingerprint size={16} className="text-primary" />
+                  <span className="text-xs font-bold text-slate-700">TRX_{selectedLog.id}</span>
+                </div>
+              </div>
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Protocol Timestamp</p>
+                <div className="flex items-center gap-3">
+                  <History size={16} className="text-primary" />
+                  <span className="text-xs font-bold text-slate-700">{selectedLog.time}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Raw Matrix Data</h4>
+              <div className="p-6 rounded-2xl bg-[#0f172a] text-emerald-400 font-mono text-[11px] leading-relaxed shadow-inner">
+                <p className="opacity-50">{"{"}</p>
+                <p className="ml-4">"node_id": "{selectedLog.id}",</p>
+                <p className="ml-4">"severity": "{selectedLog.type === 'error' ? 'CRITICAL_1' : 'STABLE_0'}",</p>
+                <p className="ml-4">"encryption": "AES-256-GCM",</p>
+                <p className="ml-4">"status": "LOGGED_ARCHIVE",</p>
+                <p className="ml-4">"payload": "{selectedLog.description}"</p>
+                <p className="opacity-50">{"}"}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => setSelectedLog(null)}
+                className="flex-1 h-14 rounded-2xl bg-slate-100 text-slate-900 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+              >
+                Close Trace
+              </button>
+              {(selectedLog.type === 'error' || selectedLog.title.includes('SOS')) && (
+                <button
+                  onClick={() => {
+                    setActiveTab('alerts');
+                    setSelectedLog(null);
+                  }}
+                  className="flex-1 h-14 rounded-2xl bg-primary text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                >
+                  <ShieldAlert size={14} /> Open Safety Command
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

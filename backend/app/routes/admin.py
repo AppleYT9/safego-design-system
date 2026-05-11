@@ -216,6 +216,22 @@ async def get_sos_alerts(status: Optional[str] = Query(None), admin: User = Depe
     return [_sos_dict(a) for a in alerts]
 
 
+@router.put("/sos-alerts/{alert_id}/resolve", response_model=SOSResponse)
+async def resolve_sos(alert_id: str, status: str = Query("resolved"), admin: User = Depends(get_current_admin)):
+    alert = await SOSAlert.get(PydanticObjectId(alert_id))
+    if not alert:
+        raise HTTPException(status_code=404, detail="SOS Alert not found")
+    
+    if status not in ("resolved", "false_alarm"):
+        raise HTTPException(status_code=400, detail="Invalid status. Must be 'resolved' or 'false_alarm'")
+        
+    alert.status = SOSStatus(status)
+    alert.resolved_by = admin.id
+    alert.resolved_at = datetime.now(timezone.utc)
+    await alert.save()
+    return _sos_dict(alert)
+
+
 @router.get("/users", response_model=List[UserResponse])
 async def get_all_users(role: Optional[str] = Query(None), q: Optional[str] = Query(None),
                         page: int = Query(default=1, ge=1),
