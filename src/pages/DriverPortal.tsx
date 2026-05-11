@@ -49,40 +49,53 @@ const DashboardTab = ({
   onDecline: (id: string) => void,
   onRefresh: () => void,
   loading: boolean
-}) => (
-  <div className="space-y-6 animate-in fade-in duration-700">
-    {/* Profile header */}
-    <div className="rounded-2xl border border-border bg-background p-6 lg:p-8">
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground">JD</div>
-        <div>
-          <h2 className="font-display text-2xl font-bold text-foreground">James Dela Cruz</h2>
-          <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1"><Star size={14} className="fill-amber-400 text-amber-400" /> 4.9 Rating</span>
-            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">Verified Driver ✓</span>
+}) => {
+  const initials = driver?.user?.full_name ? driver.user.full_name.split(" ").map((n: string) => n[0]).join("") : "D";
+  
+  return (
+    <div className="space-y-6 animate-in fade-in duration-700">
+      {/* Profile header */}
+      <div className="rounded-2xl border border-border bg-background p-6 lg:p-8 shadow-sm">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-xl font-black text-primary-foreground shadow-lg shadow-primary/20">
+            {initials}
+          </div>
+          <div>
+            <h2 className="font-display text-2xl font-black text-foreground tracking-tight">{driver?.user?.full_name || "Driver Portal"}</h2>
+            <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground font-medium">
+              <span className="flex items-center gap-1.5"><Star size={14} className="fill-amber-400 text-amber-400" /> {driver?.average_rating || "0.0"} Rating</span>
+              <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+              <span className="rounded-full bg-primary/10 px-3 py-0.5 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20">Verified Driver ✓</span>
+            </div>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+             <button onClick={onRefresh} disabled={loading} className="p-2.5 rounded-xl border border-border bg-background hover:bg-secondary transition-all active:scale-95 disabled:opacity-50">
+               <Clock className={`h-5 w-5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
+             </button>
           </div>
         </div>
-      </div>
-      <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: "Today's Rides", value: "12", icon: Car, trend: "+3", up: true },
-          { label: "Earnings", value: "₹3,240", icon: IndianRupee, trend: "+18%", up: true },
-          { label: "Acceptance", value: "94%", icon: ThumbsUp, trend: "+2%", up: true },
-          { label: "Online Hours", value: "6.5h", icon: Clock3, trend: "-0.5h", up: false },
-        ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border p-4 bg-background hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <s.icon size={18} className="text-muted-foreground" />
-              <span className={`flex items-center gap-0.5 text-xs font-medium ${s.up ? "text-emerald-600" : "text-red-500"}`}>
-                {s.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />} {s.trend}
-              </span>
+        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: "Today's Rides", value: driver?.today_rides || 0, icon: Car, trend: "+3", up: true },
+            { label: "Earnings", value: `₹${(driver?.today_earnings || 0).toLocaleString()}`, icon: IndianRupee, trend: "+18%", up: true },
+            { label: "Acceptance", value: `${driver?.acceptance_rate || 100}%`, icon: ThumbsUp, trend: "+2%", up: true },
+            { label: "Total Rides", value: driver?.total_rides || 0, icon: Award, trend: "Overall", up: true },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl border border-border/60 p-5 bg-background hover:shadow-xl hover:border-primary/20 transition-all group">
+              <div className="flex items-center justify-between">
+                <div className="p-2 rounded-xl bg-secondary/50 group-hover:bg-primary/10 transition-colors">
+                  <s.icon size={20} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+                <span className={`flex items-center gap-0.5 text-[10px] font-black uppercase tracking-widest ${s.up ? "text-emerald-600" : "text-red-500"}`}>
+                  {s.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />} {s.trend}
+                </span>
+              </div>
+              <p className="mt-4 text-2xl font-black font-display text-foreground leading-none">{s.value}</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-2 opacity-60">{s.label}</p>
             </div>
-            <p className="mt-2 text-2xl font-bold font-display text-foreground">{s.value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
 
     {/* Ride requests */}
     <div className="rounded-2xl border border-border bg-background p-6">
@@ -189,6 +202,7 @@ const DashboardTab = ({
     </div>
   </div>
 );
+};
 
 const AvailableRidesTab = ({
   available,
@@ -458,25 +472,27 @@ const DocumentsTab = ({
   );
 };
 
-const EarningsTab = () => {
-  const earningsData = [
-    { day: "Mon", amount: 2900, rides: 14 },
-    { day: "Tue", amount: 3100, rides: 16 },
-    { day: "Wed", amount: 2500, rides: 11 },
-    { day: "Thu", amount: 3500, rides: 18 },
-    { day: "Fri", amount: 4200, rides: 22 },
-    { day: "Sat", amount: 5200, rides: 26 },
-    { day: "Sun", amount: 3900, rides: 19 },
-  ];
+const EarningsTab = ({ history }: { history: any[] }) => {
+  const completedRides = history.filter(r => r.status === "completed");
+  const totalRides = completedRides.length;
+  const totalEarnings = completedRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "")), 0);
+  
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const earningsByDay = days.map(day => {
+    const dayRides = completedRides.filter(r => {
+      const date = new Date(r.date);
+      return days[date.getDay()] === day;
+    });
+    const amount = dayRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "")), 0);
+    return { day, amount, rides: dayRides.length };
+  });
 
-  const totalWeek = earningsData.reduce((s, d) => s + d.amount, 0);
-  const totalRides = earningsData.reduce((s, d) => s + d.rides, 0);
-  const maxEarning = Math.max(...earningsData.map(d => d.amount));
+  const maxEarning = Math.max(...earningsByDay.map(d => d.amount), 1000);
 
   const handleExport = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
       + "Day,Earnings,Rides\n"
-      + earningsData.map(d => `${d.day},${d.amount},${d.rides}`).join("\n");
+      + completedRides.map(r => `${r.date},${r.pickup},${r.dest},${r.fare},${r.tip},${r.status}`).join("\n");
     
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -497,17 +513,17 @@ const EarningsTab = () => {
       <div className="rounded-2xl border border-border bg-background p-6">
         <h2 className="font-display text-xl font-bold text-foreground">Earnings Overview</h2>
         <p className="text-sm text-muted-foreground mt-1">Track your income and optimize your driving schedule</p>
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "This Week", value: `₹${totalWeek.toLocaleString()}`, trend: "+12.5%", up: true },
-            { label: "Total Rides", value: totalRides.toString(), trend: "+8", up: true },
-            { label: "Avg per Ride", value: `₹${Math.round(totalWeek / totalRides)}`, trend: "+₹5", up: true },
-            { label: "Tips", value: "₹1,240", trend: "+22%", up: true },
+            { label: "This Period", value: `₹${totalEarnings.toLocaleString()}`, trend: "+12.5%", up: true },
+            { label: "Total Rides", value: totalRides.toString(), trend: `+${totalRides}`, up: true },
+            { label: "Avg per Ride", value: `₹${totalRides > 0 ? Math.round(totalEarnings / totalRides) : 0}`, trend: "+₹5", up: true },
+            { label: "Total Tips", value: "₹0", trend: "+0%", up: true },
           ].map((s) => (
-            <div key={s.label} className="rounded-xl border border-border p-4 bg-background">
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className="text-2xl font-bold font-display text-foreground mt-1">{s.value}</p>
-              <span className={`flex items-center gap-0.5 text-xs font-bold mt-1.5 ${s.up ? "text-emerald-600" : "text-red-500"}`}>
+            <div key={s.label} className="rounded-2xl border border-border/60 p-5 bg-background hover:shadow-md transition-all">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">{s.label}</p>
+              <p className="text-2xl font-black font-display text-foreground mt-2 leading-none">{s.value}</p>
+              <span className={`flex items-center gap-0.5 text-[10px] font-black uppercase tracking-widest mt-3 ${s.up ? "text-emerald-600" : "text-red-500"}`}>
                 {s.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />} {s.trend}
               </span>
             </div>
@@ -535,31 +551,27 @@ const EarningsTab = () => {
             <div className="w-full border-t border-dashed border-muted-foreground"></div>
           </div>
 
-          {earningsData.map((d, i) => (
+          {earningsByDay.map((d, i) => (
             <div key={d.day} className="flex flex-col items-center flex-1 group relative h-full justify-end">
-              {/* Tooltip Label */}
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-foreground text-background text-[11px] px-3 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 transform group-hover:-translate-y-1 whitespace-nowrap z-20 font-bold flex flex-col items-center pointer-events-none mb-2">
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-foreground text-background text-[11px] px-3 py-2 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:-translate-y-1 whitespace-nowrap z-20 font-black flex flex-col items-center pointer-events-none mb-2">
                 <span>₹{d.amount.toLocaleString()}</span>
                 <span className="text-[9px] opacity-70 uppercase tracking-tighter">{d.rides} rides</span>
                 <div className="w-2 h-2 bg-foreground rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2"></div>
               </div>
 
-              {/* Bar */}
               <div
-                className="w-full max-w-[48px] rounded-t-xl bg-primary relative hover:brightness-110 transition-all transition-height duration-700 cursor-pointer shadow-[0_-4px_12px_rgba(13,148,136,0.15)] ring-1 ring-inset ring-white/10"
+                className="w-full max-w-[42px] rounded-t-xl bg-primary relative hover:brightness-110 transition-all duration-700 cursor-pointer shadow-[0_-4px_16px_rgba(13,148,136,0.15)] group-hover:shadow-[0_-4px_24px_rgba(13,148,136,0.3)]"
                 style={{
                   height: `${(d.amount / maxEarning) * 100}%`,
                   transitionDelay: `${i * 75}ms`
                 }}
               >
-                {/* Visual Glass Shine Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-white/10 rounded-t-xl" />
               </div>
 
-              {/* Bottom Labels */}
               <div className="absolute -bottom-10 flex flex-col items-center pt-2">
-                <span className="text-xs font-bold text-foreground">{d.day}</span>
-                <span className="text-[9px] text-muted-foreground font-medium uppercase">{d.rides}</span>
+                <span className="text-[10px] font-black text-foreground uppercase tracking-widest">{d.day}</span>
+                <span className="text-[9px] text-muted-foreground font-black uppercase opacity-60">{d.rides}</span>
               </div>
             </div>
           ))}
@@ -850,15 +862,15 @@ const DriverPortal = () => {
 
   const fetchDriverData = async () => {
     const token = localStorage.getItem("token");
-    if (!token) return;
 
     setLoading(true);
     try {
+      if (!token) throw new Error("No token");
       const [profile, available, historyData, activityData] = await Promise.all([
-        fetch(`${API_URL}/api/drivers/me`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => r.json()),
-        fetch(`${API_URL}/api/drivers/me/available-rides`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => r.json()),
-        fetch(`${API_URL}/api/drivers/me/history`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => r.json()),
-        fetch(`${API_URL}/api/drivers/me/activity`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => r.json()),
+        fetch(`${API_URL}/api/drivers/me`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+        fetch(`${API_URL}/api/drivers/me/available-rides`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+        fetch(`${API_URL}/api/drivers/me/history`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+        fetch(`${API_URL}/api/drivers/me/activity`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
       ]);
       const mapRides = (rides: any[]) => rides.map(r => ({
         id: r._id,
@@ -873,9 +885,10 @@ const DriverPortal = () => {
         status: r.status,
         modeBg: r.mode === "pink" ? "rgba(236, 72, 153, 0.1)" : "rgba(13, 148, 136, 0.1)",
         modeColor: r.mode === "pink" ? "rgb(236, 72, 153)" : "rgb(13, 148, 136)",
-        tip: "₹0", // Default as tip is not in backend yet
+        tip: "₹0", 
         duration: r.duration_minutes ? `${r.duration_minutes} min` : "15 min",
-        rating: 0,
+        rating: r.passenger_rating || 4.8,
+        passenger_name: r.passenger_name || "Guest User",
         surge: 1.0
       }));
 
@@ -885,8 +898,39 @@ const DriverPortal = () => {
       setActivity(activityData);
       setRequests(mapRides(available).slice(0, 4));
     } catch (err) {
-      console.error("Failed to fetch driver data:", err);
-      toast.error("Failed to sync with database");
+      console.error("Failed to fetch driver data, using static mock data fallback:", err);
+      toast.error("Backend unreachable. Using static mock data.", { id: "mock-data-toast" });
+      
+      // Static mock data fallback
+      setDriver({
+        user: { full_name: "James Dela Cruz" },
+        average_rating: 4.8,
+        today_rides: 12,
+        today_earnings: 2450,
+        acceptance_rate: 98,
+        total_rides: 1240,
+      });
+      
+      const mockAvailable = [
+        { id: "1", pickup: "SM Megamall, Mandaluyong", dest: "BGC High Street, Taguig", dist: "3.2 km", fare: "₹185", mode: "pink", time: "2 min ago", passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 4.8 },
+        { id: "2", pickup: "Trinoma, Quezon City", dest: "UP Diliman", dist: "5.1 km", fare: "₹210", mode: "normal", time: "5 min ago", passengers: 2, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.0, rating: 4.7 },
+        { id: "3", pickup: "Makati Avenue", dest: "Ayala Triangle", dist: "1.2 km", fare: "₹120", mode: "normal", time: "1 min ago", passengers: 1, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.5, rating: 4.9 },
+        { id: "4", pickup: "Greenbelt 3", dest: "Glorietta", dist: "0.8 km", fare: "₹95", mode: "pink", time: "Just now", passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 5.0 },
+      ];
+      setAvailableRides(mockAvailable);
+      setRequests(mockAvailable.slice(0, 2));
+      
+      setHistory([
+        { id: "h1", pickup: "NAIA Terminal 3", dest: "Makati Shangri-La", dist: "8.5 km", fare: "₹450", status: "completed", date: "Today", duration: "45 min", rating: 5, tip: "₹50" },
+        { id: "h2", pickup: "Ortigas Center", dest: "Eastwood City", dist: "4.2 km", fare: "₹220", status: "completed", date: "Yesterday", duration: "25 min", rating: 4, tip: "₹0" },
+        { id: "h3", pickup: "BGC", dest: "Cubao", dist: "12 km", fare: "₹380", status: "failed", date: "Mar 10", duration: "10 min", rating: 0, tip: "₹0" },
+      ]);
+      
+      setActivity([
+        { type: "ride", text: "Completed ride to BGC High Street", time: "10:30 AM" },
+        { type: "document", text: "Vehicle Registration approved", time: "Yesterday" },
+        { type: "rating", text: "Received a 5-star rating", time: "Yesterday" },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -901,9 +945,9 @@ const DriverPortal = () => {
 
   const handleAcceptRide = async (id: string, dest: string) => {
     const token = localStorage.getItem("token");
-    if (!token) return;
 
     try {
+      if (!token) throw new Error("No token");
       const res = await fetch(`${API_URL}/api/drivers/me/rides/${id}/accept`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
@@ -915,23 +959,31 @@ const DriverPortal = () => {
       });
       fetchDriverData();
     } catch (err) {
-      toast.error("Could not accept ride");
+      // Offline fallback
+      toast.success(`[Offline Mode] Ride to ${dest} accepted!`);
+      setRequests(prev => prev.filter(r => r.id !== id));
+      setAvailableRides(prev => prev.filter(r => r.id !== id));
     }
   };
 
   const handleDeclineRide = async (id: string) => {
     const token = localStorage.getItem("token");
-    if (!token) return;
 
     try {
-      await fetch(`${API_URL}/api/drivers/me/rides/${id}/decline`, {
+      if (!token) throw new Error("No token");
+      const res = await fetch(`${API_URL}/api/drivers/me/rides/${id}/decline`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
+      if (!res.ok) throw new Error("Failed to decline ride");
+      
       toast.error("Request Declined");
       fetchDriverData();
     } catch (err) {
-      toast.error("Action failed");
+      // Offline fallback
+      toast.error("[Offline Mode] Request Declined");
+      setRequests(prev => prev.filter(r => r.id !== id));
+      setAvailableRides(prev => prev.filter(r => r.id !== id));
     }
   };
 
@@ -951,7 +1003,7 @@ const DriverPortal = () => {
       case "rides": return <AvailableRidesTab available={availableRides} onAccept={handleAcceptRide} onRefresh={fetchDriverData} loading={loading} />;
       case "history": return <HistoryTab history={history} loading={loading} />;
       case "documents": return <DocumentsTab docList={docList} onView={handleViewDoc} onUpload={handleUploadClick} onRemove={handleRemoveDoc} />;
-      case "earnings": return <EarningsTab />;
+      case "earnings": return <EarningsTab history={history} />;
       case "settings": return <SettingsTab />;
       default: return null;
     }

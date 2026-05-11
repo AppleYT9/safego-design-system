@@ -47,7 +47,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
       document.head.appendChild(link);
     }
 
-    const initMap = (lat: number, lng: number, isError: boolean) => {
+    const initMap = async (lat: number, lng: number, isError: boolean) => {
       if (!mapContainerRef.current) return;
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -58,56 +58,44 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
       const map = L.map(mapContainerRef.current, { zoomControl: false }).setView([lat, lng], 15);
       mapInstanceRef.current = map;
 
-      // Add zoom control bottom-right
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      // Satellite tiles (ESRI World Imagery)
       L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-        attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+        attribution: "Tiles &copy; Esri",
         maxZoom: 18,
       }).addTo(map);
 
-      // ── Pulsing "You are here" marker ──
       const pulseHtml = `
         <div style="position:relative;width:22px;height:22px;">
           <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(59,130,246,0.2);animation:pulse-ring 1.5s ease-out infinite;"></div>
-          <div style="position:absolute;inset:-4px;border-radius:50%;background:rgba(59,130,246,0.15);animation:pulse-ring 1.5s ease-out 0.3s infinite;"></div>
           <div style="width:22px;height:22px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 2px 8px rgba(59,130,246,0.6);"></div>
         </div>
-        <style>
-          @keyframes pulse-ring {
-            0%   { transform:scale(1); opacity:0.8; }
-            100% { transform:scale(2.5); opacity:0; }
-          }
-        </style>
+        <style>@keyframes pulse-ring { 0% { transform:scale(1); opacity:0.8; } 100% { transform:scale(2.5); opacity:0; } }</style>
       `;
       const youIcon = L.divIcon({ html: pulseHtml, className: "", iconSize: [22, 22], iconAnchor: [11, 11] });
-      const youMarker = L.marker([lat, lng], { icon: youIcon }).addTo(map);
-      youMarker.bindPopup("<b>📍 You are here</b>", { closeButton: false });
+      L.marker([lat, lng], { icon: youIcon }).addTo(map).bindPopup("<b>📍 You are here</b>");
 
-      // Accuracy circle
-      L.circle([lat, lng], { radius: 60, color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.08, weight: 1.5, dashArray: "5 5" }).addTo(map);
+      L.circle([lat, lng], { radius: 60, color: "#3b82f6", fillOpacity: 0.08, weight: 1.5 }).addTo(map);
 
-      // ── Cab markers ──
-      const cabData = generateNearbyCabs(lat, lng, mode);
-      setCabs(cabData);
-
-      cabData.forEach((cab) => {
+      // Always use static mock cabs
+      const fallbackCabs = generateNearbyCabs(lat, lng, mode);
+      setCabs(fallbackCabs);
+      
+      fallbackCabs.forEach((cab: any) => {
         const cabHtml = `
           <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
             <div style="background:${accent};color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);">
-              ${cab.name.split(" ").map((n: string) => n[0]).join("")}
+              ${(cab.name || "D").split(" ").map((n: string) => n[0]).join("")}
             </div>
             <div style="background:hsl(var(--card));border-radius:6px;padding:1px 5px;font-size:9px;font-weight:700;color:hsl(var(--card-foreground));margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;">
               ${cab.eta} min
             </div>
-            <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid white;margin-top:-1px;"></div>
           </div>
         `;
         const cabIcon = L.divIcon({ html: cabHtml, className: "", iconSize: [36, 52], iconAnchor: [18, 52] });
         L.marker([cab.lat, cab.lng], { icon: cabIcon })
           .addTo(map)
-          .bindPopup(`<b>${cab.name}</b><br>⭐ ${cab.rating} &nbsp;·&nbsp; ETA ${cab.eta} min`, { closeButton: false });
+          .bindPopup(`<b>${cab.name}</b><br>⭐ ${cab.rating} &nbsp;·&nbsp; ETA ${cab.eta} min`);
       });
 
       setLocating(false);
@@ -228,47 +216,31 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
     if (centerLoc && mapInstanceRef.current) {
       mapInstanceRef.current.flyTo([centerLoc.lat, centerLoc.lng], 15, { duration: 1.5 });
 
-      // Update cab data around new location
-      const newCabs = generateNearbyCabs(centerLoc.lat, centerLoc.lng, mode);
-      setCabs(newCabs);
-
-      // Re-add "You are here" marker at exact new center
+      // Always use static mock cabs
+      const fallbackCabs = generateNearbyCabs(centerLoc.lat, centerLoc.lng, mode);
+      setCabs(fallbackCabs);
+      
       const L = window.L;
       if (L) {
-        // Create the pulsing dot again
-        const pulseHtml = `
-          <div style="position:relative;width:22px;height:22px;">
-            <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(59,130,246,0.2);animation:pulse-ring 1.5s ease-out infinite;"></div>
-            <div style="position:absolute;inset:-4px;border-radius:50%;background:rgba(59,130,246,0.15);animation:pulse-ring 1.5s ease-out 0.3s infinite;"></div>
-            <div style="width:22px;height:22px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 2px 8px rgba(59,130,246,0.6);"></div>
-          </div>
-          <style>@keyframes pulse-ring { 0% { transform:scale(1); opacity:0.8; } 100% { transform:scale(2.5); opacity:0; } }</style>
-        `;
-        const youIcon = L.divIcon({ html: pulseHtml, className: "", iconSize: [22, 22], iconAnchor: [11, 11] });
-
-        // Let's clear existing markers (except tiles/controls) before adding new ones
         mapInstanceRef.current.eachLayer((layer: any) => {
           if (layer instanceof L.Marker || layer instanceof L.Circle) {
             mapInstanceRef.current.removeLayer(layer);
           }
         });
 
-        // Add the new "you are here" marker
-        const userMarker = L.marker([centerLoc.lat, centerLoc.lng], { icon: youIcon }).addTo(mapInstanceRef.current);
-        userMarker.bindPopup("<b>📍 You are here</b>", { closeButton: false });
-        L.circle([centerLoc.lat, centerLoc.lng], { radius: 60, color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.08, weight: 1.5, dashArray: "5 5" }).addTo(mapInstanceRef.current);
+        const pulseHtml = `<div style="position:relative;width:22px;height:22px;"><div style="background:#3b82f6;border-radius:50%;width:22px;height:22px;border:3px solid white;box-shadow:0 2px 8px rgba(59,130,246,0.6);"></div></div>`;
+        const youIcon = L.divIcon({ html: pulseHtml, className: "", iconSize: [22, 22], iconAnchor: [11, 11] });
+        L.marker([centerLoc.lat, centerLoc.lng], { icon: youIcon }).addTo(mapInstanceRef.current).bindPopup("<b>📍 You are here</b>");
 
-        // Add the new cab markers
-        newCabs.forEach((cab: any) => {
-          const cabHtml = `<div style="position:relative;display:flex;flex-direction:column;align-items:center;"><div style="background:${accent};color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);">${cab.name.split(" ").map((n: string) => n[0]).join("")}</div><div style="background:hsl(var(--card));border-radius:6px;padding:1px 5px;font-size:9px;font-weight:700;color:hsl(var(--card-foreground));margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;">${cab.eta} min</div><div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid hsl(var(--card));margin-top:-1px;"></div></div>`;
+        fallbackCabs.forEach((cab: any) => {
+          const cabHtml = `<div style="position:relative;display:flex;flex-direction:column;align-items:center;"><div style="background:${accent};color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);">${(cab.name || "D").split(" ").map((n: string) => n[0]).join("")}</div><div style="background:hsl(var(--card));border-radius:6px;padding:1px 5px;font-size:9px;font-weight:700;color:hsl(var(--card-foreground));margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;">${cab.eta} min</div></div>`;
           const cabIcon = L.divIcon({ html: cabHtml, className: "", iconSize: [36, 52], iconAnchor: [18, 52] });
-          L.marker([cab.lat, cab.lng], { icon: cabIcon }).addTo(mapInstanceRef.current).bindPopup(`<b>${cab.name}</b><br>⭐ ${cab.rating} &nbsp;·&nbsp; ETA ${cab.eta} min`, { closeButton: false });
+          L.marker([cab.lat, cab.lng], { icon: cabIcon }).addTo(mapInstanceRef.current).bindPopup(`<b>${cab.name}</b>`);
         });
-
-        setLocError(false); // Clear error because we have a manual center
       }
+      setLocError(false);
     }
-  }, [centerLoc, accent]);
+  }, [centerLoc, accent, mode]);
 
   return (
     <div className="relative h-full w-full bg-secondary">
@@ -344,7 +316,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
                   className="h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold text-white mb-2 shadow-sm"
                   style={{ backgroundColor: accent }}
                 >
-                  {cab.name.split(" ").map((n: string) => n[0]).join("")}
+                  {(cab.name || "D").split(" ").map((n: string) => n[0]).join("")}
                 </div>
                 <p className="text-xs font-bold text-foreground leading-tight text-center">{cab.name}</p>
                 <div className="flex gap-1.5 items-center mt-1 whitespace-nowrap">
@@ -624,7 +596,8 @@ const BookingPage = () => {
         destination_latitude: destinationCoords?.lat || (mapCenter?.lat || 22.3) + 0.05,
         destination_longitude: destinationCoords?.lng || (mapCenter?.lng || 73.19) + 0.05,
         passenger_count: passengers,
-        passenger_details: passengerDetails.filter(d => d.trim() !== "")
+        passenger_details: passengerDetails.filter(d => d.trim() !== ""),
+        driver_id: selectedDriver?.driver_id || null
       };
 
       const res = await fetch(`${API_URL}/api/rides/request`, {
@@ -1116,7 +1089,7 @@ const BookingPage = () => {
                           <div className={`flex items-center gap-5 transition-all duration-500 ${askStatus === "rejected" ? "opacity-40 grayscale" : "opacity-100"}`}>
                             <div className="relative">
                               <div className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-black text-white shadow-xl shadow-black/20" style={{ backgroundColor: askStatus === "accepted" ? "#10b981" : mode.accent }}>
-                                {selectedDriver.name.split(" ").map((n: string) => n[0]).join("")}
+                                {(selectedDriver?.name || "D").split(" ").map((n: string) => n[0]).join("")}
                               </div>
                               <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-background bg-green-500 shadow-sm" title="Verified Driver" />
                             </div>

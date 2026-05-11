@@ -112,6 +112,7 @@ const AdminDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fluxRange, setFluxRange] = useState('1H');
+  const [fleetGenderFilter, setFleetGenderFilter] = useState<'all' | 'male' | 'female'>('all');
 
   const getFluxData = () => {
     switch (fluxRange) {
@@ -255,6 +256,22 @@ const AdminDashboard = () => {
         fetchUsers(); fetchStats();
       } else { setFormError(data.detail || "System rejected identity deployment."); }
     } catch (err) { setFormError("CONNECTION ERROR: Verify MongoDB and Terminal are active."); } finally { setIsSubmitting(false); }
+  };
+
+  const handleApproveDriver = async (driverId: string, status: 'approved' | 'rejected') => {
+    try {
+      const res = await fetch(`${API_URL}/api/admin/drivers/${driverId}/approval`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) {
+        toast.success(`Driver ${status === 'approved' ? 'Approved' : 'Rejected'} successfully`);
+        fetchDrivers();
+      }
+    } catch (err) {
+      toast.error("Failed to update driver status");
+    }
   };
 
   const handleUpdateUser = async (e: React.FormEvent) => {
@@ -620,10 +637,10 @@ const AdminDashboard = () => {
                           transition={{ duration: 0.4, delay: i * 0.05 }}
                           onClick={() => setSelectedLog(log)}
                           className={`p-4 rounded-[1.5rem] transition-all border group relative overflow-hidden cursor-pointer hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] ${log.type === 'error'
-                              ? 'bg-rose-50/50 border-rose-100 hover:border-rose-300'
-                              : log.type === 'success'
-                                ? 'bg-emerald-50/50 border-emerald-100 hover:border-emerald-300'
-                                : 'bg-slate-50/50 border-slate-100 hover:border-primary/20'
+                            ? 'bg-rose-50/50 border-rose-100 hover:border-rose-300'
+                            : log.type === 'success'
+                              ? 'bg-emerald-50/50 border-emerald-100 hover:border-emerald-300'
+                              : 'bg-slate-50/50 border-slate-100 hover:border-primary/20'
                             }`}
                         >
                           {/* Severity Background Glow */}
@@ -633,8 +650,8 @@ const AdminDashboard = () => {
 
                           <div className="flex gap-4 relative z-10">
                             <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center shadow-sm ${log.type === 'error' ? 'bg-rose-500 text-white shadow-rose-200' :
-                                log.type === 'success' ? 'bg-emerald-500 text-white shadow-emerald-200' :
-                                  'bg-slate-900 text-white shadow-slate-200'
+                              log.type === 'success' ? 'bg-emerald-500 text-white shadow-emerald-200' :
+                                'bg-slate-900 text-white shadow-slate-200'
                               }`}>
                               {log.type === 'error' ? <ShieldAlert size={18} /> :
                                 log.type === 'success' ? <Check size={18} /> :
@@ -676,36 +693,138 @@ const AdminDashboard = () => {
 
               {/* SYSTEM RESILIENCE METRICS */}
               <div className="grid gap-8 lg:grid-cols-3">
-                <Card className="p-10 space-y-8 border-slate-100 hover:border-emerald-100 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center shadow-inner"><Database size={24} /></div>
-                    <div><h4 className="text-lg font-bold text-slate-900">Node Availability</h4><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Database Persistence</p></div>
+                <style>{`
+                  @keyframes card-shimmer {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
+                  }
+                  .glass-shimmer {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+                    animation: card-shimmer 2.5s infinite linear;
+                  }
+                  .stripes-bg {
+                    background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px);
+                    background-size: 28px 28px;
+                    animation: move-stripes 1s linear infinite;
+                  }
+                  @keyframes move-stripes {
+                    0% { background-position: 0 0; }
+                    100% { background-position: 28px 0; }
+                  }
+                `}</style>
+
+                <motion.div whileHover={{ y: -8, scale: 1.02 }} className="relative p-10 rounded-[2.5rem] overflow-hidden group bg-slate-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] border border-slate-800/80">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-[40px] group-hover:bg-emerald-500/20 transition-all duration-700 -mr-16 -mt-16" />
+                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[40px] group-hover:bg-emerald-500/20 transition-all duration-700 -ml-16 -mb-16" />
+
+                  <div className="relative z-10 flex items-center gap-5 mb-10">
+                    <div className="relative h-16 w-16 rounded-[1.25rem] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+                      <div className="absolute inset-0 rounded-[1.25rem] bg-emerald-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                      <Database size={28} className="relative z-10 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-display font-black text-white tracking-tight">Node Uptime</h4>
+                      <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mt-1.5">Database Persistence</p>
+                    </div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center"><span className="text-xs font-bold text-slate-500">Uptime Cluster</span><span className="text-xs font-black text-emerald-600">99.98%</span></div>
-                    <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-emerald-500 w-[99.9%]" /></div>
+
+                  <div className="relative z-10 space-y-5">
+                    <div className="flex justify-between items-end">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Cluster Status</span>
+                      <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]" />
+                        <span className="text-sm font-black text-emerald-400">99.98%</span>
+                      </div>
+                    </div>
+                    <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden shadow-inner p-0.5 border border-slate-700/50">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "99.9%" }}
+                        transition={{ duration: 2, ease: "easeOut" }}
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 relative overflow-hidden"
+                      >
+                        <div className="glass-shimmer" />
+                      </motion.div>
+                    </div>
                   </div>
-                </Card>
-                <Card className="p-10 space-y-8 border-slate-100 hover:border-blue-100 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center shadow-inner"><Layers size={24} /></div>
-                    <div><h4 className="text-lg font-bold text-slate-900">API Throughput</h4><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Matrix Traffic</p></div>
+                </motion.div>
+
+                <motion.div whileHover={{ y: -8, scale: 1.02 }} className="relative p-10 rounded-[2.5rem] overflow-hidden group bg-slate-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] border border-slate-800/80">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-[40px] group-hover:bg-blue-500/20 transition-all duration-700 -mr-16 -mt-16" />
+                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-[40px] group-hover:bg-blue-500/20 transition-all duration-700 -ml-16 -mb-16" />
+
+                  <div className="relative z-10 flex items-center gap-5 mb-10">
+                    <div className="relative h-16 w-16 rounded-[1.25rem] bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.1)]">
+                      <div className="absolute inset-0 rounded-[1.25rem] bg-blue-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                      <Layers size={28} className="relative z-10 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-display font-black text-white tracking-tight">Throughput</h4>
+                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mt-1.5">Matrix Traffic</p>
+                    </div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center"><span className="text-xs font-bold text-slate-500">Current Load</span><span className="text-xs font-black text-blue-600">242 Req/s</span></div>
-                    <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-blue-500 w-[45%]" /></div>
+
+                  <div className="relative z-10 space-y-5">
+                    <div className="flex justify-between items-end">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Current Load</span>
+                      <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-xl">
+                        <Activity size={14} className="text-blue-500 animate-pulse" />
+                        <span className="text-sm font-black text-blue-400">242 Req/s</span>
+                      </div>
+                    </div>
+                    <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden shadow-inner p-0.5 border border-slate-700/50">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "45%" }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 relative overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-blue-400 opacity-50 animate-pulse" />
+                        <div className="glass-shimmer" />
+                      </motion.div>
+                    </div>
                   </div>
-                </Card>
-                <Card className="p-10 space-y-8 border-slate-100 hover:border-rose-100 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center shadow-inner"><Fingerprint size={24} /></div>
-                    <div><h4 className="text-lg font-bold text-slate-900">Security Handshakes</h4><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">RBAC Validation</p></div>
+                </motion.div>
+
+                <motion.div whileHover={{ y: -8, scale: 1.02 }} className="relative p-10 rounded-[2.5rem] overflow-hidden group bg-slate-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] border border-slate-800/80">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-rose-500/10 rounded-full blur-[40px] group-hover:bg-rose-500/20 transition-all duration-700 -mr-16 -mt-16" />
+                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose-500/10 rounded-full blur-[40px] group-hover:bg-rose-500/20 transition-all duration-700 -ml-16 -mb-16" />
+
+                  <div className="relative z-10 flex items-center gap-5 mb-10">
+                    <div className="relative h-16 w-16 rounded-[1.25rem] bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.1)]">
+                      <div className="absolute inset-0 rounded-[1.25rem] bg-rose-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                      <Fingerprint size={28} className="relative z-10 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-display font-black text-white tracking-tight">Security Sec</h4>
+                      <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mt-1.5">RBAC Validation</p>
+                    </div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center"><span className="text-xs font-bold text-slate-500">Integrity Check</span><span className="text-xs font-black text-rose-600">Verified</span></div>
-                    <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-rose-500 w-[100%]" /></div>
+
+                  <div className="relative z-10 space-y-5">
+                    <div className="flex justify-between items-end">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Integrity Check</span>
+                      <div className="flex items-center gap-2 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl">
+                        <ShieldCheck size={14} className="text-rose-500" />
+                        <span className="text-sm font-black text-rose-400">Verified</span>
+                      </div>
+                    </div>
+                    <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden shadow-inner p-0.5 border border-slate-700/50">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        className="h-full rounded-full bg-gradient-to-r from-rose-600 to-rose-400 relative overflow-hidden stripes-bg"
+                      >
+                      </motion.div>
+                    </div>
                   </div>
-                </Card>
+                </motion.div>
               </div>
             </div>
           )}
@@ -794,6 +913,21 @@ const AdminDashboard = () => {
                   <h3 className="text-xl font-bold text-slate-900">Fleet Intelligence</h3>
                   <p className="text-sm text-slate-500 mt-1 font-medium">Real-time telemetry and management of the driver cluster.</p>
                 </div>
+                <div className="flex bg-slate-100 p-1 rounded-xl">
+                  {['all', 'male', 'female'].map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setFleetGenderFilter(g as any)}
+                      className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+                        fleetGenderFilter === g 
+                          ? 'bg-white text-slate-900 shadow-sm scale-105' 
+                          : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <Card noPadding className="overflow-hidden border-slate-200/60">
@@ -802,6 +936,7 @@ const AdminDashboard = () => {
                     <tr className="bg-slate-50/50 border-b border-slate-100">
                       <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Driver Node</th>
                       <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Vehicle Unit</th>
+                      <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Gender</th>
                       <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Efficiency</th>
                       <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>
                       <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Actions</th>
@@ -809,8 +944,9 @@ const AdminDashboard = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {isSearching ? (
-                      <tr><td colSpan={5} className="px-8 py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
-                    ) : driversList.length > 0 ? driversList.map((d) => (
+                      <tr><td colSpan={6} className="px-8 py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
+                    ) : driversList.filter(d => fleetGenderFilter === 'all' || d.user?.gender === fleetGenderFilter).length > 0 ? 
+                        driversList.filter(d => fleetGenderFilter === 'all' || d.user?.gender === fleetGenderFilter).map((d) => (
                       <tr key={d._id} className="hover:bg-slate-50/30 transition-colors group">
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-4">
@@ -830,6 +966,17 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td className="px-8 py-5">
+                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                            d.user?.gender === 'female' 
+                              ? 'bg-rose-100 text-rose-600' 
+                              : d.user?.gender === 'male' 
+                                ? 'bg-blue-100 text-blue-600' 
+                                : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {d.user?.gender || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-8 py-5">
                           <div className="flex items-center gap-4">
                             <div><p className="text-xs font-bold text-slate-900">{d.average_rating || '5.0'}</p><p className="text-[9px] font-medium text-slate-400">Rating</p></div>
                             <div className="w-px h-6 bg-slate-100" />
@@ -846,12 +993,29 @@ const AdminDashboard = () => {
                         </td>
                         <td className="px-8 py-5">
                           <div className="flex items-center justify-end gap-2">
-                            <button className="h-9 px-4 rounded-lg bg-white border border-slate-200 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-primary hover:border-primary/30 transition-all">Dossier</button>
+                            {d.status === 'pending' ? (
+                              <>
+                                <button 
+                                  onClick={() => handleApproveDriver(d._id, 'approved')}
+                                  className="h-9 px-4 rounded-lg bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-600 shadow-sm transition-all"
+                                >
+                                  Accept
+                                </button>
+                                <button 
+                                  onClick={() => handleApproveDriver(d._id, 'rejected')}
+                                  className="h-9 px-4 rounded-lg bg-rose-500 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-rose-600 shadow-sm transition-all"
+                                >
+                                  Decline
+                                </button>
+                              </>
+                            ) : (
+                              <button className="h-9 px-4 rounded-lg bg-white border border-slate-200 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-primary hover:border-primary/30 transition-all">Dossier</button>
+                            )}
                           </div>
                         </td>
                       </tr>
                     )) : (
-                      <tr><td colSpan={5} className="px-8 py-20 text-center"><div className="flex flex-col items-center gap-3 text-slate-300"><Car size={40} /><p className="font-semibold text-sm">No Fleet Nodes Active</p></div></td></tr>
+                      <tr><td colSpan={6} className="px-8 py-20 text-center"><div className="flex flex-col items-center gap-3 text-slate-300"><Car size={40} /><p className="font-semibold text-sm">No Fleet Nodes Active</p></div></td></tr>
                     )}
                   </tbody>
                 </table>
@@ -1126,48 +1290,82 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* SAFETY METRICS - SIDEBAR */}
-                <div className="lg:col-span-4 space-y-6">
-                  <Card className="bg-slate-900 border-none p-8 text-white shadow-2xl shadow-slate-200 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 h-40 w-40 bg-rose-500/20 rounded-full -mr-20 -mt-20 blur-[80px]" />
-                    <h4 className="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] mb-6">Threat Analysis</h4>
+                <div className="lg:col-span-4 space-y-8">
+                  <motion.div whileHover={{ scale: 1.02, y: -5 }} className="relative p-8 rounded-[2.5rem] bg-slate-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] border border-slate-800/80 overflow-hidden group">
+                    <div className="absolute top-0 right-0 h-48 w-48 bg-rose-500/10 rounded-full blur-[40px] group-hover:bg-rose-500/20 transition-all duration-700 -mr-16 -mt-16" />
+                    <div className="absolute bottom-0 left-0 h-32 w-32 bg-rose-500/10 rounded-full blur-[40px] group-hover:bg-rose-500/20 transition-all duration-700 -ml-16 -mb-16" />
+
+                    <div className="relative z-10 flex items-center gap-4 mb-8">
+                      <div className="h-12 w-12 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.1)]">
+                        <ShieldAlert size={20} className="group-hover:scale-110 transition-transform duration-500" />
+                      </div>
+                      <h4 className="text-[12px] font-black text-white uppercase tracking-[0.2em]">Threat Analysis</h4>
+                    </div>
+
                     <div className="space-y-8 relative z-10">
                       <div className="flex justify-between items-end">
                         <div>
-                          <p className="text-4xl font-black tracking-tighter">98.2<span className="text-lg text-white/40 ml-1">%</span></p>
-                          <p className="text-[9px] font-bold text-white/50 uppercase tracking-widest mt-2">Network Integrity</p>
+                          <p className="text-5xl font-display font-black tracking-tighter text-white">98.2<span className="text-xl text-white/40 ml-1">%</span></p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Network Integrity</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-bold text-emerald-400">+0.4%</p>
-                          <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">vPrev_H</p>
+                          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl mb-2">
+                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,1)]" />
+                            <span className="text-xs font-black text-emerald-400">+0.4%</span>
+                          </div>
+                          <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">vPrev_H</p>
                         </div>
                       </div>
-                      <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: '98%' }} className="h-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]" />
+
+                      <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden shadow-inner p-[1px] border border-slate-700/50">
+                        <motion.div initial={{ width: 0 }} animate={{ width: '98%' }} transition={{ duration: 2, ease: "easeOut" }} className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 relative overflow-hidden">
+                          <div className="glass-shimmer" />
+                        </motion.div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                        <div>
-                          <p className="text-xs font-bold">1.2ms</p>
-                          <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mt-1">Auth_Latency</p>
+
+                      <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-800">
+                        <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 transition-colors">
+                          <p className="text-lg font-black text-white">1.2ms</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Auth Latency</p>
                         </div>
-                        <div>
-                          <p className="text-xs font-bold text-rose-400">Critical</p>
-                          <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mt-1">Alert_Priority</p>
+                        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-colors">
+                          <p className="text-lg font-black text-rose-500 animate-pulse">Critical</p>
+                          <p className="text-[9px] font-bold text-rose-400/70 uppercase tracking-widest mt-1">Alert Priority</p>
                         </div>
                       </div>
                     </div>
-                  </Card>
+                  </motion.div>
 
-                  <Card className="p-8 space-y-6">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Shortcuts</h4>
-                    <div className="space-y-3">
-                      {['Mute All Notifications', 'Broadcast to All Drivers', 'Request Emergency Node Sync'].map(s => (
-                        <button key={s} className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 hover:bg-white hover:shadow-lg transition-all group">
-                          <span className="text-[10px] font-bold text-slate-600 group-hover:text-slate-900">{s}</span>
-                          <ChevronRight size={14} className="text-slate-300 group-hover:text-primary transition-colors" />
+                  <motion.div whileHover={{ scale: 1.02, y: -5 }} className="relative p-8 rounded-[2.5rem] bg-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden group">
+                    <div className="absolute top-0 right-0 h-40 w-40 bg-primary/5 rounded-full blur-[40px] transition-all duration-700 -mr-10 -mt-10" />
+
+                    <div className="relative z-10 flex items-center gap-4 mb-8">
+                      <div className="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
+                        <Zap size={20} className="group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500" />
+                      </div>
+                      <h4 className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em]">Quick Actions</h4>
+                    </div>
+
+                    <div className="space-y-4 relative z-10">
+                      {[
+                        { label: 'Mute All Notifications', icon: Bell, color: 'text-amber-500', bg: 'bg-amber-50', hover: 'hover:border-amber-200 hover:shadow-amber-500/10' },
+                        { label: 'Broadcast to All Drivers', icon: Navigation, color: 'text-blue-500', bg: 'bg-blue-50', hover: 'hover:border-blue-200 hover:shadow-blue-500/10' },
+                        { label: 'Emergency Node Sync', icon: ShieldAlert, color: 'text-rose-500', bg: 'bg-rose-50', hover: 'hover:border-rose-200 hover:shadow-rose-500/10' }
+                      ].map((item, i) => (
+                        <button key={i} className={`w-full flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-100 transition-all duration-300 hover:shadow-xl ${item.hover} group/btn`}>
+                          <div className="flex items-center gap-4">
+                            <div className={`h-10 w-10 rounded-xl ${item.bg} ${item.color} flex items-center justify-center transition-transform group-hover/btn:scale-110`}>
+                              <item.icon size={16} />
+                            </div>
+                            <span className="text-xs font-bold text-slate-700 group-hover/btn:text-slate-900">{item.label}</span>
+                          </div>
+                          <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center group-hover/btn:bg-slate-900 group-hover/btn:text-white transition-colors">
+                            <ChevronRight size={14} className="opacity-50 group-hover/btn:opacity-100 group-hover/btn:translate-x-0.5 transition-all" />
+                          </div>
                         </button>
                       ))}
                     </div>
-                  </Card>
+                  </motion.div>
                 </div>
               </div>
             </div>

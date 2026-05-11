@@ -6,12 +6,31 @@ import { ArrowRight, Car, User, FileText, CheckCircle, ShieldCheck, UploadCloud,
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 const ApplyDriver = () => {
     const revealRef = useScrollReveal();
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [files, setFiles] = useState<{ [key: number]: File }>({});
+    const [formData, setFormData] = useState({
+        full_name: "",
+        email: "",
+        phone: "",
+        gender: "male",
+        license_number: "",
+        make: "",
+        model_year: "",
+        plate_number: "",
+        preferred_mode: "standard",
+        color: "Silver", // Default color
+    });
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
         if (e.target.files && e.target.files[0]) {
@@ -22,23 +41,57 @@ const ApplyDriver = () => {
     const handleNext = () => setStep(s => Math.min(s + 1, 3));
     const handlePrev = () => setStep(s => Math.max(s - 1, 1));
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsSubmitting(false);
-            toast.success("Application submitted successfully", {
-                position: "top-right",
-                description: "Our onboarding team will contact you within 24 hours.",
-                style: {
-                    background: "#10b981", // Emerald 500 (Primary Green)
-                    color: "#ffffff",
-                    border: "none",
-                },
+        
+        try {
+            const vehicleYear = parseInt(formData.model_year.split(" ").pop() || "2023") || 2023;
+            const vehicleModel = formData.model_year.split(" ").slice(0, -1).join(" ") || formData.model_year;
+
+            const payload = {
+                full_name: formData.full_name,
+                email: formData.email,
+                phone: formData.phone,
+                gender: formData.gender,
+                license_number: formData.license_number || "PENDING-" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+                preferred_mode: formData.preferred_mode,
+                vehicle: {
+                    make: formData.make || "Toyota",
+                    model: vehicleModel || "Vios",
+                    year: vehicleYear,
+                    color: formData.color,
+                    plate_number: formData.plate_number,
+                    is_wheelchair_accessible: formData.preferred_mode === 'pwd'
+                }
+            };
+
+            const response = await fetch(`${API_URL}/api/drivers/apply`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
             });
-            navigate("/drive-with-us");
-        }, 2000);
+
+            if (response.ok) {
+                toast.success("Application submitted successfully", {
+                    position: "top-right",
+                    description: "Our onboarding team will contact you within 24 hours.",
+                    style: { background: "#10b981", color: "#ffffff", border: "none" },
+                });
+                navigate("/drive-with-us");
+            } else {
+                const error = await response.json();
+                toast.error("Submission failed", {
+                    description: error.detail || "Please check your information and try again."
+                });
+            }
+        } catch (err) {
+            toast.error("Network error", {
+                description: "Could not connect to the server. Please try again later."
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -76,8 +129,8 @@ const ApplyDriver = () => {
                             ].map((s) => (
                                 <div key={s.id} className="flex flex-col items-center">
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md ${step >= s.id
-                                            ? "bg-primary text-primary-foreground border-2 border-primary"
-                                            : "bg-card text-muted-foreground border-2 border-border/50"
+                                        ? "bg-primary text-primary-foreground border-2 border-primary"
+                                        : "bg-card text-muted-foreground border-2 border-border/50"
                                         }`}>
                                         {step > s.id ? <Check size={20} className="animate-in zoom-in" /> : <s.icon size={20} />}
                                     </div>
@@ -106,15 +159,23 @@ const ApplyDriver = () => {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Full Legal Name</label>
-                                            <input required type="text" className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="John Doe" />
+                                            <input required name="full_name" value={formData.full_name} onChange={handleInputChange} type="text" className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="John Doe" />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Phone Number</label>
-                                            <input required type="tel" className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="+1 (555) 000-0000" />
+                                            <input required name="phone" value={formData.phone} onChange={handleInputChange} type="tel" className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="+1 (555) 000-0000" />
                                         </div>
                                         <div className="space-y-2 sm:col-span-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Email Address</label>
-                                            <input required type="email" className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="john@example.com" />
+                                            <input required name="email" value={formData.email} onChange={handleInputChange} type="email" className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="john@example.com" />
+                                        </div>
+                                        <div className="space-y-2 sm:col-span-2">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Gender Identification</label>
+                                            <select required name="gender" value={formData.gender} onChange={handleInputChange} className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                                <option value="other">Other / Prefer not to say</option>
+                                            </select>
                                         </div>
                                         <div className="space-y-2 sm:col-span-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Home Address</label>
@@ -136,25 +197,25 @@ const ApplyDriver = () => {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Vehicle Make</label>
-                                            <select required className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
+                                            <select required name="make" value={formData.make} onChange={handleInputChange} className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
                                                 <option value="">Select Make...</option>
-                                                <option value="toyota">Toyota</option>
-                                                <option value="honda">Honda</option>
-                                                <option value="hyundai">Hyundai</option>
-                                                <option value="ford">Ford</option>
+                                                <option value="Toyota">Toyota</option>
+                                                <option value="Honda">Honda</option>
+                                                <option value="Hyundai">Hyundai</option>
+                                                <option value="Ford">Ford</option>
                                             </select>
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Vehicle Model & Year</label>
-                                            <input required type="text" className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="e.g. Camry 2021" />
+                                            <input required name="model_year" value={formData.model_year} onChange={handleInputChange} type="text" className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="e.g. Camry 2021" />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">License Plate Number</label>
-                                            <input required type="text" className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all uppercase" placeholder="ABC-1234" />
+                                            <input required name="plate_number" value={formData.plate_number} onChange={handleInputChange} type="text" className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all uppercase" placeholder="ABC-1234" />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Service Mode Preference</label>
-                                            <select required className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
+                                            <select required name="preferred_mode" value={formData.preferred_mode} onChange={handleInputChange} className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
                                                 <option value="standard">Standard Ride (All Passengers)</option>
                                                 <option value="pink">Pink Mode (Women Only - Certification Required)</option>
                                                 <option value="pwd">PWD Access (Certification Required)</option>

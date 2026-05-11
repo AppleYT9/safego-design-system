@@ -54,6 +54,7 @@ async def create_ride(
     scheduled_at: Optional[datetime] = None,
     passenger_count: int = 1,
     passenger_details: Optional[List[str]] = None,
+    driver_id: Optional[str] = None,
 ) -> Ride:
     """Create a ride request and attempt to match a driver."""
     route_info = await get_route(pickup_latitude, pickup_longitude, destination_latitude, destination_longitude, mode)
@@ -78,10 +79,14 @@ async def create_ride(
         passenger_details=passenger_details or [],
     )
 
-    driver = await find_nearest_driver(pickup_latitude, pickup_longitude, mode)
-    if driver:
-        ride.driver_id = driver.id
+    if driver_id:
+        ride.driver_id = PydanticObjectId(driver_id)
         ride.status = RideStatus.matched
+    else:
+        driver = await find_nearest_driver(pickup_latitude, pickup_longitude, mode)
+        if driver:
+            ride.driver_id = driver.id
+            ride.status = RideStatus.matched
 
     await ride.insert()
     return ride

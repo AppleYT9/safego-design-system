@@ -101,6 +101,16 @@ class DriverRegister(BaseModel):
     vehicle: VehicleCreate
 
 
+class DriverApplication(BaseModel):
+    full_name: str
+    email: str
+    phone: str
+    gender: str
+    license_number: str
+    vehicle: VehicleCreate
+    preferred_mode: str = "standard"
+
+
 class DriverResponse(BaseModel):
     id: str = Field(..., alias="_id")
     user_id: str
@@ -205,6 +215,7 @@ class RideRequest(BaseModel):
     scheduled_at: Optional[datetime] = None
     passenger_count: int = 1
     passenger_details: Optional[List[str]] = Field(default_factory=list)
+    driver_id: Optional[str] = None
 
 
 class RideResponse(BaseModel):
@@ -231,6 +242,8 @@ class RideResponse(BaseModel):
     cancel_reason: Optional[str] = None
     passenger_count: int = 1
     passenger_details: Optional[List[str]] = None
+    passenger_name: Optional[str] = None
+    passenger_rating: Optional[float] = 4.8
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     driver: Optional[DriverBrief] = None

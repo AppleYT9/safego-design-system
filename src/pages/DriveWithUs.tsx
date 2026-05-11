@@ -55,45 +55,45 @@ const DriveWithUs = () => {
     const hiringProcess = [
         {
             step: "01",
-            title: "Apply Online",
-            desc: "Fill out the application form with your personal details and upload required documents.",
+            title: "Node Registration",
+            desc: "Initialize your profile and upload the required legal documentation to start the onboarding protocol.",
             icon: FileCheck,
         },
         {
             step: "02",
-            title: "Background Verification",
-            desc: "Our team verifies your identity, driving record, and criminal background for safety compliance.",
+            title: "Protocol Verification",
+            desc: "Our integrity team performs exhaustive background audits and driver record checks to ensure network safety compliance.",
             icon: Shield,
         },
         {
             step: "03",
-            title: "Vehicle Inspection",
-            desc: "Bring your vehicle for a comprehensive safety and quality inspection at any partner hub.",
+            title: "Asset Certification",
+            desc: "Submit your vehicle for a high-standard multi-point technical inspection at any SafeGo Hub.",
             icon: Car,
         },
         {
             step: "04",
-            title: "Safety Training",
-            desc: "Complete our certified safety and sensitivity training — covering all ride modes including PWD, Pink, and Elderly.",
+            title: "Network Sensitivity",
+            desc: "Complete our certified sensitivity training modules, specializing in PWD and gender-inclusive protocols.",
             icon: GraduationCap,
         },
         {
             step: "05",
-            title: "Start Earning",
-            desc: "Get verified, go online, and start accepting ride requests. Welcome to the SafeGo family!",
+            title: "System Activation",
+            desc: "Upon verification, your node is activated. You can now go live and start generating revenue on the network.",
             icon: Sparkles,
         },
     ];
 
     const benefits = [
-        { icon: Banknote, title: "Competitive Earnings", desc: "Earn up to ₹3,500/day with flexible surge bonuses and weekly incentives." },
-        { icon: CalendarCheck, title: "Flexible Schedule", desc: "Drive when you want. Full-time or part-time — you're in control of your hours." },
-        { icon: Shield, title: "Insurance Coverage", desc: "Comprehensive accident and health insurance for all verified SafeGo drivers." },
-        { icon: Fuel, title: "Fuel Discounts", desc: "Exclusive fuel discount cards and partner deals to reduce your operating costs." },
-        { icon: GraduationCap, title: "Free Training", desc: "Certified safety and customer service training — boost your skills at no cost." },
-        { icon: TrendingUp, title: "Career Growth", desc: "Top-rated drivers can advance to Team Lead, Trainer, or Hub Manager roles." },
-        { icon: HeartHandshake, title: "Community Support", desc: "Join a supportive driver community with 24/7 hotline and mental health resources." },
-        { icon: Award, title: "Recognition Program", desc: "Monthly awards, bonuses, and badges for outstanding safety and service ratings." },
+        { icon: Banknote, title: "High-Yield Revenue", desc: "Maximize your daily potential with optimized surge algorithms and performance-based incentives." },
+        { icon: CalendarCheck, title: "Autonomous Scheduling", desc: "Full sovereign control over your operations. Scale your hours based on your personal uptime requirements." },
+        { icon: Shield, title: "Enterprise Protection", desc: "Premium liability and health insurance protocols for all verified nodes in the SafeGo network." },
+        { icon: Fuel, title: "Cost Optimization", desc: "Direct access to wholesale fuel rates and maintenance subsidies to increase your net margins." },
+        { icon: GraduationCap, title: "Skill Certification", desc: "Access specialized training modules to unlock premium ride tiers and specialized passenger categories." },
+        { icon: TrendingUp, title: "Network Advancement", desc: "Ascend the ranks from Operator to Fleet Manager, Mentor, or Regional Hub Supervisor." },
+        { icon: HeartHandshake, title: "Ecosystem Support", desc: "Dedicated 24/7 technical and humanitarian support infrastructure for your peace of mind." },
+        { icon: Award, title: "Meritocracy Program", desc: "Automated reward distribution based on safety scores, service quality, and network contributions." },
     ];
 
     const specialModeTraining = [
@@ -138,41 +138,41 @@ const DriveWithUs = () => {
     const driverTestimonials = [
         {
             name: "Carlos M.",
-            role: "Full-time Driver",
+            role: "Premier Fleet Operator",
             duration: "2 years with SafeGo",
-            quote: "SafeGo changed my life. The flexible hours let me spend mornings with my kids, and I earn enough to support my whole family. The training also made me a much better driver.",
+            quote: "SafeGo provides the infrastructure I need to run my business. The autonomous scheduling allows me to optimize my uptime, and the revenue yield is consistently higher than any other network.",
             rating: 4.9,
             avatar: "CM",
         },
         {
             name: "Anna L.",
-            role: "Pink Mode Specialist",
+            role: "Security Protocol Specialist",
             duration: "1 year with SafeGo",
-            quote: "As a female driver, I feel respected and safe here. The Pink Mode training was empowering, and I love knowing I'm making other women feel safe on their commute.",
+            quote: "As a female operator, the specialized security protocols give me absolute confidence. The Meritocratic Network ensures my performance is rewarded fairly, regardless of gender.",
             rating: 4.8,
             avatar: "AL",
         },
         {
             name: "Miguel R.",
-            role: "PWD Mode Certified",
+            role: "Accessibility Expert",
             duration: "1.5 years with SafeGo",
-            quote: "The sensitivity training opened my eyes. Helping PWD passengers get to their destinations safely is the most rewarding job I've ever had. SafeGo truly cares.",
+            quote: "The specialized mode certifications are a game changer. Providing accessibility-driven mobility for PWD passengers is technically challenging but professionally rewarding on this platform.",
             rating: 5.0,
             avatar: "MR",
         },
         {
             name: "Sarah T.",
-            role: "Part-time Driver",
+            role: "Flexible Asset Operator",
             duration: "8 months with SafeGo",
-            quote: "I drive on weekends to earn extra cash for college. The community support is incredible, and the instant weekly payouts are a lifesaver.",
+            quote: "I use the SafeGo network to monetize my vehicle during off-hours. The system activation was seamless, and the instant payouts provide reliable liquidity for my studies.",
             rating: 4.7,
             avatar: "ST",
         },
         {
             name: "David K.",
-            role: "Night Shift Driver",
+            role: "Strategic Logistics Operator",
             duration: "3 years with SafeGo",
-            quote: "I feel incredibly secure driving at night thanks to the live tracking and SOS features. SafeGo has the best safety protocols hands down.",
+            quote: "Operating during peak nocturnal hours requires mission-critical safety features. SafeGo’s live telemetry and SOS infrastructure are the best in the industry, hands down.",
             rating: 4.9,
             avatar: "DK",
         }
@@ -208,33 +208,24 @@ const DriveWithUs = () => {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                             </span>
-                            Now Hiring Operators
+                            Sector Status: Expanding Operations
                         </div>
 
                         <h1 className="mt-8 font-display text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-                            Earn More With<br />
-                            <span className="bg-gradient-to-r from-primary to-mode-blue bg-clip-text text-transparent">SafeGo.</span>
+                            Monetize Assets.<br />
+                            Scale Your <span className="bg-gradient-to-r from-primary to-mode-blue bg-clip-text text-transparent">Freedom.</span>
                         </h1>
 
                         <p className="mt-6 max-w-lg text-lg font-medium leading-relaxed text-muted-foreground/90">
-                            Join an elite tier of verified drivers. Enjoy flexible hours, premium pay rates, and the most advanced safety technology in the industry.
+                            Connect to the industry's most advanced mobility infrastructure. SafeGo provides the intelligence-driven protocols to maximize your daily yield and guarantee mission-critical safety.
                         </p>
 
                         <div className="mt-10 flex flex-wrap items-center gap-4">
-                            <Link
-                                to="/apply-driver"
-                                className="group relative inline-flex items-center gap-3 overflow-hidden rounded-2xl bg-foreground px-8 py-4 font-bold text-background transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-foreground/20 active:scale-[0.98]"
-                            >
-                                <span className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                                <span className="relative z-10 flex items-center gap-2">
-                                    Start Earning <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
-                                </span>
-                            </Link>
                             <a
                                 href="#requirements"
-                                className="inline-flex items-center gap-2 rounded-2xl border-2 border-border bg-background/50 px-8 py-4 font-bold text-foreground backdrop-blur-sm transition-all hover:border-primary/30 hover:bg-primary/5"
+                                className="inline-flex items-center gap-2 rounded-2xl border-2 border-border bg-background/50 px-8 py-4 font-bold text-foreground backdrop-blur-sm transition-all hover:border-primary/30 hover:bg-primary/5 shadow-lg shadow-black/5"
                             >
-                                View Requirements
+                                Review Fleet Protocols <ArrowRight size={18} className="text-primary" />
                             </a>
                         </div>
 
@@ -245,7 +236,7 @@ const DriveWithUs = () => {
                                 </div>
                                 <div>
                                     <p className="font-display text-sm font-bold text-foreground">₹3,500+</p>
-                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Daily Potential</p>
+                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Max Daily Yield</p>
                                 </div>
                             </div>
                             <div className="h-8 w-px bg-border/60" />
@@ -255,17 +246,17 @@ const DriveWithUs = () => {
                                 </div>
                                 <div>
                                     <p className="font-display text-sm font-bold text-foreground">100%</p>
-                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Flexible Hours</p>
+                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Autonomous Uptime</p>
                                 </div>
                             </div>
                             <div className="h-8 w-px bg-border/60" />
                             <div className="flex items-center gap-2">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mode-pink/10">
-                                    <Heart size={16} className="text-mode-pink" />
+                                    <ShieldCheck size={16} className="text-mode-pink" />
                                 </div>
                                 <div>
-                                    <p className="font-display text-sm font-bold text-foreground">Equal</p>
-                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Opportunity</p>
+                                    <p className="font-display text-sm font-bold text-foreground">Network</p>
+                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Integrity Sync</p>
                                 </div>
                             </div>
                         </div>
@@ -390,12 +381,12 @@ const DriveWithUs = () => {
 
                 <div className="mx-auto w-full relative px-6 sm:px-10 lg:px-16">
                     <div className="text-center scroll-reveal mb-16">
-                        <span className="caption-label">Ecosystem Excellence</span>
+                        <span className="caption-label">Network Architecture</span>
                         <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">
-                            The Heart of <span className="text-primary">SafeGo.</span>
+                            The Mobility <span className="text-primary">OS.</span>
                         </h2>
                         <p className="mt-6 text-lg font-medium text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                            We've engineered a driver-first platform designed for maximum earning potential and industry-leading safety.
+                            We've engineered a driver-first ecosystem designed for high-yield monetization and mission-critical safety protocols.
                         </p>
                     </div>
 
@@ -430,13 +421,13 @@ const DriveWithUs = () => {
                         <div className="relative z-10 flex flex-col lg:flex-row items-center gap-16">
                             <div className="flex-1 scroll-reveal">
                                 <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/90 mb-8 backdrop-blur-md">
-                                    <HeartHandshake size={14} className="text-primary" /> Equal Opportunity Employer
+                                    <ShieldCheck size={14} className="text-primary" /> Meritocratic Network Protocol
                                 </div>
                                 <h2 className="font-display text-5xl font-black text-white sm:text-6xl tracking-tight leading-[1.1]">
-                                    Everyone Deserves <br /><span className="bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">The Front Seat.</span>
+                                    Unbiased Mobility. <br /><span className="bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">Universal Access.</span>
                                 </h2>
                                 <p className="mt-8 text-xl leading-relaxed text-white/60 font-medium max-w-2xl">
-                                    Greatness has no gender. We actively hire, train, and support both men and women. Our inclusive practices ensure everyone gets equal pay, protection, and promotion paths.
+                                    Performance has no gender. We provide the infrastructure for both men and women to scale their earnings with equal pay protocols, absolute safety, and fair advancement paths.
                                 </p>
 
                                 <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -460,15 +451,15 @@ const DriveWithUs = () => {
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="group rounded-[2.5rem] bg-white/[0.03] backdrop-blur-xl border border-white/10 p-10 text-center transition-all hover:bg-white/[0.08] hover:border-white/20">
                                         <div className="font-display text-6xl font-black text-white tracking-tighter">45%</div>
-                                        <div className="mt-2 text-[11px] font-black uppercase tracking-widest text-white/40">Female Operators</div>
+                                        <div className="mt-2 text-[11px] font-black uppercase tracking-widest text-white/40">Female Nodes</div>
                                     </div>
                                     <div className="group rounded-[2.5rem] bg-white/[0.03] backdrop-blur-xl border border-white/10 p-10 text-center transition-all hover:bg-white/[0.08] hover:border-white/20">
                                         <div className="font-display text-6xl font-black text-white tracking-tighter">55%</div>
-                                        <div className="mt-2 text-[11px] font-black uppercase tracking-widest text-white/40">Male Operators</div>
+                                        <div className="mt-2 text-[11px] font-black uppercase tracking-widest text-white/40">Male Nodes</div>
                                     </div>
                                     <div className="group rounded-[2.5rem] bg-primary/20 backdrop-blur-xl border border-primary/30 p-12 text-center col-span-2 shadow-[0_0_50px_rgba(5,150,105,0.1)] transition-all hover:bg-primary/30">
                                         <div className="font-display text-7xl font-black text-white tracking-tighter">100%</div>
-                                        <div className="mt-3 text-sm font-bold uppercase tracking-[0.2em] text-white">Equal Opportunity & Respect</div>
+                                        <div className="mt-3 text-sm font-bold uppercase tracking-[0.2em] text-white">Meritocratic Access & Respect</div>
                                     </div>
                                 </div>
                             </div>
@@ -482,9 +473,9 @@ const DriveWithUs = () => {
                 <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
                     <div className="text-center scroll-reveal mb-20">
                         <span className="caption-label">The Blueprint</span>
-                        <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">Membership <span className="text-primary">Criteria.</span></h2>
+                        <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">Fleet Onboarding <span className="text-primary">Protocols.</span></h2>
                         <p className="mt-6 max-w-2xl mx-auto text-lg font-medium text-muted-foreground leading-relaxed">
-                            Elite standards for elite professionals. We maintain a high bar to ensure the safest ecosystem in the country.
+                            Mission-critical standards for a premium network. We onboard only the most qualified assets to maintain the SafeGo integrity.
                         </p>
                     </div>
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -555,8 +546,8 @@ const DriveWithUs = () => {
                 <div className="mx-auto w-full relative px-6 sm:px-10 lg:px-16">
                     <div className="text-center scroll-reveal mb-24">
                         <span className="caption-label">Fast Track Activation</span>
-                        <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">Onboarding <span className="text-primary">Flow.</span></h2>
-                        <p className="mt-6 text-lg font-medium text-muted-foreground max-w-2xl mx-auto">From registration to revenue in less than 96 hours. Guaranteed.</p>
+                        <h2 className="mt-4 font-display text-4xl font-black text-foreground sm:text-6xl tracking-tighter">Activation <span className="text-primary">Lifecycle.</span></h2>
+                        <p className="mt-6 text-lg font-medium text-muted-foreground max-w-2xl mx-auto">From node registration to revenue generation in less than 96 hours. Guaranteed.</p>
                     </div>
 
                     <div className="relative">

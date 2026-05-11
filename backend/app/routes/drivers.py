@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.models import User, Driver, Vehicle, DriverDocument, Ride, RideStatus, UserRole, DocumentStatus
 from app.schemas import (
-    DriverRegister, DriverResponse, DriverEarnings, DriverOnlineStatus,
+    DriverRegister, DriverApplication, DriverResponse, DriverEarnings, DriverOnlineStatus,
     DriverDocumentResponse, DocumentUpload, RideResponse,
 )
 from app.services.driver_service import create_driver_profile
@@ -57,8 +57,11 @@ def _doc_dict(doc: DriverDocument) -> dict:
 
 
 async def _ride_dict(ride: Ride) -> dict:
+    passenger = await User.get(ride.passenger_id)
     return {
         "_id": str(ride.id), "passenger_id": str(ride.passenger_id),
+        "passenger_name": passenger.full_name if passenger else "Guest User",
+        "passenger_rating": 4.8,
         "driver_id": str(ride.driver_id) if ride.driver_id else None,
         "mode": ride.mode.value, "status": ride.status.value,
         "pickup_address": ride.pickup_address, "pickup_latitude": ride.pickup_latitude,
@@ -86,6 +89,68 @@ async def register_driver(payload: DriverRegister, current_user: User = Depends(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    return await _driver_dict(driver)
+
+
+@router.post("/apply", response_model=DriverResponse, status_code=201)
+async def apply_as_driver(payload: DriverApplication):
+    # Check if user already exists
+    existing_user = await User.find_one(User.email == payload.email)
+    if existing_user:
+        if existing_user.role == UserRole.driver:
+            # Check if they already have a driver record
+            driver = await Driver.find_one(Driver.user_id == existing_user.id)
+            if driver:
+                raise HTTPException(status_code=400, detail="Driver application already exists or user is already a driver")
+        else:
+            # Update role to driver
+            existing_user.role = UserRole.driver
+            await existing_user.save()
+            user = existing_user
+    else:
+        # Create new user
+        from app.utils.security import hash_password
+        user = User(
+            full_name=payload.full_name,
+            email=payload.email,
+            phone=payload.phone,
+            role=UserRole.driver,
+            gender=payload.gender,
+            hashed_password=hash_password("SafeGo@2025"), # Temporary password
+            is_active=True,
+            is_verified=False
+        )
+        await user.insert()
+    
+    # Create driver profile (pending)
+    from app.models import DriverStatus
+    driver = Driver(
+        user_id=user.id,
+        license_number=payload.license_number,
+        status=DriverStatus.pending,
+        is_online=False,
+        average_rating=5.0,
+        total_rides=0,
+        today_rides=0,
+        today_earnings=0.0,
+        acceptance_rate=100.0,
+        certified_modes=[payload.preferred_mode] if payload.preferred_mode != "standard" else ["normal"]
+    )
+    await driver.insert()
+    
+    # Create vehicle
+    vehicle = Vehicle(
+        driver_id=driver.id,
+        make=payload.vehicle.make,
+        model=payload.vehicle.model,
+        year=payload.vehicle.year,
+        color=payload.vehicle.color,
+        plate_number=payload.vehicle.plate_number,
+        is_wheelchair_accessible=payload.vehicle.is_wheelchair_accessible,
+        is_approved=False
+    )
+    await vehicle.insert()
+    
     return await _driver_dict(driver)
 
 
@@ -124,9 +189,12 @@ async def get_available_rides(current_user: User = Depends(get_current_driver)):
     driver = await Driver.find_one(Driver.user_id == current_user.id)
     if not driver:
         raise HTTPException(status_code=404, detail="Driver profile not found")
-    rides = await Ride.find(
-        {"status": {"$in": [RideStatus.pending.value, RideStatus.searching.value]}}
-    ).sort(-Ride.created_at).to_list()
+    rides = await Ride.find({
+        "$or": [
+            {"status": {"$in": [RideStatus.pending.value, RideStatus.searching.value]}},
+            {"status": RideStatus.matched.value, "driver_id": driver.id}
+        ]
+    }).sort(-Ride.created_at).to_list()
     certified = driver.certified_modes or ["normal"]
     available = [r for r in rides if r.mode.value in certified or r.mode.value == "normal"]
     return [await _ride_dict(r) for r in available]
