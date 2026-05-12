@@ -480,10 +480,17 @@ const EarningsTab = ({ history }: { history: any[] }) => {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const earningsByDay = days.map(day => {
     const dayRides = completedRides.filter(r => {
-      const date = new Date(r.date);
-      return days[date.getDay()] === day;
+      let dateVal: Date;
+      if (r.date === "Today") dateVal = new Date();
+      else if (r.date === "Yesterday") {
+        dateVal = new Date();
+        dateVal.setDate(dateVal.getDate() - 1);
+      } else {
+        dateVal = new Date(r.date);
+      }
+      return !isNaN(dateVal.getTime()) && days[dateVal.getDay()] === day;
     });
-    const amount = dayRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "")), 0);
+    const amount = dayRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "") || "0"), 0);
     return { day, amount, rides: dayRides.length };
   });
 
@@ -923,7 +930,7 @@ const DriverPortal = () => {
       setHistory([
         { id: "h1", pickup: "NAIA Terminal 3", dest: "Makati Shangri-La", dist: "8.5 km", fare: "₹450", status: "completed", date: "Today", duration: "45 min", rating: 5, tip: "₹50" },
         { id: "h2", pickup: "Ortigas Center", dest: "Eastwood City", dist: "4.2 km", fare: "₹220", status: "completed", date: "Yesterday", duration: "25 min", rating: 4, tip: "₹0" },
-        { id: "h3", pickup: "BGC", dest: "Cubao", dist: "12 km", fare: "₹380", status: "failed", date: "Mar 10", duration: "10 min", rating: 0, tip: "₹0" },
+        { id: "h3", pickup: "BGC", dest: "Cubao", dist: "12 km", fare: "₹380", status: "failed", date: "Mar 10, 2026", duration: "10 min", rating: 0, tip: "₹0" },
       ]);
       
       setActivity([

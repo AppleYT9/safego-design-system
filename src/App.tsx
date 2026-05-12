@@ -9,15 +9,17 @@ import { FloatingAssistant } from "./components/FloatingAssistant";
 import { ThemeProvider } from "./components/ThemeProvider";
 
 // Lazy-loaded pages — each page only downloads when navigated to
-const Splash = lazy(() => import("./pages/Splash"));
-const Home = lazy(() => import("./pages/Home"));
-const AuthPage = lazy(() => import("./pages/AuthPage"));
-const BookingPage = lazy(() => import("./pages/BookingPage"));
+import Splash from "./pages/Splash";
+import Home from "./pages/Home";
+import AuthPage from "./pages/AuthPage";
+import BookingPage from "./pages/BookingPage";
+import Safety from "./pages/Safety";
+
+// High-latency or heavy administrative pages remain lazy-loaded
 const RideTracking = lazy(() => import("./pages/RideTracking"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DriverPortal = lazy(() => import("./pages/DriverPortal"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const Safety = lazy(() => import("./pages/Safety"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const DriveWithUs = lazy(() => import("./pages/DriveWithUs"));
 const ApplyDriver = lazy(() => import("./pages/ApplyDriver"));
@@ -25,13 +27,20 @@ const PWDMode = lazy(() => import("./pages/PWDMode"));
 
 const queryClient = new QueryClient();
 
-// Minimal loading state while a page chunk downloads
+/**
+ * Premium Page Loader
+ * A subtle, high-fidelity loading state for secondary pages.
+ */
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="flex flex-col items-center gap-4">
-      <div className="h-10 w-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Loading</p>
+  <div className="min-h-[80vh] flex flex-col items-center justify-center bg-background/50 backdrop-blur-sm animate-in fade-in duration-500">
+    <div className="relative h-16 w-16">
+      <div className="absolute inset-0 rounded-full border-4 border-primary/10" />
+      <div className="absolute inset-0 rounded-full border-4 border-t-primary animate-spin" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+      </div>
     </div>
+    <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 animate-pulse">Syncing Matrix</p>
   </div>
 );
 

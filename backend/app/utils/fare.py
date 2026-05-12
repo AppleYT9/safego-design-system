@@ -30,14 +30,18 @@ def calculate_fare(mode: str, distance_km: float) -> float:
 
 def calculate_safety_score(mode: str, distance_km: float) -> int:
     """
-    Calculate a heuristic safety score (0-100).
-    Deduct up to 10 points for longer distances, minimum 70.
+    Calculate a heuristic safety score (0-100) with dynamic variations.
     """
+    import random
     base = SAFETY_BASE.get(mode, 90)
-    # Deduct up to 10 points — roughly 1 point per 5 km
-    deduction = min(10, int(distance_km / 5))
-    score = max(70, base - deduction)
-    return score
+    
+    # Deduct points for distance but add a "Live Traffic/Time" random factor
+    # This makes the score feel real and dynamic as requested
+    distance_penalty = min(8, int(distance_km / 4))
+    dynamic_jitter = random.randint(-3, 3) # Real-time flux
+    
+    score = base - distance_penalty + dynamic_jitter
+    return max(65, min(100, score))
 
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

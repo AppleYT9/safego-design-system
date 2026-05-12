@@ -1,4 +1,5 @@
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { getModeConfig, modes } from "@/config/modeConfig";
 import type { RideMode } from "@/config/modeConfig";
 import { Navbar } from "@/components/Navbar";
@@ -29,7 +30,7 @@ const generateNearbyCabs = (lat: number, lng: number, mode: string = "normal") =
 // ─── Leaflet Map Panel (no API key) ─────────────────────────────────────────
 declare global { interface Window { L: any } }
 
-const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onCabSelect }: { accent: string, mode: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void }) => {
+const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRouteExtracted, onCabSelect }: { accent: string, mode: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, routePolyline?: string | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [cabs, setCabs] = useState<any[]>([]);
@@ -77,7 +78,6 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
 
       L.circle([lat, lng], { radius: 60, color: "#3b82f6", fillOpacity: 0.08, weight: 1.5 }).addTo(map);
 
-      // Always use static mock cabs
       const fallbackCabs = generateNearbyCabs(lat, lng, mode);
       setCabs(fallbackCabs);
       
@@ -104,7 +104,6 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
 
     const loadLeaflet = () => {
       if (window.L) {
-        // Already loaded — get location
         getLocation();
         return;
       }
@@ -115,12 +114,10 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
     };
 
     const getLocation = () => {
-      // Keep trying to locate
       navigator.geolocation?.getCurrentPosition(
         (pos) => initMap(pos.coords.latitude, pos.coords.longitude, false),
         (err) => {
           console.warn("Geolocation error:", err);
-          // Fallback to initial default (Vadodara) or just use standard Manila if totally blocked
           initMap(22.3, 73.19, true);
         },
         { timeout: 15000, maximumAge: 0, enableHighAccuracy: true }
@@ -135,33 +132,62 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
     };
   }, [accent]);
 
-  // Handle routing when user clicks "Find Safest Route"
   useEffect(() => {
-    if (!triggerRoute || !mapInstanceRef.current) return;
     const L = window.L;
-    if (!L) return;
+    if (!mapInstanceRef.current || !L) return;
+
+    if (!triggerRoute) {
+      // Clear routing layers if route is reset
+      mapInstanceRef.current.eachLayer((layer: any) => {
+        if (layer.options && layer.options.isRouteLayer) {
+          mapInstanceRef.current.removeLayer(layer);
+        }
+      });
+      return;
+    }
 
     (async () => {
+      if (routePolyline) {
+        try {
+          const geojson = JSON.parse(routePolyline);
+          const coordsList = geojson.coordinates.map((c: any) => [c[1], c[0]]);
+          
+          mapInstanceRef.current.eachLayer((layer: any) => {
+            if (layer.options && layer.options.isRouteLayer) {
+              mapInstanceRef.current.removeLayer(layer);
+            }
+          });
+
+          L.polyline(coordsList, { color: accent, weight: 6, opacity: 0.8, className: 'route-glow', isRouteLayer: true }).addTo(mapInstanceRef.current);
+          L.polyline(coordsList, { color: 'white', weight: 2, dashArray: '8 8', isRouteLayer: true }).addTo(mapInstanceRef.current);
+
+          const bounds = L.latLngBounds(coordsList);
+          mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
+          return;
+        } catch (e) {
+          console.warn("Polyline parse failed, falling back to OSRM", e);
+        }
+      }
+
       try {
-        // Simple Nominatim fetch for the 2 text addresses
+        const fromQuery = encodeURIComponent(triggerRoute.from);
+        const toQuery = encodeURIComponent(triggerRoute.to);
         const [resfrom, resto] = await Promise.all([
-          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(triggerRoute.from)}`),
-          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(triggerRoute.to)}`)
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${fromQuery}&limit=1`),
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${toQuery}&limit=1`)
         ]);
         const dataFrom = await resfrom.json();
         const dataTo = await resto.json();
 
         let ptFrom = centerLoc || { lat: 14.5995, lng: 120.9842 };
-        let ptTo = { lat: ptFrom.lat + 0.05, lng: ptFrom.lng + 0.05 }; // fallback dummy dest offset
+        let ptTo = { lat: ptFrom.lat + 0.05, lng: ptFrom.lng + 0.05 };
 
         if (dataFrom && dataFrom[0]) ptFrom = { lat: parseFloat(dataFrom[0].lat), lng: parseFloat(dataFrom[0].lon) };
         if (dataTo && dataTo[0]) ptTo = { lat: parseFloat(dataTo[0].lat), lng: parseFloat(dataTo[0].lon) };
 
-        // Fetch driving route via OSRM Demo Server
         const osrmRes = await fetch(`https://router.project-osrm.org/route/v1/driving/${ptFrom.lng},${ptFrom.lat};${ptTo.lng},${ptTo.lat}?overview=full&geometries=geojson`);
         const osrmData = await osrmRes.json();
 
-        // Clear old routing layers
         mapInstanceRef.current.eachLayer((layer: any) => {
           if (layer.options && layer.options.isRouteLayer) {
             mapInstanceRef.current.removeLayer(layer);
@@ -169,38 +195,16 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
         });
 
         if (osrmData.routes && osrmData.routes[0]) {
-          const coordsList = osrmData.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]); // reverse for Leaflet
+          const coordsList = osrmData.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]);
           const distKm = osrmData.routes[0].distance / 1000;
 
-          // Update cab prices based on distance
-          let updatedCabs = cabs;
-          setCabs(prev => {
-            updatedCabs = prev.map(c => ({ ...c, price: Math.floor(distKm * 20 + 50 + (c.eta * 2)) }));
-            return updatedCabs;
-          });
+          if (onRouteExtracted) onRouteExtracted(distKm, cabs);
 
-          if (onRouteExtracted) onRouteExtracted(distKm, updatedCabs);
-
-          // Draw Glowing Safest Route Line
           L.polyline(coordsList, { color: accent, weight: 6, opacity: 0.8, className: 'route-glow', isRouteLayer: true }).addTo(mapInstanceRef.current);
           L.polyline(coordsList, { color: 'white', weight: 2, dashArray: '8 8', isRouteLayer: true }).addTo(mapInstanceRef.current);
 
-          // Draw Distance Tag in Blue
-          if (coordsList.length > 2) {
-            const midPt = coordsList[Math.floor(coordsList.length / 2)];
-            const distHtml = `<div style="background:hsl(var(--card));color:#2563eb;font-weight:900;padding:4px 8px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid #2563eb;font-size:12px;white-space:nowrap;margin-top:-20px;text-align:center;">${distKm.toFixed(1)} km</div>`;
-            const distIcon = L.divIcon({ html: distHtml, className: "", iconSize: [60, 24], iconAnchor: [30, 12] });
-            L.marker(midPt, { icon: distIcon, isRouteLayer: true }).addTo(mapInstanceRef.current);
-          }
-
-          // Fit bounds
           const bounds = L.latLngBounds([ptFrom.lat, ptFrom.lng], [ptTo.lat, ptTo.lng]);
           mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
-
-          // Add simple marker for destination
-          const destIconHtml = `<div style="background:#111;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);">B</div>`;
-          const dIcon = L.divIcon({ html: destIconHtml, className: "", iconSize: [24, 24], iconAnchor: [12, 12] });
-          L.marker([ptTo.lat, ptTo.lng], { icon: dIcon, isRouteLayer: true }).addTo(mapInstanceRef.current);
         } else {
           L.polyline([[ptFrom.lat, ptFrom.lng], [ptTo.lat, ptTo.lng]], { color: accent, weight: 4, dashArray: "10 10", isRouteLayer: true }).addTo(mapInstanceRef.current);
           mapInstanceRef.current.fitBounds(L.latLngBounds([ptFrom.lat, ptFrom.lng], [ptTo.lat, ptTo.lng]), { padding: [50, 50] });
@@ -209,14 +213,11 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
         console.warn("Routing failed", err);
       }
     })();
-  }, [triggerRoute, accent]);
+  }, [triggerRoute, accent, routePolyline]);
 
-  // Handle external center update from "Locate Me" button
   useEffect(() => {
     if (centerLoc && mapInstanceRef.current) {
       mapInstanceRef.current.flyTo([centerLoc.lat, centerLoc.lng], 15, { duration: 1.5 });
-
-      // Always use static mock cabs
       const fallbackCabs = generateNearbyCabs(centerLoc.lat, centerLoc.lng, mode);
       setCabs(fallbackCabs);
       
@@ -244,10 +245,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
 
   return (
     <div className="relative h-full w-full bg-secondary">
-      {/* Leaflet map container */}
       <div ref={mapContainerRef} className="absolute inset-0 z-10" />
-
-      {/* Locating spinner */}
       {locating && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-secondary/95 z-20">
           <Locate size={32} className="text-primary animate-pulse" />
@@ -255,16 +253,12 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
           <p className="text-xs text-muted-foreground">Please allow location access if prompted</p>
         </div>
       )}
-
-      {/* Default-location warning */}
       {locError && !locating && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-xl bg-amber-500/95 backdrop-blur px-4 py-2 shadow-lg text-white text-xs font-semibold whitespace-nowrap">
           <AlertCircle size={13} />
           Using default location · Enable GPS for best results
         </div>
       )}
-
-      {/* Cabs Nearby badge */}
       {!locating && (
         <div
           className="absolute top-4 right-4 z-30 flex items-center gap-1.5 rounded-xl px-3 py-1.5 shadow-lg text-xs font-bold text-white"
@@ -274,8 +268,6 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
           {cabs.length} Cabs Nearby
         </div>
       )}
-
-      {/* Cab cards strip */}
       {!locating && cabs.length > 0 && (
         <div className="absolute bottom-0 left-0 right-0 z-30 px-3 pb-3">
           <div
@@ -305,13 +297,11 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, onRouteExtracted, onC
                   boxShadow: cab.id === selectedCab ? `0 6px 16px ${accent}30` : "0 1px 4px rgba(0,0,0,0.06)",
                 }}
               >
-                {/* Checkmark badge when selected */}
                 {cab.id === selectedCab && (
                   <div className="absolute top-2 right-2 flex items-center justify-center bg-white rounded-full">
                     <CheckCircle2 size={16} style={{ color: accent }} className="fill-white" />
                   </div>
                 )}
-
                 <div
                   className="h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold text-white mb-2 shadow-sm"
                   style={{ backgroundColor: accent }}
@@ -369,6 +359,7 @@ const BookingPage = () => {
   const [passengerDetails, setPassengerDetails] = useState<string[]>([]);
   const [pickupCoords, setPickupCoords] = useState<{ lat: number, lng: number } | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number, lng: number } | null>(null);
+  const [routePolyline, setRoutePolyline] = useState<string | null>(null);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -377,15 +368,13 @@ const BookingPage = () => {
     navigator.geolocation?.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
-        setMapCenter({ lat: latitude, lng: longitude }); // Tell map to fly here
+        setMapCenter({ lat: latitude, lng: longitude });
         setPickupCoords({ lat: latitude, lng: longitude });
 
         try {
-          // Free reverse geocoding using Nominatim (no API key required)
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           const data = await res.json();
           if (data && data.display_name) {
-            // Simplify address (e.g., take first 3 parts)
             const shortAddress = data.display_name.split(", ").slice(0, 3).join(", ");
             setPickup(shortAddress);
           } else {
@@ -404,18 +393,16 @@ const BookingPage = () => {
     );
   };
 
-  // Auto-fill on mount
   useEffect(() => {
     if (!voiceState?.pickup) {
       handleUseCurrentLocation();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [rideDetails, setRideDetails] = useState({
     distance: "12.4 km", distanceNum: 12.4, score: 94,
     etaNum: 24, traffic: "Light", riskFactors: 1,
-    aiPrediction: "Stable"
+    aiPrediction: "Stable", fare: 0
   });
 
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
@@ -423,10 +410,8 @@ const BookingPage = () => {
   const [flowState, setFlowState] = useState<"booking" | "confirmed" | "review">("booking");
   const [rating, setRating] = useState(0);
 
-  // Auto-trigger route if voice command had locations
   useEffect(() => {
     if (voiceState?.auto_search && voiceState.destination) {
-      // Wait a small bit for coordinates/nominatim if needed, but we have text
       const timer = setTimeout(() => {
         handleFindRoute();
       }, 1500);
@@ -445,61 +430,79 @@ const BookingPage = () => {
   const [destSuggestions, setDestSuggestions] = useState<any[]>([]);
   const [showPickupDropdown, setShowPickupDropdown] = useState(false);
   const [showDestDropdown, setShowDestDropdown] = useState(false);
+  const [isSearchingPickup, setIsSearchingPickup] = useState(false);
+  const [isSearchingDest, setIsSearchingDest] = useState(false);
   const pickupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handlePickupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setPickup(val);
-    setShowPickupDropdown(true);
-
-    if (pickupTimeoutRef.current) clearTimeout(pickupTimeoutRef.current);
     if (!val.trim()) {
       setPickupSuggestions([]);
+      setShowPickupDropdown(false);
       return;
     }
+    
+    setShowPickupDropdown(true);
+    setIsSearchingPickup(true);
+
+    if (pickupTimeoutRef.current) clearTimeout(pickupTimeoutRef.current);
     pickupTimeoutRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=8&addressdetails=1&countrycodes=in`);
         const data = await res.json();
         setPickupSuggestions(data);
       } catch (e) {
         console.error("Geocoding fetch error:", e);
+      } finally {
+        setIsSearchingPickup(false);
       }
-    }, 500);
+    }, 400);
   };
 
   const handleDestChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setDestination(val);
-    setShowDestDropdown(true);
-
-    if (destTimeoutRef.current) clearTimeout(destTimeoutRef.current);
     if (!val.trim()) {
       setDestSuggestions([]);
+      setShowDestDropdown(false);
       return;
     }
+
+    setShowDestDropdown(true);
+    setIsSearchingDest(true);
+
+    if (destTimeoutRef.current) clearTimeout(destTimeoutRef.current);
     destTimeoutRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=8&addressdetails=1&countrycodes=in`);
         const data = await res.json();
         setDestSuggestions(data);
       } catch (e) {
         console.error("Geocoding fetch error:", e);
+      } finally {
+        setIsSearchingDest(false);
       }
-    }, 500);
+    }, 400);
   };
 
   const selectPickup = (place: any) => {
     setPickup(place.display_name);
     setPickupCoords({ lat: parseFloat(place.lat), lng: parseFloat(place.lon) });
     setShowPickupDropdown(false);
+    if (destination) {
+      setTimeout(() => handleFindRoute(), 300);
+    }
   };
 
   const selectDest = (place: any) => {
     setDestination(place.display_name);
     setDestinationCoords({ lat: parseFloat(place.lat), lng: parseFloat(place.lon) });
     setShowDestDropdown(false);
+    if (pickup) {
+      setTimeout(() => handleFindRoute(), 300);
+    }
   };
 
   const handleRouteExtracted = (km: number) => {
@@ -511,11 +514,10 @@ const BookingPage = () => {
     setChatOpen(false);
     setChatMsgs([]);
     leftRef.current?.scrollTo({ top: leftRef.current.scrollHeight, behavior: "smooth" });
-    // Simulate network wait for driver
     setTimeout(() => {
       if (Math.random() > 0.15) {
-        setAskStatus("accepted"); // 85% accept rate
-        setTimeout(() => handleConfirmRide(), 1500); // auto confirm and wrap up
+        setAskStatus("accepted"); 
+        setTimeout(() => handleConfirmRide(), 1500); 
       } else {
         setAskStatus("rejected");
       }
@@ -559,8 +561,10 @@ const BookingPage = () => {
           etaNum: data.duration_minutes,
           traffic: randomTraffic,
           riskFactors: Math.floor(Math.random() * 2),
-          aiPrediction: data.ai_safety_prediction || "Stable"
+          aiPrediction: data.ai_safety_prediction || "Stable",
+          fare: data.fare_amount
         });
+        setRoutePolyline(data.route_polyline);
         setRouteFound(true);
       }
     } catch (err) {
@@ -575,14 +579,12 @@ const BookingPage = () => {
     setChatMsgs(prev => [...prev, { sender: "user", text: chatInput }]);
     setChatInput("");
 
-    // Fake driver response
     setTimeout(() => {
       setChatMsgs(prev => [...prev, { sender: "driver", text: "Got it, I'm on my way!" }]);
     }, 1500);
   };
 
   const handleConfirmRide = async () => {
-    // Broadcast booking to Admin Command Center
     localStorage.setItem('safego_new_booking', JSON.stringify({
       id: 'RID_' + Math.floor(Math.random() * 1000),
       passenger: 'User Node #88',
@@ -647,7 +649,6 @@ const BookingPage = () => {
       if (saved) {
         const ridesList = JSON.parse(saved);
         if (ridesList.length > 0) {
-          // Update the most recent in-progress ride
           for (let i = 0; i < ridesList.length; i++) {
             if (ridesList[i].status === "In Progress") {
               ridesList[i].status = "Completed";
@@ -670,28 +671,24 @@ const BookingPage = () => {
     setRating(0);
     setReviewText("");
     setTriggerRoute(null);
-    handleUseCurrentLocation(); // Reset to current location
+    setRoutePolyline(null);
+    setRouteFound(false);
+    handleUseCurrentLocation(); 
     leftRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="flex h-screen flex-col bg-background overflow-hidden">
       <Navbar fullWidth={true} />
-
-      {/* ── Split layout ── */}
       <div className="flex flex-1 overflow-hidden">
-
-        {/* ════ LEFT PANEL ════ */}
         <div
           ref={leftRef}
-          className="w-full lg:w-1/2 overflow-y-auto border-r border-border bg-gradient-to-br from-background via-background to-secondary/30"
+          className={`${flowState === "booking" ? "w-full lg:w-1/2" : "w-full"} overflow-y-auto border-r border-border bg-gradient-to-br from-background via-background to-secondary/30 transition-all duration-500 ease-in-out`}
           style={{ scrollbarWidth: "thin" }}
         >
           <div className="px-6 py-8 lg:px-12 lg:py-12 relative min-h-full flex flex-col">
-
             {flowState === "booking" && (
               <>
-                {/* Top bar */}
                 {rideConfirmed && (
                   <div className="mb-4 flex items-center gap-3 rounded-2xl bg-green-500 p-4 text-white shadow-lg animate-in slide-in-from-top-4 fade-in duration-500">
                     <CheckCircle2 size={22} />
@@ -701,7 +698,6 @@ const BookingPage = () => {
                     </div>
                   </div>
                 )}
-
                 <div className="flex items-center justify-between">
                   <Link to="/home" className="group flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 backdrop-blur-sm hover:bg-secondary transition-all shadow-sm hover:shadow-md">
                     <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-0.5" />
@@ -711,15 +707,12 @@ const BookingPage = () => {
                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Select Ride Type</span>
                   </div>
                 </div>
-
                 <div className="mt-8">
                   <h1 className="font-display text-3xl font-black tracking-tight text-foreground lg:text-4xl">
                     Ready for a <span className="text-primary" style={{ color: mode.accent }}>Safe Journey?</span>
                   </h1>
                   <p className="mt-2 text-muted-foreground text-sm font-medium">Configure your pickup and destination for a secure ride.</p>
                 </div>
-
-                {/* ── 1. Route Form ── */}
                 <div className="mt-8 rounded-[2rem] border border-border/40 bg-card p-8 premium-shadow relative transition-all hover:-translate-y-1">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="p-2 rounded-lg" style={{ backgroundColor: `${mode.accent}15` }}>
@@ -727,7 +720,6 @@ const BookingPage = () => {
                     </div>
                     <h3 className="text-sm font-bold text-foreground">Route Details</h3>
                   </div>
-
                   <div className="flex flex-col gap-0 relative">
                     <div className="flex items-center gap-3 relative z-50">
                       <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: mode.accent }} />
@@ -740,22 +732,34 @@ const BookingPage = () => {
                           className="w-full rounded-xl border border-border dark:border-white/10 bg-secondary/60 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors pr-10 dark:text-white dark:placeholder:text-white/30"
                           placeholder="Pickup location"
                         />
-
-                        {showPickupDropdown && pickupSuggestions.length > 0 && (
-                          <div className="absolute top-[105%] left-0 right-0 z-[60] max-h-48 overflow-y-auto rounded-xl border border-border bg-background shadow-xl animate-in fade-in zoom-in-95 duration-200">
+                        {showPickupDropdown && (pickupSuggestions.length > 0 || isSearchingPickup) && (
+                          <div className="absolute top-[105%] left-0 right-0 z-[60] max-h-64 overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl animate-in fade-in zoom-in-95 duration-200 p-2">
+                            {isSearchingPickup && (
+                              <div className="flex items-center gap-3 px-4 py-3 text-xs text-muted-foreground italic">
+                                <Loader2 size={14} className="animate-spin text-primary" />
+                                Analyzing places...
+                              </div>
+                            )}
                             {pickupSuggestions.map((place, i) => (
                               <div
                                 key={i}
-                                className="w-full text-left px-4 py-3 text-xs hover:bg-secondary transition-colors border-b border-border/40 last:border-0 cursor-pointer flex items-center gap-2"
-                                onClick={() => selectPickup(place)}
+                                className="w-full text-left px-4 py-3 text-xs hover:bg-primary/5 rounded-xl transition-all border-b border-border/5 last:border-0 cursor-pointer flex items-start gap-3 group"
+                                onMouseDown={(e) => {
+                                  e.preventDefault(); 
+                                  selectPickup(place);
+                                }}
                               >
-                                <MapPin size={12} className="text-muted-foreground shrink-0" />
-                                <span className="truncate">{place.display_name}</span>
+                                <div className="mt-0.5 p-1.5 rounded-lg bg-secondary group-hover:bg-primary/10 transition-colors">
+                                  <MapPin size={14} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-foreground truncate">{place.display_name?.split(',')[0] || "Location"}</span>
+                                  <span className="text-[10px] text-muted-foreground truncate">{place.display_name?.split(',').slice(1).join(',').trim() || ""}</span>
+                                </div>
                               </div>
                             ))}
                           </div>
                         )}
-
                         <button
                           onClick={handleUseCurrentLocation}
                           disabled={isLocatingAddress}
@@ -784,17 +788,30 @@ const BookingPage = () => {
                           className="w-full rounded-xl border border-border dark:border-white/10 bg-secondary/60 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30"
                           placeholder="Destination"
                         />
-
-                        {showDestDropdown && destSuggestions.length > 0 && (
-                          <div className="absolute top-[105%] left-0 right-0 z-[60] max-h-48 overflow-y-auto rounded-xl border border-border bg-background shadow-xl animate-in fade-in zoom-in-95 duration-200">
+                        {showDestDropdown && (destSuggestions.length > 0 || isSearchingDest) && (
+                          <div className="absolute top-[105%] left-0 right-0 z-[60] max-h-64 overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl animate-in fade-in zoom-in-95 duration-200 p-2">
+                            {isSearchingDest && (
+                              <div className="flex items-center gap-3 px-4 py-3 text-xs text-muted-foreground italic">
+                                <Loader2 size={14} className="animate-spin text-primary" />
+                                Analyzing places...
+                              </div>
+                            )}
                             {destSuggestions.map((place, i) => (
                               <div
                                 key={i}
-                                className="w-full text-left px-4 py-3 text-xs hover:bg-secondary transition-colors border-b border-border/40 last:border-0 cursor-pointer flex items-center gap-2"
-                                onClick={() => selectDest(place)}
+                                className="w-full text-left px-4 py-3 text-xs hover:bg-primary/5 rounded-xl transition-all border-b border-border/5 last:border-0 cursor-pointer flex items-start gap-3 group"
+                                onMouseDown={(e) => {
+                                  e.preventDefault(); 
+                                  selectDest(place);
+                                }}
                               >
-                                <MapPin size={12} className="text-muted-foreground shrink-0" />
-                                <span className="truncate">{place.display_name}</span>
+                                <div className="mt-0.5 p-1.5 rounded-lg bg-secondary group-hover:bg-primary/10 transition-colors">
+                                  <MapPin size={14} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-foreground truncate">{place.display_name?.split(',')[0] || "Location"}</span>
+                                  <span className="text-[10px] text-muted-foreground truncate">{place.display_name?.split(',').slice(1).join(',').trim() || ""}</span>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -802,8 +819,6 @@ const BookingPage = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Date/Time Row added based on imagery */}
                   <div className="mt-6 grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Date</label>
@@ -818,8 +833,6 @@ const BookingPage = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Passengers Selector */}
                   <div className="mt-6 flex items-center justify-between p-4 rounded-3xl bg-secondary/30 border border-border/40 transition-all hover:bg-secondary/40">
                     <div className="flex items-center gap-3">
                       <div className="p-2.5 rounded-2xl bg-background shadow-sm ring-1 ring-border/50">
@@ -848,7 +861,6 @@ const BookingPage = () => {
                       </button>
                     </div>
                   </div>
-
                   {passengers > 1 && (
                     <div className="mt-4 p-6 rounded-[2rem] border border-border/40 bg-card premium-shadow animate-in fade-in slide-in-from-top-2 duration-300">
                       <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Passenger Details</h4>
@@ -873,8 +885,6 @@ const BookingPage = () => {
                     </div>
                   )}
                 </div>
-
-                {/* ── 2. Mode Selector ── */}
                 <div className="mt-10 mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-bold text-foreground">Service Type</h3>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tap to switch</span>
@@ -903,8 +913,6 @@ const BookingPage = () => {
                     );
                   })}
                 </div>
-
-                {/* ── 3. Mode Features ── */}
                 <div className="mt-6 rounded-[2rem] border border-dashed border-border/60 bg-secondary/30 p-6 transition-all hover:bg-secondary/50">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 rounded-xl bg-background shadow-sm">
@@ -931,8 +939,6 @@ const BookingPage = () => {
                     ))}
                   </ul>
                 </div>
-
-                {/* ── PWD extras ── */}
                 {mode.id === "pwd" && (
                   <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
@@ -950,8 +956,6 @@ const BookingPage = () => {
                     <input type="tel" placeholder="+63 912 345 6789" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                   </div>
                 )}
-
-                {/* ── Pink extras ── */}
                 {mode.id === "pink" && (
                   <div className="flex flex-col gap-4">
                     <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
@@ -969,8 +973,6 @@ const BookingPage = () => {
                       <h3 className="text-sm font-bold text-foreground mt-6 mb-3">Emergency Contact</h3>
                       <input type="tel" placeholder="Emergency contact number" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                     </div>
-
-                    {/* Pink Mode Policy Notice */}
                     <div className="rounded-[2rem] border border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/20 p-5 animate-in fade-in zoom-in-95 duration-500">
                       <div className="flex gap-3">
                         <div className="flex-shrink-0 mt-0.5">
@@ -988,8 +990,6 @@ const BookingPage = () => {
                     </div>
                   </div>
                 )}
-
-                {/* ── Elderly extras ── */}
                 {mode.id === "elderly" && (
                   <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
@@ -1007,8 +1007,6 @@ const BookingPage = () => {
                     <input type="tel" placeholder="Family or caregiver's number" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                   </div>
                 )}
-
-                {/* ── Submit Button ── */}
                 <div className="mt-10 mb-4 relative z-20">
                   <button
                     onClick={handleFindRoute}
@@ -1024,26 +1022,21 @@ const BookingPage = () => {
                     )}
                   </button>
                 </div>
-
-                {/* ── Route Result ── */}
                 {routeFound && !isAnalyzing && (
                   <div className="mt-8 space-y-6 animate-in slide-in-from-bottom-8 fade-in duration-700 pb-12">
                     <div className="rounded-[2.5rem] bg-card premium-shadow border border-border/40 p-8 relative overflow-hidden transition-all hover:-translate-y-1">
                       <div className="absolute top-0 right-0 p-4 opacity-5">
                         <Shield size={120} style={{ color: mode.accent }} />
                       </div>
-
                       <div className="flex items-center gap-2 mb-6">
                         <div className="p-1.5 rounded-full bg-green-500/10">
                           <CheckCircle2 size={16} className="text-green-500" />
                         </div>
                         <h4 className="text-sm font-black uppercase tracking-widest text-foreground">AI Intelligence Report</h4>
                       </div>
-
                       <div className="relative z-10">
                         <SafetyScoreBar score={rideDetails.score} color={mode.accent} />
                       </div>
-
                       <div className="mt-8 grid grid-cols-2 gap-4">
                         <div className="p-4 rounded-2xl bg-secondary/40 border border-border/50 transition-colors hover:bg-secondary/60">
                           <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Route Length</span>
@@ -1056,11 +1049,32 @@ const BookingPage = () => {
                           <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Travel Time</span>
                           <div className="mt-1 flex items-center gap-2">
                             <Navigation size={16} className="text-blue-500" />
-                            <span className="text-lg font-black text-foreground">{rideDetails.etaNum} <span className="text-xs font-bold text-muted-foreground">min</span></span>
+                            <span className="text-lg font-black text-foreground">
+                              {rideDetails.etaNum > 60 
+                                ? `${Math.floor(rideDetails.etaNum / 60)}h ${Math.round(rideDetails.etaNum % 60)}m` 
+                                : `${Math.round(rideDetails.etaNum)} min`}
+                            </span>
                           </div>
                         </div>
                       </div>
 
+                      <div className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/20 transition-all hover:bg-primary/10">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-primary/10">
+                              <Star size={18} className="text-primary fill-primary" />
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Estimated Fare</span>
+                              <div className="text-2xl font-black text-foreground">₹{rideDetails.fare.toLocaleString()}</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Incl. Taxes</span>
+                            <div className="text-xs font-bold text-green-600">Secure Payment</div>
+                          </div>
+                        </div>
+                      </div>
                       <div className="mt-4 flex items-center justify-between p-4 rounded-2xl bg-background/50 border border-border/30">
                         <div className="flex items-center gap-3">
                           <div className={`h-3 w-3 rounded-full shadow-sm animate-pulse ${rideDetails.traffic === 'Light' ? 'bg-green-500' : rideDetails.traffic === 'Moderate' ? 'bg-amber-500' : 'bg-red-500'}`} />
@@ -1073,9 +1087,6 @@ const BookingPage = () => {
                         </div>
                       </div>
                     </div>
-
-                    {/* ── Driver Selected OR Select Please ── */}
-                    {/* ── Driver Selected OR Select Please ── */}
                     <div className="pt-4">
                       <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4 pl-1 text-center">Available Operators Nearby</h3>
                       {!selectedDriver ? (
@@ -1098,7 +1109,6 @@ const BookingPage = () => {
                               {selectedDriver.rating}
                             </div>
                           </div>
-
                           <div className={`flex items-center gap-5 transition-all duration-500 ${askStatus === "rejected" ? "opacity-40 grayscale" : "opacity-100"}`}>
                             <div className="relative">
                               <div className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-black text-white shadow-xl shadow-black/20" style={{ backgroundColor: askStatus === "accepted" ? "#10b981" : mode.accent }}>
@@ -1115,7 +1125,6 @@ const BookingPage = () => {
                               <span className="block mt-1 text-[10px] font-bold text-blue-600 uppercase tracking-widest">ETA {selectedDriver.eta}m</span>
                             </div>
                           </div>
-
                           <div className={`mt-8 transition-all duration-500 ${askStatus === "rejected" ? "opacity-40" : "opacity-100"}`}>
                             {chatOpen ? (
                               <div className="rounded-3xl border border-border/50 bg-secondary/20 p-2 animate-in fade-in zoom-in-95 duration-300">
@@ -1196,7 +1205,6 @@ const BookingPage = () => {
                               </div>
                             )}
                           </div>
-
                           {askStatus === "accepted" && (
                             <div className="mt-6 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 font-bold text-[10px] uppercase tracking-widest animate-in fade-in slide-in-from-top-2">
                               <CheckCircle2 size={12} />
@@ -1210,18 +1218,47 @@ const BookingPage = () => {
                 )}
               </>
             )}
-
-            {/* ════ CONFIRMED JOURNEY STATE ════ */}
             {flowState === "confirmed" && (
               <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-6 max-w-lg mx-auto py-8">
-                <div className="text-center">
-                  <div className="mx-auto w-16 h-16 bg-green-500/10 flex items-center justify-center rounded-full mb-4 shadow-sm">
-                    <CheckCircle2 size={32} className="text-green-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold font-display text-foreground">Ride Confirmed!</h2>
-                  <p className="text-muted-foreground mt-2 text-sm">Your driver is on the way to your pickup location.</p>
+                <div className="flex justify-start mb-4">
+                  <button 
+                    onClick={() => setFlowState("booking")}
+                    className="group flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 backdrop-blur-sm hover:bg-secondary transition-all shadow-sm hover:shadow-md"
+                  >
+                    <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-0.5" />
+                  </button>
                 </div>
-
+                <div className="text-center">
+                  <motion.div 
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ 
+                      type: "spring",
+                      stiffness: 260,
+                      damping: 20,
+                      delay: 0.2
+                    }}
+                    className="mx-auto w-20 h-20 bg-green-500/10 flex items-center justify-center rounded-full mb-6 shadow-sm border border-green-500/20"
+                  >
+                    <CheckCircle2 size={40} className="text-green-600" />
+                  </motion.div>
+                  <motion.h2 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-2xl font-bold font-display text-foreground"
+                  >
+                    Ride Confirmed!
+                  </motion.h2>
+                  <motion.p 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="text-muted-foreground mt-2 text-sm"
+                  >
+                    Your driver is on the way to your pickup location.
+                  </motion.p>
+                </div>
                 <div className="rounded-[2.5rem] bg-card border border-border/40 premium-shadow p-8 mt-8 transition-all hover:-translate-y-1">
                   <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Driver Details</h3>
                   <div className="flex items-center gap-4">
@@ -1237,13 +1274,11 @@ const BookingPage = () => {
                       <span className="block text-xs font-semibold text-blue-600 mt-1 uppercase">Arriving in {selectedDriver?.eta}m</span>
                     </div>
                   </div>
-
                   <div className="mt-6 pt-6 border-t border-border">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Destination</h3>
                     <p className="text-sm font-medium text-foreground">{destination}</p>
                   </div>
                 </div>
-
                 <button
                   onClick={handleCompleteRide}
                   className="w-full mt-8 rounded-xl py-4 text-sm font-bold text-white hover:brightness-110 transition-all shadow-md active:scale-[0.98]"
@@ -1253,8 +1288,6 @@ const BookingPage = () => {
                 </button>
               </div>
             )}
-
-            {/* ════ REVIEW STATE ════ */}
             {flowState === "review" && (
               <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-6 max-w-lg mx-auto py-8">
                 <div className="text-center">
@@ -1264,11 +1297,8 @@ const BookingPage = () => {
                   <h2 className="text-2xl font-bold font-display text-foreground">You've reached your destination!</h2>
                   <p className="text-muted-foreground mt-2 text-sm">How was your journey with {selectedDriver?.name}?</p>
                 </div>
-
                 <div className="rounded-[2.5rem] bg-card border border-border/40 premium-shadow p-8 mt-8 text-center flex flex-col items-center transition-all hover:-translate-y-1">
                   <h3 className="text-sm font-bold text-foreground mb-4">Rate your driver</h3>
-
-                  {/* Interactive Star Rating */}
                   <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -1288,7 +1318,6 @@ const BookingPage = () => {
                   <p className="text-xs text-muted-foreground mt-4 font-medium min-h-[16px]">
                     {rating === 5 ? "Excellent service!" : rating === 4 ? "Great ride!" : rating === 3 ? "It was okay." : rating > 0 ? "Needs improvement" : " "}
                   </p>
-
                   <div className="w-full mt-6 text-left">
                     <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 block">Leave a review (optional)</label>
                     <textarea
@@ -1300,7 +1329,6 @@ const BookingPage = () => {
                     />
                   </div>
                 </div>
-
                 <button
                   onClick={handleSubmitReview}
                   disabled={rating === 0}
@@ -1318,9 +1346,19 @@ const BookingPage = () => {
         </div>
 
         {/* ════ RIGHT PANEL — Live Map ════ */}
-        <div className="hidden lg:block lg:w-1/2 relative">
-          <MapPanel accent={mode.accent} mode={modeId || "normal"} centerLoc={mapCenter} triggerRoute={triggerRoute} onRouteExtracted={handleRouteExtracted} onCabSelect={(cab: any) => { setSelectedDriver(cab); setAskStatus("idle"); }} />
-        </div>
+        {flowState === "booking" && (
+          <div className="hidden lg:block lg:w-1/2 relative animate-in fade-in slide-in-from-right duration-500">
+            <MapPanel
+              accent={mode.accent}
+              mode={mode.id}
+              centerLoc={mapCenter}
+              triggerRoute={triggerRoute}
+              routePolyline={routePolyline}
+              onRouteExtracted={handleRouteExtracted}
+              onCabSelect={setSelectedDriver}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
