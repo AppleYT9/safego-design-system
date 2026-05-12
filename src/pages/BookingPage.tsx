@@ -6,7 +6,7 @@ import { useVoiceAssistant } from "@/contexts/VoiceAssistantContext";
 import { SafetyScoreBar } from "@/components/SafetyScoreBar";
 import {
   ArrowLeft, Star, MessageCircle, Shield, Loader2, CheckCircle2,
-  MapPin, Navigation, Car, AlertCircle, Locate, Send, X, Users
+  MapPin, Navigation, Car, AlertCircle, Locate, Send, X, Users, Zap
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
@@ -370,7 +370,7 @@ const BookingPage = () => {
   const [pickupCoords, setPickupCoords] = useState<{ lat: number, lng: number } | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number, lng: number } | null>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || "";
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   const handleUseCurrentLocation = () => {
     setIsLocatingAddress(true);
@@ -415,6 +415,7 @@ const BookingPage = () => {
   const [rideDetails, setRideDetails] = useState({
     distance: "12.4 km", distanceNum: 12.4, score: 94,
     etaNum: 24, traffic: "Light", riskFactors: 1,
+    aiPrediction: "Stable"
   });
 
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
@@ -521,7 +522,7 @@ const BookingPage = () => {
     }, 2500 + Math.random() * 2000);
   };
 
-  const handleFindRoute = () => {
+  const handleFindRoute = async () => {
     if (!pickup.trim() || !destination.trim()) {
       alert("Please enter both a pickup location and a destination.");
       return;
@@ -533,28 +534,40 @@ const BookingPage = () => {
     setChatOpen(false);
     setTriggerRoute({ from: pickup, to: destination });
 
-    setTimeout(() => {
-      const trafficOptions = ["Light", "Moderate", "Heavy"];
-      const randomTraffic = trafficOptions[Math.floor(Math.random() * trafficOptions.length)];
-      setRideDetails(prev => ({
-        ...prev,
-        score: Math.floor(Math.random() * 10 + 90),
-        etaNum: Math.floor(prev.distanceNum * 3 + Math.random() * 5),
-        traffic: randomTraffic,
-        riskFactors: Math.floor(Math.random() * 3) + 1
-      }));
-      setIsAnalyzing(false);
-      setRouteFound(true);
+    try {
+      const res = await fetch(`${API_URL}/api/map/route`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pickup_latitude: pickupCoords?.lat || 22.3,
+          pickup_longitude: pickupCoords?.lng || 73.19,
+          destination_latitude: destinationCoords?.lat || 22.35,
+          destination_longitude: destinationCoords?.lng || 73.24,
+          mode: mode.id
+        })
+      });
 
-      // AUTO-PROCESS: If voice command requested full booking
-      if (voiceState?.auto_confirm) {
-        setTimeout(() => {
-          // Select the first driver (if any cabs generated)
-          speak("Route found. Automatically connecting you with the nearest driver.");
-          handleAskDriver();
-        }, 1500);
+      if (res.ok) {
+        const data = await res.json();
+        const trafficOptions = ["Light", "Moderate", "Heavy"];
+        const randomTraffic = trafficOptions[Math.floor(Math.random() * trafficOptions.length)];
+        
+        setRideDetails({
+          distance: `${data.distance_km} km`,
+          distanceNum: data.distance_km,
+          score: data.safety_score,
+          etaNum: data.duration_minutes,
+          traffic: randomTraffic,
+          riskFactors: Math.floor(Math.random() * 2),
+          aiPrediction: data.ai_safety_prediction || "Stable"
+        });
+        setRouteFound(true);
       }
-    }, 2000);
+    } catch (err) {
+      console.error("Route fetch error:", err);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleSendMessage = () => {
@@ -1055,8 +1068,8 @@ const BookingPage = () => {
                         </div>
                         <div className="h-4 w-px bg-border/50" />
                         <div className="flex items-center gap-3">
-                          <AlertCircle size={16} className="text-amber-500" />
-                          <span className="text-xs font-black uppercase tracking-widest text-foreground">{rideDetails.riskFactors} Alerts Found</span>
+                          <Zap size={16} className="text-primary" />
+                          <span className="text-xs font-black uppercase tracking-widest text-foreground">AI: {rideDetails.aiPrediction}</span>
                         </div>
                       </div>
                     </div>

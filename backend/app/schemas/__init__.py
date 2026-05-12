@@ -200,6 +200,7 @@ class RouteResponse(BaseModel):
     duration_minutes: float
     fare_amount: float
     safety_score: int
+    ai_safety_prediction: Optional[str] = "Stable"
     route_polyline: Optional[str] = None
     steps: Optional[List[Any]] = []
 
@@ -268,6 +269,8 @@ class RatingResponse(BaseModel):
     driver_id: str
     score: int
     comment: Optional[str] = None
+    sentiment_score: Optional[float] = None
+    sentiment_label: Optional[str] = None
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)

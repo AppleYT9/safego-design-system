@@ -61,11 +61,23 @@ async def get_route(
     fare_amount = calculate_fare(mode, distance_km)
     safety_score = calculate_safety_score(mode, distance_km)
 
+    # AI Route Prediction Logic
+    ai_prediction = "Stable"
+    from datetime import datetime
+    hour = datetime.now().hour
+    if 22 <= hour or hour <= 4:
+        ai_prediction = "Cautious" # Night time risk
+    if distance_km > 20:
+        ai_prediction = "Strategic" # Long haul optimization
+    if mode == "pink" or mode == "pwd":
+        ai_prediction = "High Priority"
+
     return {
         "distance_km": distance_km,
         "duration_minutes": duration_minutes,
         "fare_amount": fare_amount,
         "safety_score": safety_score,
+        "ai_safety_prediction": ai_prediction,
         "route_polyline": route_polyline,
         "steps": steps,
     }

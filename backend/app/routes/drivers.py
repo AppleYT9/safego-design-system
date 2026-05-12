@@ -96,17 +96,14 @@ async def register_driver(payload: DriverRegister, current_user: User = Depends(
 async def apply_as_driver(payload: DriverApplication):
     # Check if user already exists
     existing_user = await User.find_one(User.email == payload.email)
+    if existing_user and existing_user.role == UserRole.driver:
+        raise HTTPException(status_code=400, detail="You are already registered as a driver")
+
     if existing_user:
-        if existing_user.role == UserRole.driver:
-            # Check if they already have a driver record
-            driver = await Driver.find_one(Driver.user_id == existing_user.id)
-            if driver:
-                raise HTTPException(status_code=400, detail="Driver application already exists or user is already a driver")
-        else:
-            # Update role to driver
-            existing_user.role = UserRole.driver
-            await existing_user.save()
-            user = existing_user
+        # Update role to driver
+        existing_user.role = UserRole.driver
+        await existing_user.save()
+        user = existing_user
     else:
         # Create new user
         from app.utils.security import hash_password
@@ -287,6 +284,25 @@ async def get_driver_activity(current_user: User = Depends(get_current_driver)):
             "type": "ride"
         })
         
+    # 2. Verified documents
+    docs = await DriverDocument.find(DriverDocument.driver_id == driver.id, DriverDocument.status == DocumentStatus.verified).sort(-DriverDocument.updated_at).limit(3).to_list()
+    for d in docs:
+        activity.append({
+            "text": f"Document approved: {d.document_type.value.replace('_', ' ').title()}",
+            "time": d.updated_at.strftime("%I:%M %p") if d.updated_at else "Today",
+            "type": "document"
+        })
+        
+    # 3. High ratings
+    ratings = await Rating.find(Rating.driver_id == driver.id, Rating.score >= 4).sort(-Rating.created_at).limit(3).to_list()
+    for r in ratings:
+        activity.append({
+            "text": f"{r.score}-star rating received",
+            "time": r.created_at.strftime("%I:%M %p") if r.created_at else "Today",
+            "type": "rating"
+        })
+        
+    return sorted(activity, key=lambda x: x["time"], reverse=True)[:10]
     # 2. Verified documents
     docs = await DriverDocument.find(DriverDocument.driver_id == driver.id, DriverDocument.status == DocumentStatus.verified).sort(-DriverDocument.updated_at).limit(3).to_list()
     for d in docs:

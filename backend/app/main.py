@@ -1,5 +1,4 @@
 from __future__ import annotations
-print("MAIN STARTING")
 
 from contextlib import asynccontextmanager
 
@@ -66,14 +65,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from fastapi import Request
-@app.middleware("http")
-async def log_origin(request: Request, call_next):
-    origin = request.headers.get("origin")
-    if origin:
-        print(f"INFO: Origin header received: {origin}")
-    response = await call_next(request)
-    return response
+
 
 # Include routers
 app.include_router(auth.router)

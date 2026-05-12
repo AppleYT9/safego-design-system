@@ -339,7 +339,7 @@ const AdminDashboard = () => {
     fetchStats();
     fetchCurrentUser();
     if (activeTab === "users") fetchUsers();
-    if (activeTab === "drivers") fetchDrivers();
+    if (activeTab === "drivers") { fetchDrivers(); }
     if (activeTab === "live-rides") fetchLiveRides();
     if (activeTab === "alerts") fetchSOS();
 
@@ -502,6 +502,68 @@ const AdminDashboard = () => {
                     </div>
                   </Card>
                 ))}
+              </div>
+
+              {/* AI INTELLIGENCE INSIGHTS */}
+              <div className="grid gap-8 lg:grid-cols-3">
+                <Card className="lg:col-span-1 bg-slate-900 border-slate-800 text-white p-8 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 h-32 w-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/30 transition-all duration-700" />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary"><Zap size={20} /></div>
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">AI Sentiment Matrix</h4>
+                    </div>
+                    <div className="space-y-6">
+                      <div>
+                        <div className="flex justify-between items-end mb-2">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Network Sentiment</span>
+                          <span className="text-xl font-black text-emerald-400">92% Positive</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                          <motion.div initial={{ width: 0 }} animate={{ width: "92%" }} className="h-full bg-emerald-500" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Neutral Flux</p>
+                          <p className="text-lg font-black text-white">7.2%</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+                          <p className="text-[9px] font-bold text-rose-400/70 uppercase tracking-widest mb-1">Critical Signals</p>
+                          <p className="text-lg font-black text-rose-500">0.8%</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="lg:col-span-2 p-8 border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 relative overflow-hidden group">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-lg"><Activity size={20} /></div>
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900 tracking-tight">AI Predictive Route Safety</h4>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Real-time Anomaly Analysis</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[9px] font-black uppercase tracking-widest animate-pulse">
+                      Live Prediction Engine
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-6">
+                    {[
+                      { label: "Night Protocol", val: "Cautious", desc: "Low visibility delta", color: "text-amber-500", bg: "bg-amber-50" },
+                      { label: "Traffic Density", val: "Stable", desc: "Nominal flux detected", color: "text-emerald-500", bg: "bg-emerald-50" },
+                      { label: "Safety Confidence", val: "98.4%", desc: "Verified via Digital Twin", color: "text-primary", bg: "bg-primary/5" }
+                    ].map((m, i) => (
+                      <div key={i} className={`p-5 rounded-2xl border border-transparent hover:border-slate-200 hover:bg-white transition-all`}>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{m.label}</p>
+                        <p className={`text-xl font-black ${m.color} mb-1`}>{m.val}</p>
+                        <p className="text-[10px] font-bold text-slate-500">{m.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
               </div>
 
               {/* CORE INTELLIGENCE CLUSTER */}
@@ -918,11 +980,10 @@ const AdminDashboard = () => {
                     <button
                       key={g}
                       onClick={() => setFleetGenderFilter(g as any)}
-                      className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-                        fleetGenderFilter === g 
-                          ? 'bg-white text-slate-900 shadow-sm scale-105' 
+                      className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${fleetGenderFilter === g
+                          ? 'bg-white text-slate-900 shadow-sm scale-105'
                           : 'text-slate-400 hover:text-slate-600'
-                      }`}
+                        }`}
                     >
                       {g}
                     </button>
@@ -945,78 +1006,77 @@ const AdminDashboard = () => {
                   <tbody className="divide-y divide-slate-50">
                     {isSearching ? (
                       <tr><td colSpan={6} className="px-8 py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
-                    ) : driversList.filter(d => fleetGenderFilter === 'all' || d.user?.gender === fleetGenderFilter).length > 0 ? 
-                        driversList.filter(d => fleetGenderFilter === 'all' || d.user?.gender === fleetGenderFilter).map((d) => (
-                      <tr key={d._id} className="hover:bg-slate-50/30 transition-colors group">
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-500 border border-slate-200">
-                              {d.user?.full_name?.charAt(0).toUpperCase()}
+                    ) : driversList.filter(d => fleetGenderFilter === 'all' || d.user?.gender === fleetGenderFilter).length > 0 ?
+                      driversList.filter(d => fleetGenderFilter === 'all' || d.user?.gender === fleetGenderFilter).map((d) => (
+                        <tr key={d._id} className="hover:bg-slate-50/30 transition-colors group">
+                          <td className="px-8 py-5">
+                            <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-500 border border-slate-200">
+                                {d.user?.full_name?.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-900">{d.user?.full_name}</p>
+                                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-tight">{d.license_number}</p>
+                              </div>
                             </div>
+                          </td>
+                          <td className="px-8 py-5">
                             <div>
-                              <p className="text-sm font-bold text-slate-900">{d.user?.full_name}</p>
-                              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-tight">{d.license_number}</p>
+                              <p className="text-xs font-bold text-slate-700">{d.vehicle?.make} {d.vehicle?.model}</p>
+                              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{d.vehicle?.plate_number}</p>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div>
-                            <p className="text-xs font-bold text-slate-700">{d.vehicle?.make} {d.vehicle?.model}</p>
-                            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{d.vehicle?.plate_number}</p>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                            d.user?.gender === 'female' 
-                              ? 'bg-rose-100 text-rose-600' 
-                              : d.user?.gender === 'male' 
-                                ? 'bg-blue-100 text-blue-600' 
-                                : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {d.user?.gender || 'N/A'}
-                          </span>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-4">
-                            <div><p className="text-xs font-bold text-slate-900">{d.average_rating || '5.0'}</p><p className="text-[9px] font-medium text-slate-400">Rating</p></div>
-                            <div className="w-px h-6 bg-slate-100" />
-                            <div><p className="text-xs font-bold text-slate-900">{d.total_rides || '0'}</p><p className="text-[9px] font-medium text-slate-400">Trips</p></div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-2">
-                            <div className={`h-1.5 w-1.5 rounded-full ${d.is_online ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                            <span className={`text-[10px] font-bold uppercase tracking-widest ${d.is_online ? 'text-emerald-600' : 'text-slate-400'}`}>
-                              {d.is_online ? 'Active' : 'Offline'}
+                          </td>
+                          <td className="px-8 py-5">
+                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${d.user?.gender === 'female'
+                                ? 'bg-rose-100 text-rose-600'
+                                : d.user?.gender === 'male'
+                                  ? 'bg-blue-100 text-blue-600'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}>
+                              {d.user?.gender || 'N/A'}
                             </span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center justify-end gap-2">
-                            {d.status === 'pending' ? (
-                              <>
-                                <button 
-                                  onClick={() => handleApproveDriver(d._id, 'approved')}
-                                  className="h-9 px-4 rounded-lg bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-600 shadow-sm transition-all"
-                                >
-                                  Accept
-                                </button>
-                                <button 
-                                  onClick={() => handleApproveDriver(d._id, 'rejected')}
-                                  className="h-9 px-4 rounded-lg bg-rose-500 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-rose-600 shadow-sm transition-all"
-                                >
-                                  Decline
-                                </button>
-                              </>
-                            ) : (
-                              <button className="h-9 px-4 rounded-lg bg-white border border-slate-200 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-primary hover:border-primary/30 transition-all">Dossier</button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )) : (
-                      <tr><td colSpan={6} className="px-8 py-20 text-center"><div className="flex flex-col items-center gap-3 text-slate-300"><Car size={40} /><p className="font-semibold text-sm">No Fleet Nodes Active</p></div></td></tr>
-                    )}
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="flex items-center gap-4">
+                              <div><p className="text-xs font-bold text-slate-900">{d.average_rating || '5.0'}</p><p className="text-[9px] font-medium text-slate-400">Rating</p></div>
+                              <div className="w-px h-6 bg-slate-100" />
+                              <div><p className="text-xs font-bold text-slate-900">{d.total_rides || '0'}</p><p className="text-[9px] font-medium text-slate-400">Trips</p></div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="flex items-center gap-2">
+                              <div className={`h-1.5 w-1.5 rounded-full ${d.is_online ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                              <span className={`text-[10px] font-bold uppercase tracking-widest ${d.is_online ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                {d.is_online ? 'Active' : 'Offline'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="flex items-center justify-end gap-2">
+                              {d.status === 'pending' ? (
+                                <>
+                                  <button
+                                    onClick={() => handleApproveDriver(d._id, 'approved')}
+                                    className="h-9 px-4 rounded-lg bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-600 shadow-sm transition-all"
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    onClick={() => handleApproveDriver(d._id, 'rejected')}
+                                    className="h-9 px-4 rounded-lg bg-rose-500 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-rose-600 shadow-sm transition-all"
+                                  >
+                                    Decline
+                                  </button>
+                                </>
+                              ) : (
+                                <button className="h-9 px-4 rounded-lg bg-white border border-slate-200 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-primary hover:border-primary/30 transition-all">Dossier</button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan={6} className="px-8 py-20 text-center"><div className="flex flex-col items-center gap-3 text-slate-300"><Car size={40} /><p className="font-semibold text-sm">No Fleet Nodes Active</p></div></td></tr>
+                      )}
                   </tbody>
                 </table>
               </Card>

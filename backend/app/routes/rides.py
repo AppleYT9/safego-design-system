@@ -174,12 +174,29 @@ async def rate_ride(ride_id: str, payload: RatingCreate, current_user: User = De
     existing = await Rating.find_one(Rating.ride_id == ride.id)
     if existing:
         raise HTTPException(status_code=400, detail="Ride already rated")
+    # AI Sentiment Analysis
+    sentiment_score = 0.0
+    sentiment_label = "Neutral"
+    if payload.comment:
+        try:
+            from textblob import TextBlob
+            analysis = TextBlob(payload.comment)
+            sentiment_score = round(analysis.sentiment.polarity, 2)
+            if sentiment_score > 0.1:
+                sentiment_label = "Positive"
+            elif sentiment_score < -0.1:
+                sentiment_label = "Critical"
+        except Exception:
+            pass
+
     rating = Rating(
         ride_id=ride.id,
         rater_id=current_user.id,
         driver_id=ride.driver_id,
         score=payload.score,
         comment=payload.comment,
+        sentiment_score=sentiment_score,
+        sentiment_label=sentiment_label,
     )
     await rating.insert()
     await update_driver_rating(ride.driver_id)
@@ -190,6 +207,8 @@ async def rate_ride(ride_id: str, payload: RatingCreate, current_user: User = De
         "driver_id": str(rating.driver_id),
         "score": rating.score,
         "comment": rating.comment,
+        "sentiment_score": rating.sentiment_score,
+        "sentiment_label": rating.sentiment_label,
         "created_at": rating.created_at,
     }
 

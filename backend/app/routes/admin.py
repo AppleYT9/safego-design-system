@@ -341,3 +341,24 @@ async def delete_user(user_id: str, admin: User = Depends(get_current_admin)):
 
     await user.delete()
     return None
+    return _user_dict(user)
+
+
+@router.delete("/users/{user_id}", status_code=204)
+async def delete_user(user_id: str, admin: User = Depends(get_current_admin)):
+    user = await User.get(PydanticObjectId(user_id))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # If user is a driver, we might need to handle Driver record too
+    if user.role == UserRole.driver:
+        driver = await Driver.find_one(Driver.user_id == user.id)
+        if driver:
+            # Delete vehicle too?
+            vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
+            if vehicle:
+                await vehicle.delete()
+            await driver.delete()
+
+    await user.delete()
+    return None

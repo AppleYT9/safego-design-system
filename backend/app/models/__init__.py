@@ -196,6 +196,8 @@ class Rating(Document):
     driver_id: PydanticObjectId
     score: int
     comment: Optional[str] = None
+    sentiment_score: Optional[float] = None
+    sentiment_label: Optional[str] = None
     created_at: datetime = Field(default_factory=_utcnow)
 
     class Settings:

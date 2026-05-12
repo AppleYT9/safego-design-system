@@ -29,7 +29,14 @@ const ApplyDriver = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => {
+            const newData = { ...prev, [name]: value };
+            // If gender is changed to male and preferred_mode was pink, reset it
+            if (name === "gender" && value === "male" && prev.preferred_mode === "pink") {
+                newData.preferred_mode = "standard";
+            }
+            return newData;
+        });
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
@@ -38,11 +45,44 @@ const ApplyDriver = () => {
         }
     };
 
-    const handleNext = () => setStep(s => Math.min(s + 1, 3));
+    const isStepValid = () => {
+        if (step === 1) {
+            return formData.full_name.length >= 2 && 
+                   formData.email.includes("@") && 
+                   formData.phone.length >= 8 &&
+                   formData.gender;
+        }
+        if (step === 2) {
+            return formData.make && 
+                   formData.model_year && 
+                   formData.plate_number.length >= 4 &&
+                   formData.preferred_mode;
+        }
+        if (step === 3) {
+            return files[0] && files[1] && files[2];
+        }
+        return true;
+    };
+
+    const handleNext = () => {
+        if (isStepValid()) {
+            setStep(s => Math.min(s + 1, 3));
+        } else {
+            toast.error("Missing Information", {
+                description: "Please complete all required fields before proceeding."
+            });
+        }
+    };
     const handlePrev = () => setStep(s => Math.max(s - 1, 1));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!isStepValid()) {
+            toast.error("Incomplete Application", {
+                description: "Please upload all required documents before submitting."
+            });
+            return;
+        }
         setIsSubmitting(true);
         
         try {
@@ -217,7 +257,9 @@ const ApplyDriver = () => {
                                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Service Mode Preference</label>
                                             <select required name="preferred_mode" value={formData.preferred_mode} onChange={handleInputChange} className="w-full bg-background/50 border border-border rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
                                                 <option value="standard">Standard Ride (All Passengers)</option>
-                                                <option value="pink">Pink Mode (Women Only - Certification Required)</option>
+                                                {formData.gender !== 'male' && (
+                                                    <option value="pink">Pink Mode (Women Only - Certification Required)</option>
+                                                )}
                                                 <option value="pwd">PWD Access (Certification Required)</option>
                                             </select>
                                         </div>
