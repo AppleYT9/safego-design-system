@@ -609,9 +609,9 @@ const EarningsTab = ({ history }: { history: any[] }) => {
         </div>
         <div className="divide-y divide-border">
           {[
-            { desc: "Ride Fare – BGC to Makati", amount: "+₹185", type: "credit", time: "2:30 PM Today" },
+            { desc: "Ride Fare – HSR to Indiranagar", amount: "+₹185", type: "credit", time: "2:30 PM Today" },
             { desc: "Tip from Passenger", amount: "+₹30", type: "tip", time: "2:32 PM Today" },
-            { desc: "Ride Fare – SM Megamall to Ortigas", amount: "+₹120", type: "credit", time: "1:15 PM Today" },
+            { desc: "Ride Fare – Cyber Hub to DLF Phase 3", amount: "+₹120", type: "credit", time: "1:15 PM Today" },
             { desc: "Platform Commission (15%)", amount: "-₹45.75", type: "debit", time: "1:15 PM Today" },
             { desc: "Weekly Bonus (20+ rides)", amount: "+₹500", type: "bonus", time: "Mon 12:00 AM" },
           ].map((t, i) => (

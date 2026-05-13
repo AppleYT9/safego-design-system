@@ -38,4 +38,4 @@ async def close_db():
     global _client
     if _client:
         _client.close()
-        print("[DB] MongoDB connection closed")
+        print("[DB] MongoDB connection closed gracefully (App Lifecycle)")

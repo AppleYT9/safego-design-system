@@ -22,9 +22,9 @@ const navItems = [
 ];
 
 const rides = [
-  { id: 1, mode: "Pink", route: "SM Mall → BGC", date: "Mar 8", driver: "Ana M.", status: "Completed", rating: 5 },
-  { id: 2, mode: "Normal", route: "Makati → QC", date: "Mar 7", driver: "James D.", status: "Completed", rating: 4 },
-  { id: 3, mode: "PWD", route: "Home → Hospital", date: "Mar 6", driver: "Carlos R.", status: "Cancelled", rating: 0 },
+  { id: 1, mode: "Pink", route: "Forum Mall → HSR Layout", date: "Mar 8", driver: "Ananya M.", status: "Completed", rating: 5 },
+  { id: 2, mode: "Normal", route: "Indiranagar → Marathahalli", date: "Mar 7", driver: "James D.", status: "Completed", rating: 4 },
+  { id: 3, mode: "PWD", route: "Whitefield → Manipal Hospital", date: "Mar 6", driver: "Carlos R.", status: "Cancelled", rating: 0 },
 ];
 
 const statusColors: Record<string, string> = {

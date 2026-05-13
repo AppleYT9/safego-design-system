@@ -30,13 +30,15 @@ const generateNearbyCabs = (lat: number, lng: number, mode: string = "normal") =
 // ─── Leaflet Map Panel (no API key) ─────────────────────────────────────────
 declare global { interface Window { L: any } }
 
-const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRouteExtracted, onCabSelect }: { accent: string, mode: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, routePolyline?: string | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void }) => {
+const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRouteExtracted, onCabSelect, simulatingTravel, onTravelComplete }: { accent: string, mode: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, routePolyline?: string | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void, simulatingTravel?: boolean, onTravelComplete?: () => void }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [cabs, setCabs] = useState<any[]>([]);
   const [locating, setLocating] = useState(true);
   const [locError, setLocError] = useState(false);
   const [selectedCab, setSelectedCab] = useState<number | null>(null);
+  const carMarkerRef = useRef<any>(null);
+  const simulationIntervalRef = useRef<any>(null);
 
   useEffect(() => {
     // Load Leaflet CSS
@@ -161,6 +163,19 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
           L.polyline(coordsList, { color: accent, weight: 6, opacity: 0.8, className: 'route-glow', isRouteLayer: true }).addTo(mapInstanceRef.current);
           L.polyline(coordsList, { color: 'white', weight: 2, dashArray: '8 8', isRouteLayer: true }).addTo(mapInstanceRef.current);
 
+          // Add Pickup and Destination Markers
+          const pickupIcon = L.divIcon({
+            html: `<div style="background:${accent};width:12px;height:12px;border:2px solid white;border-radius:50%;box-shadow:0 0 10px ${accent}80;"></div>`,
+            className: "", iconSize: [12, 12], iconAnchor: [6, 6]
+          });
+          const destIcon = L.divIcon({
+            html: `<div style="background:#ef4444;width:12px;height:12px;border:2px solid white;border-radius:2px;box-shadow:0 0 10px #ef444480;"></div>`,
+            className: "", iconSize: [12, 12], iconAnchor: [6, 6]
+          });
+
+          L.marker(coordsList[0], { icon: pickupIcon, isRouteLayer: true }).addTo(mapInstanceRef.current);
+          L.marker(coordsList[coordsList.length - 1], { icon: destIcon, isRouteLayer: true }).addTo(mapInstanceRef.current);
+
           const bounds = L.latLngBounds(coordsList);
           mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
           return;
@@ -203,7 +218,20 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
           L.polyline(coordsList, { color: accent, weight: 6, opacity: 0.8, className: 'route-glow', isRouteLayer: true }).addTo(mapInstanceRef.current);
           L.polyline(coordsList, { color: 'white', weight: 2, dashArray: '8 8', isRouteLayer: true }).addTo(mapInstanceRef.current);
 
-          const bounds = L.latLngBounds([ptFrom.lat, ptFrom.lng], [ptTo.lat, ptTo.lng]);
+          // Add Pickup and Destination Markers
+          const pickupIcon = L.divIcon({
+            html: `<div style="background:${accent};width:12px;height:12px;border:2px solid white;border-radius:50%;box-shadow:0 0 10px ${accent}80;"></div>`,
+            className: "", iconSize: [12, 12], iconAnchor: [6, 6]
+          });
+          const destIcon = L.divIcon({
+            html: `<div style="background:#ef4444;width:12px;height:12px;border:2px solid white;border-radius:2px;box-shadow:0 0 10px #ef444480;"></div>`,
+            className: "", iconSize: [12, 12], iconAnchor: [6, 6]
+          });
+
+          L.marker(coordsList[0], { icon: pickupIcon, isRouteLayer: true }).addTo(mapInstanceRef.current);
+          L.marker(coordsList[coordsList.length - 1], { icon: destIcon, isRouteLayer: true }).addTo(mapInstanceRef.current);
+
+          const bounds = L.latLngBounds(coordsList);
           mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
         } else {
           L.polyline([[ptFrom.lat, ptFrom.lng], [ptTo.lat, ptTo.lng]], { color: accent, weight: 4, dashArray: "10 10", isRouteLayer: true }).addTo(mapInstanceRef.current);
@@ -214,6 +242,60 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
       }
     })();
   }, [triggerRoute, accent, routePolyline]);
+
+  // Car Animation Simulation
+  useEffect(() => {
+    const L = window.L;
+    if (!L || !mapInstanceRef.current || !simulatingTravel || !routePolyline) return;
+
+    const geojson = JSON.parse(routePolyline);
+    const coordsList = geojson.coordinates.map((c: any) => [c[1], c[0]]);
+    
+    if (coordsList.length < 2) return;
+
+    const carHtml = `
+      <div style="background:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.25);border:2px solid ${accent};">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+          <circle cx="7" cy="17" r="2"/>
+          <path d="M9 17h6"/>
+          <circle cx="17" cy="17" r="2"/>
+        </svg>
+      </div>
+    `;
+    const carIcon = L.divIcon({ html: carHtml, className: "", iconSize: [32, 32], iconAnchor: [16, 16] });
+    
+    if (carMarkerRef.current) {
+      mapInstanceRef.current.removeLayer(carMarkerRef.current);
+    }
+    
+    const carMarker = L.marker(coordsList[0], { icon: carIcon, zIndexOffset: 1000 }).addTo(mapInstanceRef.current);
+    carMarkerRef.current = carMarker;
+
+    let step = 0;
+    const totalSteps = coordsList.length;
+    
+    // Ensure animation always takes ~600ms regardless of distance
+    const targetDuration = 600; 
+    const frameRate = 30; // 30ms per update
+    const totalUpdates = targetDuration / frameRate; 
+    const stepIncrement = Math.max(1, Math.ceil(totalSteps / totalUpdates));
+
+    simulationIntervalRef.current = setInterval(() => {
+      step += stepIncrement;
+      if (step >= totalSteps) {
+        carMarker.setLatLng(coordsList[totalSteps - 1]);
+        clearInterval(simulationIntervalRef.current);
+        if (onTravelComplete) onTravelComplete();
+        return;
+      }
+      carMarker.setLatLng(coordsList[step]);
+    }, frameRate);
+
+    return () => {
+      if (simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
+    };
+  }, [simulatingTravel, routePolyline, accent]);
 
   useEffect(() => {
     if (centerLoc && mapInstanceRef.current) {
@@ -360,6 +442,7 @@ const BookingPage = () => {
   const [pickupCoords, setPickupCoords] = useState<{ lat: number, lng: number } | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number, lng: number } | null>(null);
   const [routePolyline, setRoutePolyline] = useState<string | null>(null);
+  const [isSimulatingTravel, setIsSimulatingTravel] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -627,8 +710,8 @@ const BookingPage = () => {
       if (!res.ok) throw new Error("Failed to create ride");
       const rideData = await res.json();
 
-      setAskStatus("accepted");
-      setFlowState("confirmed");
+      // Trigger simulation instead of immediate confirmed state
+      setIsSimulatingTravel(true);
       leftRef.current?.scrollTo({ top: 0, behavior: "smooth" });
 
     } catch (err) {
@@ -1356,6 +1439,12 @@ const BookingPage = () => {
               routePolyline={routePolyline}
               onRouteExtracted={handleRouteExtracted}
               onCabSelect={setSelectedDriver}
+              simulatingTravel={isSimulatingTravel}
+              onTravelComplete={() => {
+                setAskStatus("accepted");
+                setFlowState("confirmed");
+                setIsSimulatingTravel(false);
+              }}
             />
           </div>
         )}
