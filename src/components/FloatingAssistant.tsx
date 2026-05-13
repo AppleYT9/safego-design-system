@@ -69,8 +69,13 @@ export const FloatingAssistant: React.FC = () => {
     }
   }, [transcript, isProcessing, isSpeaking, lastFeedback]);
 
-  // Hide on PWD mode (has its own full-screen UI)
-  if (window.location.pathname === "/pwd-mode") return null;
+  // Hide on restricted portals and PWD mode
+  const restrictedPaths = ["/admin", "/driver", "/pwd-mode"];
+  const isRestricted = restrictedPaths.some(path => 
+    window.location.pathname === path || window.location.pathname.startsWith(`${path}/`)
+  );
+  
+  if (isRestricted) return null;
 
   const handleButtonClick = () => {
     if (isProcessing || isSpeaking) return; // Busy — ignore
