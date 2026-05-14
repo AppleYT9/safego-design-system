@@ -3,9 +3,11 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.models import User
-from app.schemas import UserRegister, UserLogin, TokenResponse, UserResponse
-from app.services.auth_service import register_user, authenticate_user, create_token_for_user
+from app.schemas import UserRegister, UserLogin, TokenResponse, UserResponse, FirebaseSyncRequest
+from app.services.auth_service import register_user, authenticate_user, create_token_for_user, get_or_create_firebase_user
 from app.utils.dependencies import get_current_user
+from app.utils.firebase_admin import verify_firebase_token, HTTPAuthorizationCredentials
+from app.services.auth_service import get_or_create_firebase_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -44,6 +46,32 @@ async def login(payload: UserLogin):
 
     token = create_token_for_user(user)
     role_val = user.role.value if hasattr(user.role, 'value') else user.role
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        role=role_val,
+        user_id=str(user.id),
+    )
+
+
+@router.post("/firebase", response_model=TokenResponse)
+async def firebase_auth(
+    payload: FirebaseSyncRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(verify_firebase_token)
+):
+    """
+    Handle Firebase Authentication with role selection.
+    """
+    user = await get_or_create_firebase_user(credentials, role=payload.role)
+    
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account is deactivated")
+
+    # We still issue a local token for consistency, or we could just use the Firebase token everywhere.
+    # For now, let's keep the local token for legacy support in other parts of the app.
+    token = create_token_for_user(user)
+    role_val = user.role.value if hasattr(user.role, 'value') else user.role
+    
     return TokenResponse(
         access_token=token,
         token_type="bearer",

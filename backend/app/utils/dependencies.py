@@ -7,6 +7,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.models import User, UserRole
 from app.utils.security import decode_access_token
+from app.utils.firebase_admin import verify_firebase_token
 
 security_scheme = HTTPBearer()
 
@@ -16,38 +17,60 @@ async def get_current_user(
 ) -> User:
     token = credentials.credentials
 
-    # Development Shortcut: Allow dummy tokens
-    if token in ["google-dummy-token", "admin-dummy-token", "dummy-token"]:
+    # 1. Development Shortcut: Allow dummy tokens
+    if token == "admin-dummy-token":
+        user = await User.find_one(User.role == UserRole.admin)
+        if user:
+            return user
+    if token in ["google-dummy-token", "dummy-token"]:
         user = await User.find_one()
-        print(f"DEBUG: Dummy token used. User found: {user}")
         if user:
             return user
         raise HTTPException(status_code=404, detail="No users in database to use as dummy")
 
+    # 2. Try Local JWT Verification (Speed Optimization)
     payload = decode_access_token(token)
-    if payload is None:
+    if payload:
+        user_id = payload.get("sub")
+        if user_id:
+            user = await User.get(PydanticObjectId(user_id))
+            if user:
+                if not user.is_active:
+                    raise HTTPException(status_code=403, detail="Account is deactivated")
+                return user
+
+    # 3. Try Firebase Token Verification (Fallback/New Logins)
+    try:
+        from app.utils.firebase_admin import verify_firebase_token
+        decoded_token = await verify_firebase_token(credentials)
+        uid = decoded_token.get("uid")
+        
+        # Find user by firebase_uid
+        user = await User.find_one(User.firebase_uid == uid)
+        if user is None:
+            # Check by email
+            email = decoded_token.get("email")
+            user = await User.find_one(User.email == email)
+            if user:
+                user.firebase_uid = uid
+                await user.save()
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User not found in local database. Please complete registration.",
+                )
+        
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Account is deactivated")
+        return user
+        
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
+            detail=f"Authentication failed: {str(e)}",
         )
-    user_id = payload.get("sub")
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token payload",
-        )
-    user = await User.get(PydanticObjectId(user_id))
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User account is deactivated",
-        )
-    return user
 
 
 async def get_current_passenger(user: User = Depends(get_current_user)) -> User:

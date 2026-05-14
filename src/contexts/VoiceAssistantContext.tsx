@@ -33,11 +33,11 @@ const VOICE_API_URL = `${API_BASE}/api/voice`;
 // Provider using Web Speech API + Gemini Flash
 // ---------------------------------------------------------------------------
 export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isListening, setIsListening]   = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSpeaking, setIsSpeaking]     = useState(false);
-  const [transcript, setTranscript]     = useState("");
-  const [lastCommand, setLastCommand]   = useState("");
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [lastCommand, setLastCommand] = useState("");
   const [lastFeedback, setLastFeedback] = useState("");
   const [voiceEnabled, setVoiceEnabledState] = useState(
     () => localStorage.getItem("voice_assistant_enabled") === "true"
@@ -75,7 +75,7 @@ export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ chil
         } else {
           // If not final, wait 2s of silence to auto-submit
           submitTimeoutRef.current = setTimeout(() => {
-             handleFinalTranscript(text);
+            handleFinalTranscript(text);
           }, 2000);
         }
       };
@@ -112,14 +112,14 @@ export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ chil
     utterance.pitch = 1.0;
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
-    
+
     // Auto-select a clear English voice if available
     const getBestVoice = () => {
       const voices = window.speechSynthesis.getVoices();
-      return voices.find(v => v.lang.includes("en-IN")) || 
-             voices.find(v => v.lang.includes("en-GB")) ||
-             voices.find(v => v.lang.includes("en-US")) || 
-             voices[0];
+      return voices.find(v => v.lang.includes("en-IN")) ||
+        voices.find(v => v.lang.includes("en-GB")) ||
+        voices.find(v => v.lang.includes("en-US")) ||
+        voices[0];
     };
 
     const bestVoice = getBestVoice();
@@ -171,15 +171,15 @@ export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ chil
   // ---------------------------------------------------------------------------
   const handleFinalTranscript = async (text: string) => {
     const lower = text.toLowerCase();
-    
+
     // Fast Path: Emergency Keywords (Hardcoded as requested)
     if (lower.includes("help") || lower.includes("police") || lower.includes("danger") || lower.includes("emergency")) {
       handleAction({ action: "SOS", feedback: "Triggering emergency SOS now! Help is on the way." });
       return;
     }
     if (lower.includes("location") || lower.includes("where am i")) {
-       handleAction({ action: "LOCATION_SHARE", feedback: "Sharing your live location with your trusted contacts now." });
-       return;
+      handleAction({ action: "LOCATION_SHARE", feedback: "Sharing your live location with your trusted contacts now." });
+      return;
     }
 
     // AI Path: Gemini Flash for Intent Verification
@@ -205,7 +205,7 @@ export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ chil
 
       const res = await fetch(GEMINI_URL, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": GEMINI_API_KEY // Backup auth
         },
@@ -223,7 +223,7 @@ export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ chil
       const content = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
       const jsonStr = content.replace(/```json|```/g, "").trim();
       const actionData = JSON.parse(jsonStr);
-      
+
       console.log("[Voice] Executing Action:", actionData.action);
       handleAction(actionData);
     } catch (err) {
@@ -265,9 +265,9 @@ export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ chil
       try {
         await fetch(`${VOICE_API_URL}/sos-trigger`, {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token") ?? ""}` 
+            Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`
           },
           body: JSON.stringify({
             latitude: pos.coords.latitude,
@@ -285,9 +285,9 @@ export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ chil
       try {
         await fetch(`${VOICE_API_URL}/location-share`, {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token") ?? ""}` 
+            Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`
           },
           body: JSON.stringify({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
         });

@@ -3,6 +3,8 @@ import { SafeGoLogo } from "./SafeGoLogo";
 import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "./ThemeToggle";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 const navLinks = [
   { label: "Home", to: "/home" },
@@ -51,7 +53,8 @@ export const Navbar = ({ fullWidth = true }: { fullWidth?: boolean }) => {
           {localStorage.getItem("token") ? (
             <>
               <button
-                onClick={() => {
+                onClick={async () => {
+                  await signOut(auth);
                   localStorage.removeItem("token");
                   window.location.href = "/login";
                 }}
@@ -104,7 +107,8 @@ export const Navbar = ({ fullWidth = true }: { fullWidth?: boolean }) => {
               {localStorage.getItem("token") ? (
                 <>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      await signOut(auth);
                       localStorage.removeItem("token");
                       setOpen(false);
                       window.location.href = "/login";

@@ -29,6 +29,10 @@ class TokenResponse(BaseModel):
     user_id: str  # MongoDB ObjectId as string
 
 
+class FirebaseSyncRequest(BaseModel):
+    role: str = "passenger"
+
+
 class UserResponse(BaseModel):
     id: str = Field(..., alias="_id")
     full_name: str
@@ -226,11 +230,11 @@ class RideResponse(BaseModel):
     mode: str
     status: str
     pickup_address: Optional[str] = None
-    pickup_latitude: float
-    pickup_longitude: float
+    pickup_latitude: Optional[float] = None
+    pickup_longitude: Optional[float] = None
     destination_address: Optional[str] = None
-    destination_latitude: float
-    destination_longitude: float
+    destination_latitude: Optional[float] = None
+    destination_longitude: Optional[float] = None
     distance_km: Optional[float] = None
     duration_minutes: Optional[float] = None
     fare_amount: Optional[float] = None

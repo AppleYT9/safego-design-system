@@ -82,7 +82,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
 
       const fallbackCabs = generateNearbyCabs(lat, lng, mode);
       setCabs(fallbackCabs);
-      
+
       fallbackCabs.forEach((cab: any) => {
         const cabHtml = `
           <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
@@ -153,7 +153,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
         try {
           const geojson = JSON.parse(routePolyline);
           const coordsList = geojson.coordinates.map((c: any) => [c[1], c[0]]);
-          
+
           mapInstanceRef.current.eachLayer((layer: any) => {
             if (layer.options && layer.options.isRouteLayer) {
               mapInstanceRef.current.removeLayer(layer);
@@ -250,7 +250,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
 
     const geojson = JSON.parse(routePolyline);
     const coordsList = geojson.coordinates.map((c: any) => [c[1], c[0]]);
-    
+
     if (coordsList.length < 2) return;
 
     const carHtml = `
@@ -264,21 +264,21 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
       </div>
     `;
     const carIcon = L.divIcon({ html: carHtml, className: "", iconSize: [32, 32], iconAnchor: [16, 16] });
-    
+
     if (carMarkerRef.current) {
       mapInstanceRef.current.removeLayer(carMarkerRef.current);
     }
-    
+
     const carMarker = L.marker(coordsList[0], { icon: carIcon, zIndexOffset: 1000 }).addTo(mapInstanceRef.current);
     carMarkerRef.current = carMarker;
 
     let step = 0;
     const totalSteps = coordsList.length;
-    
+
     // Ensure animation always takes ~600ms regardless of distance
-    const targetDuration = 600; 
+    const targetDuration = 600;
     const frameRate = 30; // 30ms per update
-    const totalUpdates = targetDuration / frameRate; 
+    const totalUpdates = targetDuration / frameRate;
     const stepIncrement = Math.max(1, Math.ceil(totalSteps / totalUpdates));
 
     simulationIntervalRef.current = setInterval(() => {
@@ -302,7 +302,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
       mapInstanceRef.current.flyTo([centerLoc.lat, centerLoc.lng], 15, { duration: 1.5 });
       const fallbackCabs = generateNearbyCabs(centerLoc.lat, centerLoc.lng, mode);
       setCabs(fallbackCabs);
-      
+
       const L = window.L;
       if (L) {
         mapInstanceRef.current.eachLayer((layer: any) => {
@@ -526,7 +526,7 @@ const BookingPage = () => {
       setShowPickupDropdown(false);
       return;
     }
-    
+
     setShowPickupDropdown(true);
     setIsSearchingPickup(true);
 
@@ -599,8 +599,8 @@ const BookingPage = () => {
     leftRef.current?.scrollTo({ top: leftRef.current.scrollHeight, behavior: "smooth" });
     setTimeout(() => {
       if (Math.random() > 0.15) {
-        setAskStatus("accepted"); 
-        setTimeout(() => handleConfirmRide(), 1500); 
+        setAskStatus("accepted");
+        setTimeout(() => handleConfirmRide(), 1500);
       } else {
         setAskStatus("rejected");
       }
@@ -636,7 +636,7 @@ const BookingPage = () => {
         const data = await res.json();
         const trafficOptions = ["Light", "Moderate", "Heavy"];
         const randomTraffic = trafficOptions[Math.floor(Math.random() * trafficOptions.length)];
-        
+
         setRideDetails({
           distance: `${data.distance_km} km`,
           distanceNum: data.distance_km,
@@ -756,7 +756,7 @@ const BookingPage = () => {
     setTriggerRoute(null);
     setRoutePolyline(null);
     setRouteFound(false);
-    handleUseCurrentLocation(); 
+    handleUseCurrentLocation();
     leftRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -828,7 +828,7 @@ const BookingPage = () => {
                                 key={i}
                                 className="w-full text-left px-4 py-3 text-xs hover:bg-primary/5 rounded-xl transition-all border-b border-border/5 last:border-0 cursor-pointer flex items-start gap-3 group"
                                 onMouseDown={(e) => {
-                                  e.preventDefault(); 
+                                  e.preventDefault();
                                   selectPickup(place);
                                 }}
                               >
@@ -884,7 +884,7 @@ const BookingPage = () => {
                                 key={i}
                                 className="w-full text-left px-4 py-3 text-xs hover:bg-primary/5 rounded-xl transition-all border-b border-border/5 last:border-0 cursor-pointer flex items-start gap-3 group"
                                 onMouseDown={(e) => {
-                                  e.preventDefault(); 
+                                  e.preventDefault();
                                   selectDest(place);
                                 }}
                               >
@@ -1133,8 +1133,8 @@ const BookingPage = () => {
                           <div className="mt-1 flex items-center gap-2">
                             <Navigation size={16} className="text-blue-500" />
                             <span className="text-lg font-black text-foreground">
-                              {rideDetails.etaNum > 60 
-                                ? `${Math.floor(rideDetails.etaNum / 60)}h ${Math.round(rideDetails.etaNum % 60)}m` 
+                              {rideDetails.etaNum > 60
+                                ? `${Math.floor(rideDetails.etaNum / 60)}h ${Math.round(rideDetails.etaNum % 60)}m`
                                 : `${Math.round(rideDetails.etaNum)} min`}
                             </span>
                           </div>
@@ -1304,7 +1304,7 @@ const BookingPage = () => {
             {flowState === "confirmed" && (
               <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-6 max-w-lg mx-auto py-8">
                 <div className="flex justify-start mb-4">
-                  <button 
+                  <button
                     onClick={() => setFlowState("booking")}
                     className="group flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 backdrop-blur-sm hover:bg-secondary transition-all shadow-sm hover:shadow-md"
                   >
@@ -1312,10 +1312,10 @@ const BookingPage = () => {
                   </button>
                 </div>
                 <div className="text-center">
-                  <motion.div 
+                  <motion.div
                     initial={{ scale: 0, rotate: -180 }}
                     animate={{ scale: 1, rotate: 0 }}
-                    transition={{ 
+                    transition={{
                       type: "spring",
                       stiffness: 260,
                       damping: 20,
@@ -1325,7 +1325,7 @@ const BookingPage = () => {
                   >
                     <CheckCircle2 size={40} className="text-green-600" />
                   </motion.div>
-                  <motion.h2 
+                  <motion.h2
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
@@ -1333,7 +1333,7 @@ const BookingPage = () => {
                   >
                     Ride Confirmed!
                   </motion.h2>
-                  <motion.p 
+                  <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.6 }}

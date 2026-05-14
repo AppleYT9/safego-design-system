@@ -8,7 +8,7 @@ import {
   ArrowUpRight, ChevronRight, Zap, Edit2, Trash2, UserPlus, Save, AlertCircle,
   BarChart3, PieChart as PieChartIcon, History, Shield, Info, Globe,
   Lock, Mail, Phone, User as UserIcon, Loader2, Wifi, WifiOff, Database,
-  Briefcase, Fingerprint, Key, ShieldPlus
+  Briefcase, Fingerprint, Key, ShieldPlus, CheckCircle2
 } from "lucide-react";
 import {
   XAxis, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, YAxis
@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type AdminTab = "dashboard" | "users" | "drivers" | "live-rides" | "alerts" | "settings";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const navGroups = [
   {
@@ -41,11 +41,14 @@ const navGroups = [
 
 // PREMIUM SaaS UI COMPONENTS
 
-const Card = ({ children, className = "", noPadding = false }: any) => (
-  <div className={`bg-white border border-slate-100 rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] ${noPadding ? "" : "p-8"} ${className}`}>
-    {children}
-  </div>
-);
+const Card = ({ children, className = "", noPadding = false }: any) => {
+  const hasBg = className.includes("bg-");
+  return (
+    <div className={`${hasBg ? "" : "bg-white"} border border-slate-100 rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] ${noPadding ? "" : "p-8"} ${className}`}>
+      {children}
+    </div>
+  );
+};
 
 const Modal = ({ isOpen, onClose, title, children }: any) => {
   if (!isOpen) return null;
@@ -69,20 +72,22 @@ const AdminDashboard = () => {
   const [driversList, setDriversList] = useState<any[]>([]);
   const [liveRides, setLiveRides] = useState<any[]>([]);
   const [sosAlerts, setSosAlerts] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<{ id: string, title: string, description: string, time: string, type: string }[]>([
+  const [notifications, setNotifications] = useState<{ id: string, title: string, description: string, time: string, type: string, sourceId?: string }[]>([
     { id: '1', title: 'System Boot Success', description: 'All matrix nodes are synchronized and online.', time: 'Just now', type: 'success' },
     { id: '2', title: 'New Node Joined', description: 'Driver ID #4421 has entered the fleet.', time: '2 min ago', type: 'info' }
   ]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [activePop, setActivePop] = useState<{ title: string, type: string } | null>(null);
+  const [selectedSOS, setSelectedSOS] = useState<any | null>(null);
 
-  const addNotification = (title: string, description: string, type: 'success' | 'info' | 'error' = 'info') => {
+  const addNotification = (title: string, description: string, type: 'success' | 'info' | 'error' = 'info', sourceId?: string) => {
     const newNotif = {
       id: Math.random().toString(36).substr(2, 9),
       title,
       description,
       time: 'Just now',
-      type
+      type,
+      sourceId
     };
     setNotifications(prev => [newNotif, ...prev]);
 
@@ -168,11 +173,29 @@ const AdminDashboard = () => {
   };
 
   const fetchCurrentUser = async () => {
-    // In a real SaaS version, this would be a /me endpoint
-    // Simulating based on what we have in localStorage
     const token = localStorage.getItem("token");
-    if (token) {
-      // Mocking for now, in reality you'd decode JWT
+    if (!token) return;
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+      
+      const res = await fetch(`${API_URL}/api/auth/me`, {
+        headers: { "Authorization": `Bearer ${token}` },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentUser({ 
+          role: data.role, 
+          name: data.full_name || "Admin Node" 
+        });
+      }
+    } catch (err) {
+      console.error("[ADMIN] Failed to fetch current user:", err);
       setCurrentUser({ role: 'admin', name: 'System Admin' });
     }
   };
@@ -189,12 +212,23 @@ const AdminDashboard = () => {
   const fetchUsers = async () => {
     setIsSearching(true);
     try {
-      const q = searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : "";
-      const res = await fetch(`${API_URL}/api/admin/users${q}`, {
+      const q = searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : "";
+      const res = await fetch(`${API_URL}/api/admin/users?per_page=100${q}`, {
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       });
-      if (res.ok) setUsersList(await res.json());
-    } catch (err) { } finally { setIsSearching(false); }
+      if (res.ok) {
+        const data = await res.json();
+        console.log("[ADMIN] Users fetched:", data);
+        setUsersList(data);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error("[ADMIN] Users fetch failed:", res.status, errData);
+        toast.error(`Fetch failed (${res.status}): ${errData.detail || 'Access Denied'}`);
+      }
+    } catch (err) {
+      console.error("[ADMIN] Users fetch error:", err);
+      toast.error("Network error fetching users.");
+    } finally { setIsSearching(false); }
   };
 
   const fetchDrivers = async () => {
@@ -221,10 +255,36 @@ const AdminDashboard = () => {
   const fetchSOS = async () => {
     setIsSearching(true);
     try {
-      const res = await fetch(`${API_URL}/api/admin/sos-alerts?status=active`, {
+      const res = await fetch(`${API_URL}/api/admin/sos-alerts`, {
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       });
-      if (res.ok) setSosAlerts(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+
+        // Always ensure at least some ACTIVE threats for demo purposes
+        const hasActive = data.some((a: any) => a.status === 'active');
+        const finalAlerts = hasActive ? data : [
+          ...data,
+          { _id: 'sos_static_1', severity: 'critical', location_address: 'Ayala Triangle, Makati (Simulated)', user_id: 'SYSTEM_NODE', ride_id: 'SIM_992', status: 'active', created_at: new Date().toISOString() },
+          { _id: 'sos_static_2', severity: 'moderate', location_address: 'BGC Stopover (Simulated)', user_id: 'SYSTEM_NODE', ride_id: 'SIM_441', status: 'active', created_at: new Date().toISOString() }
+        ];
+
+        // Ensure mock notifications exist for these simulated alerts so they can "turn green"
+        if (!hasActive && notifications.filter(n => n.sourceId?.startsWith('sos_static')).length === 0) {
+          addNotification("CRITICAL SOS DETECTED", "Passenger SYSTEM_NODE triggered emergency node @ Ayala Triangle.", "error", "sos_static_1");
+          addNotification("CRITICAL SOS DETECTED", "Passenger SYSTEM_NODE triggered emergency node @ BGC Stopover.", "error", "sos_static_2");
+        }
+
+        setSosAlerts(finalAlerts);
+
+        // Always prioritize selecting an ACTIVE alert
+        const activeToSelect = finalAlerts.find((a: any) => a.status === 'active');
+        if (activeToSelect) {
+          setSelectedSOS(activeToSelect);
+        } else if (finalAlerts.length > 0) {
+          setSelectedSOS(finalAlerts[0]);
+        }
+      }
     } catch (err) { } finally { setIsSearching(false); }
   };
 
@@ -233,7 +293,7 @@ const AdminDashboard = () => {
       const delayDebounceFn = setTimeout(() => { fetchUsers(); }, 300);
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [searchQuery]);
+  }, [searchQuery, activeTab]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -259,6 +319,9 @@ const AdminDashboard = () => {
   };
 
   const handleApproveDriver = async (driverId: string, status: 'approved' | 'rejected') => {
+    // Optimistic Update for instant feedback
+    setDriversList(prev => prev.map(d => d._id === driverId ? { ...d, status: status } : d));
+
     try {
       const res = await fetch(`${API_URL}/api/admin/drivers/${driverId}/approval`, {
         method: "PUT",
@@ -266,11 +329,15 @@ const AdminDashboard = () => {
         body: JSON.stringify({ status })
       });
       if (res.ok) {
-        toast.success(`Driver ${status === 'approved' ? 'Approved' : 'Rejected'} successfully`);
-        fetchDrivers();
+        toast.success(`Node ${status.toUpperCase()}: Registry Synchronization Complete.`);
+        fetchDrivers(); // Hard sync
+      } else {
+        toast.error("Protocol Error: Identity deployment failed.");
+        fetchDrivers(); // Revert
       }
     } catch (err) {
-      toast.error("Failed to update driver status");
+      toast.error("Network Link Lost: Reverting local state.");
+      fetchDrivers(); // Revert
     }
   };
 
@@ -288,10 +355,30 @@ const AdminDashboard = () => {
   };
 
   const handleResolveSOS = async (alertId: string, status: 'resolved' | 'false_alarm' = 'resolved') => {
-    // If it's a mock ID (like 'sos1'), handle it locally to prevent backend crashes
+    // Transform existing notifications for this alert
+    setNotifications(prev => prev.map(n =>
+      n.sourceId === alertId
+        ? { ...n, type: 'success', title: 'INCIDENT RESOLVED', description: `Alert #${alertId.slice(-4).toUpperCase()} cleared and stabilized.` }
+        : n
+    ));
+
+    // Optimistic Update for UI snappiness
+    setSosAlerts(prev => prev.map(a => a._id === alertId ? { ...a, status: status } : a));
+
+    // Auto-select next active alert if the current one was resolved
+    if (selectedSOS?._id === alertId) {
+      setTimeout(() => {
+        setSosAlerts(current => {
+          const nextActive = current.find(a => a.status === 'active');
+          if (nextActive) setSelectedSOS(nextActive);
+          return current;
+        });
+      }, 500);
+    }
+
+    // If it's a mock ID (like 'sos1'), handle it locally
     if (alertId.startsWith('sos')) {
-      addNotification("SIMULATION RESOLVED", `Mock Alert #${alertId.toUpperCase()} cleared from local monitor.`, "info");
-      setSosAlerts(prev => prev.filter(a => a._id !== alertId));
+      addNotification("SIMULATION RESOLVED", `Mock Alert #${alertId.toUpperCase()} cleared from local monitor.`, "success");
       return;
     }
 
@@ -308,10 +395,11 @@ const AdminDashboard = () => {
       } else {
         const errorData = await res.json().catch(() => ({}));
         toast.error(errorData.detail || "Failed to resolve alert.");
+        fetchSOS(); // Revert on failure
       }
     } catch (err) {
-      toast.error("CONNECTION LOST: The safety node is unreachable. Retrying sync...");
-      console.error("SOS Resolution Error:", err);
+      toast.error("CONNECTION LOST: The safety node is unreachable.");
+      fetchSOS(); // Revert on failure
     } finally {
       setIsSubmitting(false);
     }
@@ -348,7 +436,8 @@ const AdminDashboard = () => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'safego_new_sos') {
         const sosData = JSON.parse(e.newValue || '{}');
-        addNotification("CRITICAL SOS DETECTED", `Passenger ${sosData.userId} has triggered an emergency node.`, "error");
+        addNotification("CRITICAL SOS DETECTED", `Passenger ${sosData.userId} has triggered an emergency node.`, "error", sosData.id);
+        setActiveTab("dashboard"); // Redirect to Operation Hub
         fetchSOS(); // Refresh list
       }
       if (e.key === 'safego_new_booking') {
@@ -376,8 +465,7 @@ const AdminDashboard = () => {
   const navGroupsFiltered = navGroups.map(group => ({
     ...group,
     items: group.items.filter(item => {
-      // Simulated: only admins/staff see live rides
-      if (item.id === 'live-rides' && currentUser?.role !== 'admin') return false;
+      // Show all tabs in the admin dashboard for accessible roles
       return true;
     })
   }));
@@ -410,7 +498,7 @@ const AdminDashboard = () => {
             <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary"><UserCheck size={20} /></div>
             <div><p className="text-xs font-black text-slate-900">{currentUser?.name || "Initializing..."}</p><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{currentUser?.role}</p></div>
           </div>
-          <button onClick={() => { localStorage.removeItem("token"); navigate("/login"); }} className="w-full flex items-center gap-4 px-6 py-4 rounded-[1.25rem] text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all text-sm font-bold border border-transparent hover:border-red-100"><LogOut size={20} /> Terminate Session</button>
+          <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("userRole"); navigate("/login"); }} className="w-full flex items-center gap-4 px-6 py-4 rounded-[1.25rem] text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all text-sm font-bold border border-transparent hover:border-red-100"><LogOut size={20} /> Terminate Session</button>
         </div>
       </aside>
 
@@ -981,8 +1069,8 @@ const AdminDashboard = () => {
                       key={g}
                       onClick={() => setFleetGenderFilter(g as any)}
                       className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${fleetGenderFilter === g
-                          ? 'bg-white text-slate-900 shadow-sm scale-105'
-                          : 'text-slate-400 hover:text-slate-600'
+                        ? 'bg-white text-slate-900 shadow-sm scale-105'
+                        : 'text-slate-400 hover:text-slate-600'
                         }`}
                     >
                       {g}
@@ -1028,10 +1116,10 @@ const AdminDashboard = () => {
                           </td>
                           <td className="px-8 py-5">
                             <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${d.user?.gender === 'female'
-                                ? 'bg-rose-100 text-rose-600'
-                                : d.user?.gender === 'male'
-                                  ? 'bg-blue-100 text-blue-600'
-                                  : 'bg-slate-100 text-slate-600'
+                              ? 'bg-rose-100 text-rose-600'
+                              : d.user?.gender === 'male'
+                                ? 'bg-blue-100 text-blue-600'
+                                : 'bg-slate-100 text-slate-600'
                               }`}>
                               {d.user?.gender || 'N/A'}
                             </span>
@@ -1174,46 +1262,33 @@ const AdminDashboard = () => {
                   ))}
                 </div>
 
-                <div className="space-y-6">
-                  <Card className="bg-[#0f172a] border-slate-800 text-white p-6 shadow-2xl shadow-slate-200">
-                    <div className="flex items-center justify-between mb-8">
+                <div className="space-y-8">
+                  <Card className="bg-[#0f172a] border-slate-800 text-white p-8 shadow-2xl shadow-slate-200 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 h-32 w-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-emerald-500/20 transition-all duration-700" />
+                    <div className="flex items-center justify-between mb-8 relative z-10">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500"><Database size={18} /></div>
-                        <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-500">Live Global Stream</h4>
+                        <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500"><Database size={20} /></div>
+                        <div>
+                          <h4 className="text-sm font-black text-white tracking-tight">Live Global Stream</h4>
+                          <p className="text-[9px] font-bold text-emerald-500/60 uppercase tracking-widest mt-0.5">Real-time Node Telemetry</p>
+                        </div>
                       </div>
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_12px_rgba(16,185,129,1)]" />
                     </div>
-                    <div className="space-y-4 font-mono text-[10px] max-h-[350px] overflow-hidden">
-                      {[...Array(10)].map((_, i) => (
-                        <div key={i} className="flex gap-4 border-l-2 border-emerald-500/20 pl-4 py-1.5 hover:bg-white/5 transition-colors cursor-default group">
-                          <span className="text-slate-500 font-bold">[{new Date().toLocaleTimeString()}]</span>
-                          <span className="text-emerald-400/90 group-hover:text-emerald-400 transition-colors">TRX_{Math.floor(Math.random() * 90000) + 10000}</span>
-                          <span className="text-slate-500">::</span>
-                          <span className="text-emerald-500 font-bold">OK_SYNC</span>
+                    <div className="space-y-4 font-mono text-[10px] max-h-[300px] overflow-y-auto pr-2 custom-scrollbar relative z-10">
+                      {notifications.map((n, i) => (
+                        <div key={n.id} className={`p-4 rounded-2xl border ${n.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-200' :
+                          n.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200' :
+                            'bg-slate-800/50 border-slate-700/50 text-slate-300'
+                          } animate-in slide-in-from-right duration-500`} style={{ animationDelay: `${i * 100}ms` }}>
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="font-bold uppercase tracking-widest opacity-50">[{n.time}]</span>
+                            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${n.type === 'error' ? 'bg-rose-500/20 text-rose-400' : 'bg-white/10 text-white/60'}`}>{n.type}</span>
+                          </div>
+                          <p className="font-black text-white mb-1 tracking-tight">{n.title}</p>
+                          <p className="opacity-70 leading-relaxed font-medium">{n.description}</p>
                         </div>
                       ))}
-                      <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-                          <span className="text-[9px] uppercase tracking-[0.1em] text-slate-400 font-bold">Encrypted Buffer</span>
-                        </div>
-                        <span className="text-[10px] font-bold text-emerald-400">99.98%</span>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="border-slate-200/60 p-6">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Network Health</h4>
-                    <div className="space-y-6">
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-[10px] font-bold"><span className="text-slate-500">API DELTA</span><span className="text-slate-900">8ms</span></div>
-                        <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden"><div className="h-full bg-primary w-[15%]" /></div>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-[10px] font-bold"><span className="text-slate-500">SYNC RATE</span><span className="text-slate-900">100%</span></div>
-                        <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 w-full" /></div>
-                      </div>
-                      <button className="w-full py-3 rounded-xl bg-slate-50 text-[10px] font-bold uppercase tracking-widest text-slate-600 border border-slate-100 hover:bg-slate-100 transition-all">Export Telemetry</button>
                     </div>
                   </Card>
                 </div>
@@ -1225,132 +1300,109 @@ const AdminDashboard = () => {
             <div className="animate-in fade-in duration-500 space-y-8">
               <div className="flex justify-between items-end">
                 <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">Live Safety Ops</span>
-                  </div>
-                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">Safety Command Center</h2>
-                  <p className="text-sm text-slate-500 mt-1 font-medium italic">"Priority-1 Intervention Protocol Active"</p>
+                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Safety Command Center</h2>
+                  <p className="text-sm text-slate-500 mt-1 font-medium">Real-time threat assessment and emergency protocol management.</p>
                 </div>
-                <div className="flex gap-4">
-                  <div className="px-6 py-3 rounded-2xl bg-rose-500 text-white shadow-xl shadow-rose-100 flex items-center gap-3">
-                    <ShieldAlert size={20} className="animate-bounce" />
-                    <div className="text-left">
-                      <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">Urgent Alerts</p>
-                      <p className="text-sm font-black">{sosAlerts.length || 2} Signals</p>
-                    </div>
+                <div className="flex gap-3">
+                  <div className="h-9 px-4 rounded-xl bg-rose-50 text-rose-600 text-[10px] font-bold flex items-center gap-2 border border-rose-100/50">
+                    <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" /> SCANNING FOR THREATS
                   </div>
                 </div>
               </div>
 
-              <div className="grid gap-8 lg:grid-cols-12">
-                {/* LIVE INCIDENT TABLE - SaaS VERSION */}
-                <div className="lg:col-span-8 space-y-6">
-                  <Card noPadding className="overflow-hidden border-rose-100 shadow-2xl shadow-rose-500/5">
-                    <div className="p-6 bg-rose-50/30 border-b border-rose-100/50 flex justify-between items-center">
-                      <h3 className="text-sm font-black uppercase tracking-widest text-rose-600">Active Incident Matrix</h3>
-                      <div className="flex gap-2">
-                        <span className="px-3 py-1 rounded-full bg-white border border-rose-100 text-[9px] font-bold text-rose-500 uppercase tracking-widest animate-pulse">Live Stream</span>
-                      </div>
-                    </div>
-                    <table className="w-full text-left">
-                      <thead className="bg-slate-50">
-                        <tr>
-                          <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Severity</th>
-                          <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Node Info</th>
-                          <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400">Coordinates</th>
-                          <th className="px-8 py-5 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Intervention</th>
+              <div className="grid gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2 space-y-6">
+                  <Card noPadding className="overflow-hidden border-slate-200/60">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/50 border-b border-slate-100">
+                          <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Incident Node</th>
+                          <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Severity</th>
+                          <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>
+                          <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Protocol</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
-                        {(sosAlerts.length > 0 ? sosAlerts : [
-                          { _id: 'sos1', severity: 'critical', location_address: 'Corner of Ayala Ave & Paseo de Roxas', user_id: 'USER_9921', ride_id: 'RIDE_882', created_at: new Date().toISOString() },
-                          { _id: 'sos2', severity: 'moderate', location_address: 'Near Gateway Mall, Cubao', user_id: 'USER_1045', ride_id: 'RIDE_441', created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() }
-                        ]).map((alert, idx) => (
-                          <tr key={alert._id} className="hover:bg-rose-50/20 transition-all group">
-                            <td className="px-8 py-6">
-                              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border ${alert.severity === 'critical' ? 'bg-rose-500/10 border-rose-500/20 text-rose-600' : 'bg-orange-500/10 border-orange-500/20 text-orange-600'
-                                }`}>
-                                <div className={`h-1.5 w-1.5 rounded-full animate-pulse ${alert.severity === 'critical' ? 'bg-rose-500' : 'bg-orange-500'}`} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">{alert.severity}</span>
+                        {sosAlerts.length > 0 ? sosAlerts.map((sos) => (
+                          <tr 
+                            key={sos._id} 
+                            onClick={() => setSelectedSOS(sos)}
+                            className={`cursor-pointer transition-all ${selectedSOS?._id === sos._id ? 'bg-rose-50/50' : 'hover:bg-slate-50/30'}`}
+                          >
+                            <td className="px-8 py-5">
+                              <p className="text-sm font-bold text-slate-900">Passenger {sos.user_id}</p>
+                              <p className="text-[10px] font-medium text-slate-400 uppercase mt-0.5">{sos.location_address}</p>
+                            </td>
+                            <td className="px-8 py-5">
+                              <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${
+                                sos.severity === 'critical' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white'
+                              }`}>
+                                {sos.severity}
+                              </span>
+                            </td>
+                            <td className="px-8 py-5">
+                              <div className="flex items-center gap-2">
+                                <div className={`h-1.5 w-1.5 rounded-full ${sos.status === 'active' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
+                                <span className={`text-[10px] font-bold uppercase tracking-widest ${sos.status === 'active' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                  {sos.status}
+                                </span>
                               </div>
                             </td>
-                            <td className="px-8 py-6">
-                              <div className="flex flex-col">
-                                <span className="text-xs font-bold text-slate-900">{alert.user_id}</span>
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mt-1">{alert.ride_id}</span>
-                              </div>
-                            </td>
-                            <td className="px-8 py-6">
-                              <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
-                                  <MapPin size={14} />
-                                </div>
-                                <span className="text-[10px] font-medium text-slate-600 max-w-[150px] line-clamp-1">{alert.location_address}</span>
-                              </div>
-                            </td>
-                            <td className="px-8 py-6 text-right">
-                              <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                                <button
-                                  onClick={() => handleResolveSOS(alert._id, 'resolved')}
-                                  disabled={isSubmitting}
-                                  className="h-9 w-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-lg shadow-slate-200 hover:scale-110 transition-transform disabled:opacity-50"
-                                >
-                                  {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={16} />}
-                                </button>
-                                <button
-                                  onClick={() => handleResolveSOS(alert._id, 'false_alarm')}
-                                  disabled={isSubmitting}
-                                  className="h-9 w-9 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center hover:text-rose-500 hover:border-rose-200 transition-all disabled:opacity-50"
-                                >
-                                  <X size={16} />
-                                </button>
-                              </div>
+                            <td className="px-8 py-5 text-right">
+                              <button className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary transition-all">
+                                <ChevronRight size={14} />
+                              </button>
                             </td>
                           </tr>
-                        ))}
+                        )) : (
+                          <tr><td colSpan={4} className="px-8 py-20 text-center text-slate-400 font-medium">No active security threats.</td></tr>
+                        )}
                       </tbody>
                     </table>
                   </Card>
 
-                  {/* INCIDENT DETAILS - FOCUS VIEW */}
-                  {sosAlerts[0] && (
+                  {selectedSOS && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="p-8 border-rose-100 bg-gradient-to-br from-white to-rose-50/30">
                         <div className="flex justify-between items-start mb-8">
                           <div className="flex items-center gap-6">
-                            <div className="h-20 w-20 rounded-3xl bg-rose-500 flex items-center justify-center text-white shadow-2xl shadow-rose-200 animate-pulse-slow">
-                              <ShieldAlert size={40} />
+                            <div className={`h-20 w-20 rounded-3xl flex items-center justify-center text-white shadow-2xl transition-all ${selectedSOS.status === 'active' ? 'bg-rose-500 shadow-rose-200 animate-pulse-slow' : 'bg-emerald-500 shadow-emerald-200'}`}>
+                              {selectedSOS.status === 'active' ? <ShieldAlert size={40} /> : <CheckCircle2 size={40} />}
                             </div>
                             <div>
-                              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Active Critical Protocol</h3>
-                              <p className="text-sm font-medium text-slate-500 mt-1">Passenger {sosAlerts[0].user_id} • Urgent Intervention Required</p>
+                              <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                                {selectedSOS.status === 'active' ? 'Active Critical Protocol' : 'Incident Resolved'}
+                              </h3>
+                              <p className="text-sm font-medium text-slate-500 mt-1">Passenger {selectedSOS.user_id} • {selectedSOS.status === 'active' ? 'Urgent Intervention Required' : 'Situation Stabilized'}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Elapsed Time</p>
-                            <p className="text-2xl font-black text-slate-900 mt-1">04:12.82</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedSOS.status === 'active' ? 'Elapsed Time' : 'Time to Resolve'}</p>
+                            <p className="text-2xl font-black text-slate-900 mt-1">{selectedSOS.status === 'active' ? '04:12.82' : '02:45.10'}</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                          <button
-                            onClick={() => handleResolveSOS(sosAlerts[0]._id, 'resolved')}
-                            disabled={isSubmitting}
-                            className="h-14 rounded-2xl bg-rose-500 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-rose-200 hover:bg-rose-600 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                          >
-                            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Navigation size={18} />} Deploy Rapid Response & Resolve
-                          </button>
-                          <button className="h-14 rounded-2xl bg-white border-2 border-slate-900 text-slate-900 font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">
-                            Open Audio Intercept
-                          </button>
+                          {selectedSOS.status === 'active' ? (
+                            <button
+                              onClick={() => handleResolveSOS(selectedSOS._id, 'resolved')}
+                              disabled={isSubmitting}
+                              className="h-14 rounded-2xl bg-rose-500 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-rose-200 hover:bg-rose-600 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                            >
+                              {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Navigation size={18} />} Deploy Rapid Response & Resolve
+                            </button>
+                          ) : (
+                            <div className="h-14 rounded-2xl bg-emerald-500 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3">
+                              <CheckCircle2 size={18} /> Situation Resolved
+                            </div>
+                          )}
+                          <button className="h-14 rounded-2xl bg-white border border-slate-200 text-slate-500 font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all">Download Blackbox Log</button>
                         </div>
                       </Card>
                     </motion.div>
                   )}
                 </div>
 
-                {/* SAFETY METRICS - SIDEBAR */}
-                <div className="lg:col-span-4 space-y-8">
+                <div className="space-y-8">
                   <motion.div whileHover={{ scale: 1.02, y: -5 }} className="relative p-8 rounded-[2.5rem] bg-slate-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] border border-slate-800/80 overflow-hidden group">
                     <div className="absolute top-0 right-0 h-48 w-48 bg-rose-500/10 rounded-full blur-[40px] group-hover:bg-rose-500/20 transition-all duration-700 -mr-16 -mt-16" />
                     <div className="absolute bottom-0 left-0 h-32 w-32 bg-rose-500/10 rounded-full blur-[40px] group-hover:bg-rose-500/20 transition-all duration-700 -ml-16 -mb-16" />
@@ -1395,7 +1447,6 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </motion.div>
-
                   <motion.div whileHover={{ scale: 1.02, y: -5 }} className="relative p-8 rounded-[2.5rem] bg-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden group">
                     <div className="absolute top-0 right-0 h-40 w-40 bg-primary/5 rounded-full blur-[40px] transition-all duration-700 -mr-10 -mt-10" />
 

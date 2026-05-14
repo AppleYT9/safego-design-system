@@ -73,19 +73,48 @@ async def _driver_dict(driver: Driver) -> dict:
     }
 
 
+import asyncio
+
 @router.get("/stats", response_model=AdminStats)
 async def get_admin_stats(admin: User = Depends(get_current_admin)):
-    total_users = await User.count()
-    total_drivers = await Driver.count()
-    active_drivers = await Driver.find(Driver.is_online == True, Driver.status == DriverStatus.approved).count()
-    pending_drivers = await Driver.find(Driver.status == DriverStatus.pending).count()
-    total_rides = await Ride.count()
-    active_rides = await Ride.find({"status": {"$in": [RideStatus.searching.value, RideStatus.matched.value, RideStatus.driver_arriving.value, RideStatus.in_progress.value]}}).count()
-    total_sos = await SOSAlert.count()
-    active_sos = await SOSAlert.find(SOSAlert.status == SOSStatus.active).count()
-    return AdminStats(total_users=total_users, total_drivers=total_drivers, active_drivers=active_drivers,
-                      pending_drivers=pending_drivers, total_rides=total_rides, active_rides=active_rides,
-                      total_sos_alerts=total_sos, active_sos_alerts=active_sos)
+    """
+    Fetch comprehensive system metrics in parallel for maximum dashboard performance.
+    """
+    (
+        total_users, 
+        total_drivers, 
+        active_drivers, 
+        pending_drivers, 
+        total_rides, 
+        active_rides, 
+        total_sos, 
+        active_sos
+    ) = await asyncio.gather(
+        User.count(),
+        Driver.count(),
+        Driver.find(Driver.is_online == True, Driver.status == DriverStatus.approved).count(),
+        Driver.find(Driver.status == DriverStatus.pending).count(),
+        Ride.count(),
+        Ride.find({"status": {"$in": [
+            RideStatus.searching.value, 
+            RideStatus.matched.value, 
+            RideStatus.driver_arriving.value, 
+            RideStatus.in_progress.value
+        ]}}).count(),
+        SOSAlert.count(),
+        SOSAlert.find(SOSAlert.status == SOSStatus.active).count()
+    )
+    
+    return AdminStats(
+        total_users=total_users, 
+        total_drivers=total_drivers, 
+        active_drivers=active_drivers,
+        pending_drivers=pending_drivers, 
+        total_rides=total_rides, 
+        active_rides=active_rides,
+        total_sos_alerts=total_sos, 
+        active_sos_alerts=active_sos
+    )
 
 
 @router.get("/analytics/rides-by-mode", response_model=List[RidesByMode])
@@ -128,13 +157,14 @@ async def get_all_drivers(status: Optional[str] = Query(None), q: Optional[str] 
         query["user_id"] = {"$in": user_ids}
         
     drivers = await Driver.find(query).sort(-Driver.created_at).skip((page - 1) * per_page).limit(per_page).to_list()
-    return [await _driver_dict(d) for d in drivers]
+    # Parallelize the dossier assembly to avoid N+1 bottleneck
+    return await asyncio.gather(*[_driver_dict(d) for d in drivers])
 
 
 @router.get("/drivers/pending", response_model=List[DriverResponse])
 async def get_pending_drivers(admin: User = Depends(get_current_admin)):
     drivers = await Driver.find(Driver.status == DriverStatus.pending).to_list()
-    return [await _driver_dict(d) for d in drivers]
+    return await asyncio.gather(*[_driver_dict(d) for d in drivers])
 
 
 @router.get("/drivers/{driver_id}/dossier")
@@ -190,7 +220,14 @@ async def review_document(driver_id: str, doc_id: str, payload: DocumentReview, 
 
 @router.get("/rides/live", response_model=List[RideResponse])
 async def get_live_rides(admin: User = Depends(get_current_admin)):
-    rides = await Ride.find(Ride.status == RideStatus.in_progress).sort(-Ride.created_at).to_list()
+    active_statuses = [
+        RideStatus.pending.value, 
+        RideStatus.searching.value, 
+        RideStatus.matched.value, 
+        RideStatus.driver_arriving.value, 
+        RideStatus.in_progress.value
+    ]
+    rides = await Ride.find({"status": {"$in": active_statuses}}).sort(-Ride.created_at).to_list()
     return [_ride_dict(r) for r in rides]
 
 
@@ -320,27 +357,6 @@ async def update_user(user_id: str, payload: AdminUserUpdate, admin: User = Depe
         user.is_verified = payload.is_verified
 
     await user.save()
-    return _user_dict(user)
-
-
-@router.delete("/users/{user_id}", status_code=204)
-async def delete_user(user_id: str, admin: User = Depends(get_current_admin)):
-    user = await User.get(PydanticObjectId(user_id))
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # If user is a driver, we might need to handle Driver record too
-    if user.role == UserRole.driver:
-        driver = await Driver.find_one(Driver.user_id == user.id)
-        if driver:
-            # Delete vehicle too?
-            vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
-            if vehicle:
-                await vehicle.delete()
-            await driver.delete()
-
-    await user.delete()
-    return None
     return _user_dict(user)
 
 

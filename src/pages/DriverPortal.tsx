@@ -51,7 +51,7 @@ const DashboardTab = ({
   loading: boolean
 }) => {
   const initials = driver?.user?.full_name ? driver.user.full_name.split(" ").map((n: string) => n[0]).join("") : "D";
-  
+
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       {/* Profile header */}
@@ -69,9 +69,9 @@ const DashboardTab = ({
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-             <button onClick={onRefresh} disabled={loading} className="p-2.5 rounded-xl border border-border bg-background hover:bg-secondary transition-all active:scale-95 disabled:opacity-50">
-               <Clock className={`h-5 w-5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
-             </button>
+            <button onClick={onRefresh} disabled={loading} className="p-2.5 rounded-xl border border-border bg-background hover:bg-secondary transition-all active:scale-95 disabled:opacity-50">
+              <Clock className={`h-5 w-5 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -97,111 +97,111 @@ const DashboardTab = ({
         </div>
       </div>
 
-    {/* Ride requests */}
-    <div className="rounded-2xl border border-border bg-background p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <h3 className="font-display text-lg font-bold text-foreground">Incoming Ride Requests</h3>
-          <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
-        </div>
-        <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">{requests.length} pending</span>
-      </div>
-      <div className="mt-4 flex flex-col gap-3">
-        {requests.length > 0 ? (
-          requests.map((r) => (
-            <div key={r.id} className="flex flex-wrap items-center gap-4 rounded-xl border border-border p-4 hover:border-primary/30 hover:shadow-sm transition-all group animate-in slide-in-from-top-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                <Navigation size={18} className="text-primary" />
-              </div>
-              <div className="flex-1 min-w-[200px]">
-                <p className="text-sm font-semibold text-foreground">{r.pickup} → {r.dest}</p>
-                <p className="text-xs text-muted-foreground mt-1">{r.dist} · Est. {r.fare} · {r.passengers} passenger{r.passengers > 1 ? "s" : ""}</p>
-              </div>
-              <span className="text-xs text-muted-foreground">{r.time}</span>
-              <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ backgroundColor: r.modeBg, color: r.modeColor }}>{r.mode}</span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onAccept(r.id, r.dest)}
-                  className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all active:scale-95"
-                >
-                  Accept
-                </button>
-                <button
-                  onClick={() => onDecline(r.id)}
-                  className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
-                >
-                  Decline
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="py-16 text-center bg-secondary/10 rounded-2xl border border-dashed border-border transition-all animate-in fade-in zoom-in-95">
-            <div className="mx-auto w-16 h-16 bg-background rounded-full flex items-center justify-center mb-4 shadow-sm">
-              <Car className="text-muted-foreground opacity-50" size={28} />
-            </div>
-            <h4 className="text-xl font-display font-bold text-foreground">All Cleared!</h4>
-            <p className="text-sm text-muted-foreground mt-1 px-4">You've reached the end of the queue. We'll notify you when new ride requests arrive.</p>
-            <button className="mt-6 rounded-xl border border-border bg-background px-6 py-2 text-sm font-semibold text-foreground hover:bg-secondary transition-colors">
-              Refresh Queue
-            </button>
+      {/* Ride requests */}
+      <div className="rounded-2xl border border-border bg-background p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="font-display text-lg font-bold text-foreground">Incoming Ride Requests</h3>
+            <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
           </div>
-        )}
-      </div>
-    </div>
-
-    {/* Performance & Activity */}
-    <div className="grid gap-4 md:grid-cols-2">
-      <div className="rounded-2xl border border-border bg-background p-6">
-        <h3 className="font-display text-lg font-bold text-foreground">Performance</h3>
-        <div className="mt-4 space-y-4">
-          {[
-            { label: "Completion Rate", value: 96, color: "bg-emerald-500" },
-            { label: "On-Time Pickup", value: 91, color: "bg-blue-500" },
-            { label: "Customer Satisfaction", value: 98, color: "bg-primary" },
-            { label: "Safety Score", value: 100, color: "bg-violet-500" },
-          ].map((p) => (
-            <div key={p.label}>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-muted-foreground">{p.label}</span>
-                <span className="font-semibold text-foreground">{p.value}%</span>
-              </div>
-              <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                <div className={`h-full rounded-full ${p.color} transition-all duration-1000`} style={{ width: `${p.value}%` }} />
-              </div>
-            </div>
-          ))}
+          <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">{requests.length} pending</span>
         </div>
-      </div>
-      <div className="rounded-2xl border border-border bg-background p-6">
-        <h3 className="font-display text-lg font-bold text-foreground">Recent Activity</h3>
-        <div className="mt-4 space-y-3">
-          {activity.length > 0 ? activity.map((a, i) => {
-            const Icon = a.type === "ride" ? Check : a.type === "document" ? FileText : a.type === "rating" ? Star : CircleDot;
-            const iconColor = a.type === "ride" ? "text-emerald-600" : a.type === "document" ? "text-blue-600" : a.type === "rating" ? "text-amber-500" : "text-emerald-600";
-            const iconBg = a.type === "ride" ? "bg-emerald-100" : a.type === "document" ? "bg-blue-100" : a.type === "rating" ? "bg-amber-100" : "bg-emerald-100";
-
-            return (
-              <div key={i} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0 hover:bg-secondary/20 rounded-lg transition-colors px-2 -mx-2">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${iconBg} shrink-0`}>
-                  <Icon size={14} className={iconColor} />
+        <div className="mt-4 flex flex-col gap-3">
+          {requests.length > 0 ? (
+            requests.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center gap-4 rounded-xl border border-border p-4 hover:border-primary/30 hover:shadow-sm transition-all group animate-in slide-in-from-top-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                  <Navigation size={18} className="text-primary" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground truncate">{a.text}</p>
+                <div className="flex-1 min-w-[200px]">
+                  <p className="text-sm font-semibold text-foreground">{r.pickup} → {r.dest}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{r.dist} · Est. {r.fare} · {r.passengers} passenger{r.passengers > 1 ? "s" : ""}</p>
                 </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">{a.time}</span>
+                <span className="text-xs text-muted-foreground">{r.time}</span>
+                <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ backgroundColor: r.modeBg, color: r.modeColor }}>{r.mode}</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onAccept(r.id, r.dest)}
+                    className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all active:scale-95"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => onDecline(r.id)}
+                    className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
+                  >
+                    Decline
+                  </button>
+                </div>
               </div>
-            );
-          }) : (
-            <div className="py-8 text-center">
-              <p className="text-sm text-muted-foreground">No recent activity</p>
+            ))
+          ) : (
+            <div className="py-16 text-center bg-secondary/10 rounded-2xl border border-dashed border-border transition-all animate-in fade-in zoom-in-95">
+              <div className="mx-auto w-16 h-16 bg-background rounded-full flex items-center justify-center mb-4 shadow-sm">
+                <Car className="text-muted-foreground opacity-50" size={28} />
+              </div>
+              <h4 className="text-xl font-display font-bold text-foreground">All Cleared!</h4>
+              <p className="text-sm text-muted-foreground mt-1 px-4">You've reached the end of the queue. We'll notify you when new ride requests arrive.</p>
+              <button className="mt-6 rounded-xl border border-border bg-background px-6 py-2 text-sm font-semibold text-foreground hover:bg-secondary transition-colors">
+                Refresh Queue
+              </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Performance & Activity */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-background p-6">
+          <h3 className="font-display text-lg font-bold text-foreground">Performance</h3>
+          <div className="mt-4 space-y-4">
+            {[
+              { label: "Completion Rate", value: 96, color: "bg-emerald-500" },
+              { label: "On-Time Pickup", value: 91, color: "bg-blue-500" },
+              { label: "Customer Satisfaction", value: 98, color: "bg-primary" },
+              { label: "Safety Score", value: 100, color: "bg-violet-500" },
+            ].map((p) => (
+              <div key={p.label}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-muted-foreground">{p.label}</span>
+                  <span className="font-semibold text-foreground">{p.value}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                  <div className={`h-full rounded-full ${p.color} transition-all duration-1000`} style={{ width: `${p.value}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-background p-6">
+          <h3 className="font-display text-lg font-bold text-foreground">Recent Activity</h3>
+          <div className="mt-4 space-y-3">
+            {activity.length > 0 ? activity.map((a, i) => {
+              const Icon = a.type === "ride" ? Check : a.type === "document" ? FileText : a.type === "rating" ? Star : CircleDot;
+              const iconColor = a.type === "ride" ? "text-emerald-600" : a.type === "document" ? "text-blue-600" : a.type === "rating" ? "text-amber-500" : "text-emerald-600";
+              const iconBg = a.type === "ride" ? "bg-emerald-100" : a.type === "document" ? "bg-blue-100" : a.type === "rating" ? "bg-amber-100" : "bg-emerald-100";
+
+              return (
+                <div key={i} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0 hover:bg-secondary/20 rounded-lg transition-colors px-2 -mx-2">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-full ${iconBg} shrink-0`}>
+                    <Icon size={14} className={iconColor} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground truncate">{a.text}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{a.time}</span>
+                </div>
+              );
+            }) : (
+              <div className="py-8 text-center">
+                <p className="text-sm text-muted-foreground">No recent activity</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 const AvailableRidesTab = ({
@@ -229,7 +229,7 @@ const AvailableRidesTab = ({
             <p className="text-sm text-muted-foreground mt-1">Browse and accept new ride requests in your area</p>
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={onRefresh}
               disabled={loading}
               className="mr-2 rounded-xl border border-border p-2 text-muted-foreground hover:bg-secondary disabled:opacity-50"
@@ -301,12 +301,12 @@ const AvailableRidesTab = ({
   );
 };
 
-const HistoryTab = ({ 
-  history, 
-  loading 
-}: { 
-  history: any[], 
-  loading: boolean 
+const HistoryTab = ({
+  history,
+  loading
+}: {
+  history: any[],
+  loading: boolean
 }) => {
   if (loading && history.length === 0) {
     return (
@@ -390,14 +390,14 @@ const HistoryTab = ({
   );
 };
 
-const DocumentsTab = ({ 
+const DocumentsTab = ({
   docList,
-  onView, 
+  onView,
   onUpload,
   onRemove
-}: { 
+}: {
   docList: any[],
-  onView: (doc: any) => void, 
+  onView: (doc: any) => void,
   onUpload: (name: string) => void,
   onRemove: (name: string) => void
 }) => {
@@ -434,14 +434,14 @@ const DocumentsTab = ({
             <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-4">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Uploaded: {d.uploaded}</span>
               {d.status === "Upload Required" ? (
-                <button 
+                <button
                   onClick={() => onUpload(d.name)}
                   className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:brightness-110 transition-all active:scale-95 shadow-sm shadow-primary/20"
                 >
                   <Upload size={14} /> Upload Now
                 </button>
               ) : d.status === "Expiring Soon" ? (
-                <button 
+                <button
                   onClick={() => onUpload(d.name)}
                   className="flex items-center gap-1.5 rounded-xl bg-amber-50 px-4 py-2 text-xs font-bold text-amber-600 hover:bg-amber-100 transition-colors border border-amber-200/50"
                 >
@@ -449,13 +449,13 @@ const DocumentsTab = ({
                 </button>
               ) : (
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={() => onView(d)}
                     className="flex items-center gap-1.5 rounded-xl bg-secondary px-4 py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-all border border-border/50"
                   >
                     <Eye size={14} /> View
                   </button>
-                  <button 
+                  <button
                     onClick={() => onRemove(d.name)}
                     className="flex items-center justify-center rounded-xl bg-red-50 p-2 text-red-500 hover:bg-red-100 transition-colors border border-red-100"
                     title="Remove Document"
@@ -476,7 +476,7 @@ const EarningsTab = ({ history }: { history: any[] }) => {
   const completedRides = history.filter(r => r.status === "completed");
   const totalRides = completedRides.length;
   const totalEarnings = completedRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "")), 0);
-  
+
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const earningsByDay = days.map(day => {
     const dayRides = completedRides.filter(r => {
@@ -497,10 +497,10 @@ const EarningsTab = ({ history }: { history: any[] }) => {
   const maxEarning = Math.max(...earningsByDay.map(d => d.amount), 1000);
 
   const handleExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + "Day,Earnings,Rides\n"
       + completedRides.map(r => `${r.date},${r.pickup},${r.dest},${r.fare},${r.tip},${r.status}`).join("\n");
-    
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -508,7 +508,7 @@ const EarningsTab = ({ history }: { history: any[] }) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast.success("Export Successful", {
       description: "Your earnings report has been downloaded.",
       position: "bottom-right",
@@ -600,7 +600,7 @@ const EarningsTab = ({ history }: { history: any[] }) => {
       <div className="rounded-2xl border border-border bg-background p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-display text-lg font-bold text-foreground">Recent Transactions</h3>
-          <button 
+          <button
             onClick={handleExport}
             className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-all border border-border/50"
           >
@@ -805,7 +805,7 @@ const DriverPortal = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || "";
+  const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
   const handleViewDoc = (doc: any) => {
     setSelectedDoc(doc);
@@ -821,23 +821,23 @@ const DriverPortal = () => {
     const file = e.target.files?.[0];
     if (file && uploadingDoc) {
       const previewUrl = URL.createObjectURL(file);
-      const today = new Date().toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: '2-digit', 
-        year: 'numeric' 
+      const today = new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric'
       });
-      
-      setDocList(prev => prev.map(doc => 
-        doc.name === uploadingDoc 
-          ? { 
-              ...doc, 
-              url: previewUrl, 
-              uploaded: today, 
-              status: "Pending Review", 
-              icon: Clock, 
-              color: "text-amber-600", 
-              bg: "bg-amber-100" 
-            } 
+
+      setDocList(prev => prev.map(doc =>
+        doc.name === uploadingDoc
+          ? {
+            ...doc,
+            url: previewUrl,
+            uploaded: today,
+            status: "Pending Review",
+            icon: Clock,
+            color: "text-amber-600",
+            bg: "bg-amber-100"
+          }
           : doc
       ));
 
@@ -849,16 +849,16 @@ const DriverPortal = () => {
           error: "Upload failed",
         }
       );
-      
+
       // Reset input value so the same file can be selected again
       e.target.value = "";
     }
   };
 
   const handleRemoveDoc = (docName: string) => {
-    setDocList(prev => prev.map(doc => 
-      doc.name === docName 
-        ? { ...doc, url: "", uploaded: "—", status: "Upload Required", icon: AlertCircle, color: "text-red-500", bg: "bg-red-50", expiry: "—" } 
+    setDocList(prev => prev.map(doc =>
+      doc.name === docName
+        ? { ...doc, url: "", uploaded: "—", status: "Upload Required", icon: AlertCircle, color: "text-red-500", bg: "bg-red-50", expiry: "—" }
         : doc
     ));
     toast.success(`${docName} removed`, {
@@ -892,7 +892,7 @@ const DriverPortal = () => {
         status: r.status,
         modeBg: r.mode === "pink" ? "rgba(236, 72, 153, 0.1)" : "rgba(13, 148, 136, 0.1)",
         modeColor: r.mode === "pink" ? "rgb(236, 72, 153)" : "rgb(13, 148, 136)",
-        tip: "₹0", 
+        tip: "₹0",
         duration: r.duration_minutes ? `${r.duration_minutes} min` : "15 min",
         rating: r.passenger_rating || 4.8,
         passenger_name: r.passenger_name || "Guest User",
@@ -906,8 +906,8 @@ const DriverPortal = () => {
       setRequests(mapRides(available).slice(0, 4));
     } catch (err) {
       console.error("Failed to fetch driver data, using static mock data fallback:", err);
-      toast.error("Backend unreachable. Using static mock data.", { id: "mock-data-toast" });
-      
+      // Silently fallback to mock data if backend is unreachable during local dev
+
       // Static mock data fallback
       setDriver({
         user: { full_name: "James Dela Cruz" },
@@ -917,7 +917,7 @@ const DriverPortal = () => {
         acceptance_rate: 98,
         total_rides: 1240,
       });
-      
+
       const mockAvailable = [
         { id: "1", pickup: "SM Megamall, Mandaluyong", dest: "BGC High Street, Taguig", dist: "3.2 km", fare: "₹185", mode: "pink", time: "2 min ago", passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 4.8 },
         { id: "2", pickup: "Trinoma, Quezon City", dest: "UP Diliman", dist: "5.1 km", fare: "₹210", mode: "normal", time: "5 min ago", passengers: 2, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.0, rating: 4.7 },
@@ -926,13 +926,13 @@ const DriverPortal = () => {
       ];
       setAvailableRides(mockAvailable);
       setRequests(mockAvailable.slice(0, 2));
-      
+
       setHistory([
         { id: "h1", pickup: "NAIA Terminal 3", dest: "Makati Shangri-La", dist: "8.5 km", fare: "₹450", status: "completed", date: "Today", duration: "45 min", rating: 5, tip: "₹50" },
         { id: "h2", pickup: "Ortigas Center", dest: "Eastwood City", dist: "4.2 km", fare: "₹220", status: "completed", date: "Yesterday", duration: "25 min", rating: 4, tip: "₹0" },
         { id: "h3", pickup: "BGC", dest: "Cubao", dist: "12 km", fare: "₹380", status: "failed", date: "Mar 10, 2026", duration: "10 min", rating: 0, tip: "₹0" },
       ]);
-      
+
       setActivity([
         { type: "ride", text: "Completed ride to BGC High Street", time: "10:30 AM" },
         { type: "document", text: "Vehicle Registration approved", time: "Yesterday" },
@@ -983,7 +983,7 @@ const DriverPortal = () => {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!res.ok) throw new Error("Failed to decline ride");
-      
+
       toast.error("Request Declined");
       fetchDriverData();
     } catch (err) {
@@ -1019,10 +1019,10 @@ const DriverPortal = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Hidden file input for uploads */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        className="hidden" 
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
         onChange={handleFileChange}
         accept="image/*,.pdf"
       />
@@ -1048,9 +1048,9 @@ const DriverPortal = () => {
                   </div>
                 </div>
                 <div className="bg-secondary/10 p-2 sm:p-4 flex items-center justify-center">
-                  <img 
-                    src={selectedDoc.url} 
-                    alt={selectedDoc.name} 
+                  <img
+                    src={selectedDoc.url}
+                    alt={selectedDoc.name}
                     className="max-h-[70vh] w-auto object-contain rounded-lg shadow-inner"
                   />
                 </div>
@@ -1058,7 +1058,7 @@ const DriverPortal = () => {
                   <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
                     Status: {selectedDoc.status}
                   </span>
-                  <button 
+                  <button
                     onClick={() => setViewerOpen(false)}
                     className="text-sm font-bold text-primary hover:underline"
                   >
@@ -1073,7 +1073,7 @@ const DriverPortal = () => {
                 </div>
                 <h3 className="text-xl font-display font-bold text-foreground">No Document Found</h3>
                 <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">This document hasn't been uploaded yet or is currently being processed.</p>
-                <button 
+                <button
                   onClick={() => setViewerOpen(false)}
                   className="mt-6 rounded-xl bg-primary px-8 py-2.5 text-sm font-bold text-primary-foreground"
                 >
@@ -1085,93 +1085,94 @@ const DriverPortal = () => {
         </DialogContent>
       </Dialog>
       <div className="flex min-h-screen bg-secondary/30 selection:bg-primary/20">
-      {/* Desktop Sidebar */}
-      <aside className="hidden w-[280px] shrink-0 flex-col border-r border-border bg-background lg:flex sticky top-0 h-screen">
-        <div className="p-6">
-          <SafeGoLogo size={24} className="px-2" />
-        </div>
-        <nav className="mt-4 flex flex-col gap-1.5 px-4 flex-1">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => setActiveTab(item.tab)}
-              className={`flex items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-bold tracking-tight transition-all text-left w-full group ${activeTab === item.tab
-                ? "bg-primary text-white shadow-xl shadow-primary/20"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                }`}
-            >
-              <item.icon size={20} className={activeTab === item.tab ? "text-white" : "text-muted-foreground group-hover:text-primary transition-colors"} />
-              {item.label}
-              {activeTab === item.tab && <ChevronRight size={16} className="ml-auto opacity-70" />}
-            </button>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-border mt-auto">
-          <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              window.location.href = "/login";
-            }}
-            className="flex items-center justify-center gap-3 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-4 py-3.5 text-[13px] font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] active:scale-[0.97] w-full text-left"
-          >
-            <LogOut size={20} /> Logout Account
-          </button>
-        </div>
-      </aside>
-
-      {/* Mobile Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-md px-4 py-3 lg:hidden">
-        <SafeGoLogo size={22} />
-        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-xl p-2.5 bg-secondary/50 border border-border/50 text-foreground shadow-sm">
-          <Menu size={22} />
-        </button>
-      </div>
-
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[60] lg:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute top-0 right-0 bottom-0 w-[300px] bg-background p-6 flex flex-col animate-in slide-in-from-right duration-300 shadow-2xl">
-            <div className="flex justify-between items-center mb-10">
-              <SafeGoLogo size={22} />
-              <button onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-full bg-secondary">
-                <X size={20} />
+        {/* Desktop Sidebar */}
+        <aside className="hidden w-[280px] shrink-0 flex-col border-r border-border bg-background lg:flex sticky top-0 h-screen">
+          <div className="p-6">
+            <SafeGoLogo size={24} className="px-2" />
+          </div>
+          <nav className="mt-4 flex flex-col gap-1.5 px-4 flex-1">
+            {navItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => setActiveTab(item.tab)}
+                className={`flex items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-bold tracking-tight transition-all text-left w-full group ${activeTab === item.tab
+                  ? "bg-primary text-white shadow-xl shadow-primary/20"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
+              >
+                <item.icon size={20} className={activeTab === item.tab ? "text-white" : "text-muted-foreground group-hover:text-primary transition-colors"} />
+                {item.label}
+                {activeTab === item.tab && <ChevronRight size={16} className="ml-auto opacity-70" />}
               </button>
-            </div>
-            <nav className="flex flex-col gap-2 flex-1">
-              {navItems.map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => { setActiveTab(item.tab); setMobileMenuOpen(false); }}
-                  className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-sm font-bold transition-all text-left w-full ${activeTab === item.tab
-                    ? "bg-primary text-white shadow-lg shadow-primary/20"
-                    : "text-muted-foreground hover:bg-secondary"
-                    }`}
-                >
-                  <item.icon size={20} /> {item.label}
-                </button>
-              ))}
-            </nav>
+            ))}
+          </nav>
+          <div className="p-4 border-t border-border mt-auto">
             <button
               onClick={() => {
                 localStorage.removeItem("token");
+                localStorage.setItem("userRole", "");
                 window.location.href = "/login";
               }}
-              className="flex items-center justify-center gap-4 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-5 py-4 text-sm font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.3)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] mt-auto text-left w-full active:scale-[0.98]"
+              className="flex items-center justify-center gap-3 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-4 py-3.5 text-[13px] font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] active:scale-[0.97] w-full text-left"
             >
               <LogOut size={20} /> Logout Account
             </button>
           </div>
-        </div>
-      )}
+        </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-transparent p-4 pt-24 lg:p-10 lg:pt-8">
-        <div className="max-w-6xl mx-auto">
-          {renderActiveTab()}
+        {/* Mobile Header */}
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-md px-4 py-3 lg:hidden">
+          <SafeGoLogo size={22} />
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-xl p-2.5 bg-secondary/50 border border-border/50 text-foreground shadow-sm">
+            <Menu size={22} />
+          </button>
         </div>
-      </main>
-    </div>
+
+        {/* Mobile Menu Overlay */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-[60] lg:hidden">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+            <div className="absolute top-0 right-0 bottom-0 w-[300px] bg-background p-6 flex flex-col animate-in slide-in-from-right duration-300 shadow-2xl">
+              <div className="flex justify-between items-center mb-10">
+                <SafeGoLogo size={22} />
+                <button onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-full bg-secondary">
+                  <X size={20} />
+                </button>
+              </div>
+              <nav className="flex flex-col gap-2 flex-1">
+                {navItems.map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => { setActiveTab(item.tab); setMobileMenuOpen(false); }}
+                    className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-sm font-bold transition-all text-left w-full ${activeTab === item.tab
+                      ? "bg-primary text-white shadow-lg shadow-primary/20"
+                      : "text-muted-foreground hover:bg-secondary"
+                      }`}
+                  >
+                    <item.icon size={20} /> {item.label}
+                  </button>
+                ))}
+              </nav>
+              <button
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  window.location.href = "/login";
+                }}
+                className="flex items-center justify-center gap-4 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-5 py-4 text-sm font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.3)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] mt-auto text-left w-full active:scale-[0.98]"
+              >
+                <LogOut size={20} /> Logout Account
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto bg-transparent p-4 pt-24 lg:p-10 lg:pt-8">
+          <div className="max-w-6xl mx-auto">
+            {renderActiveTab()}
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

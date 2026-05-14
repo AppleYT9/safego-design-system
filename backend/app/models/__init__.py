@@ -21,6 +21,7 @@ class RideMode(str, enum.Enum):
     pink = "pink"
     pwd = "pwd"
     elderly = "elderly"
+    premium = "premium"
 
 
 class Gender(str, enum.Enum):
@@ -82,7 +83,8 @@ class User(Document):
     full_name: str
     email: Indexed(str, unique=True)  # type: ignore
     phone: Indexed(str, unique=True)  # type: ignore
-    hashed_password: str
+    firebase_uid: Optional[Indexed(str, unique=True)] = None  # type: ignore
+    hashed_password: Optional[str] = None
     role: UserRole = UserRole.passenger
     position: Optional[str] = None
     department: Optional[str] = None
@@ -155,11 +157,11 @@ class Ride(Document):
     mode: RideMode = RideMode.normal
     status: RideStatus = RideStatus.pending
     pickup_address: Optional[str] = None
-    pickup_latitude: float
-    pickup_longitude: float
+    pickup_latitude: Optional[float] = None
+    pickup_longitude: Optional[float] = None
     destination_address: Optional[str] = None
-    destination_latitude: float
-    destination_longitude: float
+    destination_latitude: Optional[float] = None
+    destination_longitude: Optional[float] = None
     distance_km: Optional[float] = None
     duration_minutes: Optional[float] = None
     fare_amount: Optional[float] = None

@@ -120,6 +120,13 @@ def get_modes():
             "color": "#FF9800",
             "icon": "elderly",
         },
+        {
+            "id": "premium",
+            "name": "Premium",
+            "description": "High-end luxury node for executive travel",
+            "color": "#9C27B0",
+            "icon": "gem",
+        },
     ]
 
 
