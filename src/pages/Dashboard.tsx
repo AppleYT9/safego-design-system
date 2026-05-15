@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
-  LayoutDashboard, Car, Shield, Users, Settings, LogOut,
+  LayoutDashboard, Car, Shield, Users, Settings,
   Star, TrendingUp, ArrowRight, User, Lock, Bell, Moon, MapPin,
   Accessibility, Mic, Check, Trash2, Loader2, Plus, X
 } from "lucide-react";
@@ -464,10 +464,10 @@ const Dashboard = () => {
         </nav>
         <div className="mt-auto pt-4 border-t border-border/50">
           <button
-            onClick={() => { localStorage.removeItem("token"); navigate("/home"); }}
-            className="flex items-center justify-center gap-3 rounded-xl bg-[#ef4444] hover:bg-[#dc2626] px-3 py-3 text-sm font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.25)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] active:scale-[0.97] w-full"
+            onClick={() => navigate("/home")}
+            className="flex items-center justify-center gap-3 rounded-xl bg-primary hover:bg-primary/90 px-3 py-3 text-sm font-bold text-primary-foreground transition-all shadow-[0_4px_12px_hsl(var(--primary)/0.25)] hover:shadow-[0_0_20px_hsl(var(--primary)/0.5)] active:scale-[0.97] w-full"
           >
-            <LogOut size={18} /> Logout
+            <ArrowRight size={18} className="rotate-180" /> Back to Home
           </button>
         </div>
       </aside>

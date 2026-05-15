@@ -1,7 +1,6 @@
-
 import enum
 from datetime import datetime, timezone
-from typing import Optional, List, Any
+from typing import Annotated, Optional, List, Any
 
 from beanie import Document, Indexed, PydanticObjectId
 from pydantic import Field
@@ -81,9 +80,9 @@ def _utcnow():
 
 class User(Document):
     full_name: str
-    email: Indexed(str, unique=True)  # type: ignore
-    phone: Indexed(str, unique=True)  # type: ignore
-    firebase_uid: Optional[Indexed(str, unique=True)] = None  # type: ignore
+    email: Annotated[str, Indexed(unique=True)]
+    phone: Annotated[str, Indexed(unique=True)]
+    firebase_uid: Optional[Annotated[str, Indexed(unique=True)]] = None
     hashed_password: Optional[str] = None
     role: UserRole = UserRole.passenger
     position: Optional[str] = None
@@ -102,7 +101,7 @@ class User(Document):
 
 class Driver(Document):
     user_id: PydanticObjectId
-    license_number: Indexed(str, unique=True)  # type: ignore
+    license_number: Annotated[str, Indexed(unique=True)]
     status: DriverStatus = DriverStatus.pending
     is_online: bool = False
     current_latitude: Optional[float] = None
@@ -127,7 +126,7 @@ class Vehicle(Document):
     model: str
     year: int
     color: str
-    plate_number: Indexed(str, unique=True)  # type: ignore
+    plate_number: Annotated[str, Indexed(unique=True)]
     is_wheelchair_accessible: bool = False
     is_approved: bool = False
     created_at: datetime = Field(default_factory=_utcnow)
