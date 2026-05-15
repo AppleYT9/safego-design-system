@@ -24,6 +24,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const DriveWithUs = lazy(() => import("./pages/DriveWithUs"));
 const ApplyDriver = lazy(() => import("./pages/ApplyDriver"));
 const PWDMode = lazy(() => import("./pages/PWDMode"));
+const About = lazy(() => import("./pages/About"));
 
 const queryClient = new QueryClient();
 
@@ -52,7 +53,7 @@ const App = () => (
         <Sonner position="top-right" expand={true} richColors closeButton />
         <BrowserRouter>
           <VoiceAssistantProvider>
-            <FloatingAssistant />
+            {/* <FloatingAssistant /> */}
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Splash />} />
@@ -68,6 +69,7 @@ const App = () => (
                 <Route path="/drive-with-us" element={<DriveWithUs />} />
                 <Route path="/apply-driver" element={<ApplyDriver />} />
                 <Route path="/pwd-mode" element={<PWDMode />} />
+                <Route path="/about" element={<About />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

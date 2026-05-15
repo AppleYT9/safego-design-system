@@ -11,12 +11,13 @@ const PWDMode: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Enable continuous listening and speak welcome
+    // Voice auto-start disabled to match hidden assistant
+    /*
     setVoiceEnabled(true);
     speak("Safe Go - PWD Mode enabled. Voice Assistance is now active. I am listening for your commands.");
-    // Auto-start listening after a short delay
     const t = setTimeout(() => startListening(), 2000);
     return () => clearTimeout(t);
+    */
   }, []);
 
   const handleSOS = () => {
@@ -45,10 +46,8 @@ const PWDMode: React.FC = () => {
       <Card className="w-full max-w-2xl bg-zinc-900 border-4 border-yellow-400 p-6 mb-8">
         <CardHeader className="text-center">
           <CardTitle className="text-5xl font-black uppercase tracking-widest text-yellow-400">Safe Go PWD</CardTitle>
-          <p className="text-2xl mt-4 text-yellow-300">VOICE ASSISTANCE ACTIVE</p>
-          {lastCommand && (
-            <p className="text-xl mt-4 text-white italic">Recognized: "{lastCommand}"</p>
-          )}
+          <p className="text-2xl mt-4 text-yellow-300">Accessibility Mode</p>
+          {/* Voice status hidden */}
         </CardHeader>
         <CardContent className="flex flex-col gap-8 mt-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -80,23 +79,10 @@ const PWDMode: React.FC = () => {
                 S.O.S HELP
             </Button>
 
-            <div className="flex flex-col gap-4 bg-zinc-800 p-6 rounded-2xl border-4 border-yellow-400 mt-4">
-                <div className="flex justify-between items-center">
-                    <p className="text-3xl font-bold">{isListening ? "I'M LISTENING..." : isSpeaking ? "I'M SPEAKING..." : "MODE STATUS"}</p>
-                    <div 
-                        className={`w-12 h-12 rounded-full ${isListening ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)] animate-pulse' : isSpeaking ? 'bg-purple-500 animate-pulse' : 'bg-zinc-500'}`}
-                    ></div>
-                </div>
-                {lastCommand && (
-                    <div className="border-t border-zinc-700 pt-4">
-                         <p className="text-xl text-yellow-300 uppercase tracking-tighter">Last Heard:</p>
-                         <p className="text-3xl font-black text-white">"{lastCommand}"</p>
-                    </div>
-                )}
-            </div>
+            {/* Voice status indicators hidden */}
             
             <p className="text-2xl text-center font-bold text-yellow-300 mt-4">
-               {isListening ? "Go ahead, I'm waiting for your command." : "Tap the screen to speak."}
+               Select an option below for assistance.
             </p>
         </CardContent>
       </Card>
@@ -146,12 +132,7 @@ const PWDMode: React.FC = () => {
         </div>
       </div>
 
-      {/* Voice Recognition Trigger Overlay - Can be clicked anywhere to listen */}
-      <div 
-        className="fixed inset-0 z-0 opacity-0 cursor-pointer"
-        onClick={() => !isListening && startListening()}
-        aria-hidden="true"
-      />
+      {/* Voice click overlay disabled */}
     </div>
   );
 };

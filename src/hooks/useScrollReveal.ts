@@ -6,7 +6,7 @@ export function useScrollReveal(deps: any[] = []) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const children = el.querySelectorAll(".scroll-reveal:not(.revealed)");
+    const children = el.querySelectorAll('[class*="scroll-reveal"]:not(.revealed)');
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry, i) => {

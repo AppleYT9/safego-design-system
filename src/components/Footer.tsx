@@ -22,7 +22,7 @@ export const Footer = () => {
           <div>
             <h4 className="font-display text-sm font-bold">Company</h4>
             <div className="mt-3 flex flex-col gap-2">
-              <Link to="/home" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</Link>
+              <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</Link>
               <Link to="/drive-with-us" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Careers</Link>
               <Link to="/home" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Blog</Link>
               <Link to="/home" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Press</Link>

@@ -492,6 +492,12 @@ const BookingPage = () => {
   const [askStatus, setAskStatus] = useState<"idle" | "asking" | "accepted" | "rejected">("idle");
   const [flowState, setFlowState] = useState<"booking" | "confirmed" | "review">("booking");
   const [rating, setRating] = useState(0);
+  const [prevRating, setPrevRating] = useState(0);
+
+  const handleRatingSelect = (val: number) => {
+    setPrevRating(rating);
+    setRating(val);
+  };
 
   useEffect(() => {
     if (voiceState?.auto_search && voiceState.destination) {
@@ -1396,20 +1402,28 @@ const BookingPage = () => {
                 <div className="rounded-[2.5rem] bg-card border border-border/40 premium-shadow p-8 mt-8 text-center flex flex-col items-center transition-all hover:-translate-y-1">
                   <h3 className="text-sm font-bold text-foreground mb-4">Rate your driver</h3>
                   <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setRating(star)}
-                        onMouseEnter={() => setHoverRating(star)}
-                        onMouseLeave={() => setHoverRating(0)}
-                        className="p-1 transition-transform hover:scale-110 focus:outline-none"
-                      >
-                        <Star
-                          size={36}
-                          className={`transition-colors duration-200 ${(hoverRating || rating) >= star ? 'fill-amber-400 text-amber-400' : 'fill-transparent text-muted-foreground/30'}`}
-                        />
-                      </button>
-                    ))}
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      let delayClass = "";
+                      if (star > prevRating + 1 && star <= rating) {
+                        const delayAmount = star - (prevRating + 1);
+                        delayClass = `rating__label--delay${delayAmount}`;
+                      }
+
+                      return (
+                        <button
+                          key={star}
+                          onClick={() => handleRatingSelect(star)}
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          className={`p-1 transition-transform hover:scale-110 focus:outline-none ${delayClass}`}
+                        >
+                          <Star
+                            size={36}
+                            className={`transition-colors duration-200 ${(hoverRating || rating) >= star ? 'fill-amber-400 text-amber-400' : 'fill-transparent text-muted-foreground/30'}`}
+                          />
+                        </button>
+                      );
+                    })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-4 font-medium min-h-[16px]">
                     {rating === 5 ? "Excellent service!" : rating === 4 ? "Great ride!" : rating === 3 ? "It was okay." : rating > 0 ? "Needs improvement" : " "}

@@ -12,6 +12,7 @@ const navLinks = [
   { label: "Drive With Us", to: "/drive-with-us" },
   { label: "Safety", to: "/safety" },
   { label: "Dashboard", to: "/dashboard" },
+  { label: "About", to: "/about" },
 ];
 
 export const Navbar = ({ fullWidth = true }: { fullWidth?: boolean }) => {
