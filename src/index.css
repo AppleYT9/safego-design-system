@@ -248,6 +248,10 @@
   animation: progress-fill 2.8s ease-in-out forwards;
 }
 
+.animate-progress-fast {
+  animation: progress-fill 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);

@@ -39,6 +39,7 @@ const DashboardTab = ({
   activity,
   onAccept,
   onDecline,
+  onDetails,
   onRefresh,
   loading
 }: {
@@ -47,6 +48,7 @@ const DashboardTab = ({
   activity: any[],
   onAccept: (id: string, loc: string) => void,
   onDecline: (id: string) => void,
+  onDetails: (ride: any) => void,
   onRefresh: () => void,
   loading: boolean
 }) => {
@@ -121,6 +123,12 @@ const DashboardTab = ({
                 <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ backgroundColor: r.modeBg, color: r.modeColor }}>{r.mode}</span>
                 <div className="flex gap-2">
                   <button
+                    onClick={() => onDetails(r)}
+                    className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
+                  >
+                    Details
+                  </button>
+                  <button
                     onClick={() => onAccept(r.id, r.dest)}
                     className="rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all active:scale-95"
                   >
@@ -128,7 +136,7 @@ const DashboardTab = ({
                   </button>
                   <button
                     onClick={() => onDecline(r.id)}
-                    className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
+                    className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 hover:border-red-100 transition-colors"
                   >
                     Decline
                   </button>
@@ -207,11 +215,13 @@ const DashboardTab = ({
 const AvailableRidesTab = ({
   available,
   onAccept,
+  onDetails,
   onRefresh,
   loading
 }: {
   available: any[],
   onAccept: (id: string, loc: string) => void,
+  onDetails: (ride: any) => void,
   onRefresh: () => void,
   loading: boolean
 }) => {
@@ -278,7 +288,12 @@ const AvailableRidesTab = ({
               <div className="mt-4 py-3 border-t border-border/50 flex items-center justify-between">
                 <p className="text-lg font-bold font-display text-foreground">{r.fare}</p>
                 <div className="flex gap-2">
-                  <button className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors">Details</button>
+                  <button
+                    onClick={() => onDetails(r)}
+                    className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
+                  >
+                    Details
+                  </button>
                   <button
                     onClick={() => onAccept(r.id, r.dest)}
                     className="rounded-xl bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground hover:brightness-110 transition-all active:scale-95 shadow-sm shadow-primary/20"
@@ -802,6 +817,8 @@ const DriverPortal = () => {
   ]);
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedRide, setSelectedRide] = useState<any>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
 
@@ -951,46 +968,91 @@ const DriverPortal = () => {
   }, [location.state]);
 
   const handleAcceptRide = async (id: string, dest: string) => {
-    const token = localStorage.getItem("token");
+    const rideToAccept = [...availableRides, ...requests].find(r => r.id === id);
+    if (!rideToAccept) return;
 
+    // ─── Optimistic Update (Immediate UI Feedback) ───
+    setRequests(prev => prev.filter(r => r.id !== id));
+    setAvailableRides(prev => prev.filter(r => r.id !== id));
+
+    const newHistoryItem = {
+      ...rideToAccept,
+      status: "completed",
+      date: "Today",
+      duration: "Just now",
+      tip: "₹0"
+    };
+    setHistory(prev => [newHistoryItem, ...prev]);
+
+    setDriver(prev => {
+      if (!prev) return prev;
+      const fareValue = parseInt(rideToAccept.fare.replace("₹", "").replace(",", "")) || 0;
+      return {
+        ...prev,
+        today_rides: (prev.today_rides || 0) + 1,
+        today_earnings: (prev.today_earnings || 0) + fareValue,
+        total_rides: (prev.total_rides || 0) + 1
+      };
+    });
+
+    setActivity(prev => [
+      { type: "ride", text: `Completed ride to ${dest}`, time: "Just now" },
+      ...prev
+    ]);
+
+    toast.success(`Ride to ${dest} accepted!`, {
+      icon: <Navigation size={18} className="text-white animate-pulse" />
+    });
+    // ────────────────────────────────────────────────
+
+    const token = localStorage.getItem("token");
     try {
       if (!token) throw new Error("No token");
-      const res = await fetch(`${API_URL}/api/drivers/me/rides/${id}/accept`, {
+      await fetch(`${API_URL}/api/drivers/me/rides/${id}/accept`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error("Failed to accept ride");
-
-      toast.success(`Ride to ${dest} accepted!`, {
-        icon: <Navigation size={18} className="text-white animate-pulse" />
-      });
-      fetchDriverData();
+      // We rely on the optimistic update to keep state consistent during the session
     } catch (err) {
-      // Offline fallback
-      toast.success(`[Offline Mode] Ride to ${dest} accepted!`);
-      setRequests(prev => prev.filter(r => r.id !== id));
-      setAvailableRides(prev => prev.filter(r => r.id !== id));
+      console.log("Offline/Mock mode: Proceeding with local state only.");
     }
   };
 
   const handleDeclineRide = async (id: string) => {
-    const token = localStorage.getItem("token");
+    const rideToDecline = [...availableRides, ...requests].find(r => r.id === id);
+    if (!rideToDecline) return;
 
+    // ─── Optimistic Update (Immediate UI Feedback) ───
+    setRequests(prev => prev.filter(r => r.id !== id));
+    setAvailableRides(prev => prev.filter(r => r.id !== id));
+
+    const newHistoryItem = {
+      ...rideToDecline,
+      status: "failed",
+      date: "Today",
+      duration: "—",
+      tip: "₹0",
+      rating: 0
+    };
+    setHistory(prev => [newHistoryItem, ...prev]);
+
+    setActivity(prev => [
+      { type: "ride", text: `Declined request: ${rideToDecline.pickup}`, time: "Just now" },
+      ...prev
+    ]);
+
+    toast.error("Request Declined");
+    // ────────────────────────────────────────────────
+
+    const token = localStorage.getItem("token");
     try {
       if (!token) throw new Error("No token");
-      const res = await fetch(`${API_URL}/api/drivers/me/rides/${id}/decline`, {
+      await fetch(`${API_URL}/api/drivers/me/rides/${id}/decline`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
-      if (!res.ok) throw new Error("Failed to decline ride");
-
-      toast.error("Request Declined");
-      fetchDriverData();
     } catch (err) {
-      // Offline fallback
-      toast.error("[Offline Mode] Request Declined");
-      setRequests(prev => prev.filter(r => r.id !== id));
-      setAvailableRides(prev => prev.filter(r => r.id !== id));
+      console.log("Offline/Mock mode: Proceeding with local state only.");
     }
   };
 
@@ -1003,11 +1065,20 @@ const DriverPortal = () => {
           activity={activity}
           onAccept={handleAcceptRide}
           onDecline={handleDeclineRide}
+          onDetails={(r) => { setSelectedRide(r); setDetailsOpen(true); }}
           onRefresh={fetchDriverData}
           loading={loading}
         />
       );
-      case "rides": return <AvailableRidesTab available={availableRides} onAccept={handleAcceptRide} onRefresh={fetchDriverData} loading={loading} />;
+      case "rides": return (
+        <AvailableRidesTab
+          available={availableRides}
+          onAccept={handleAcceptRide}
+          onDetails={(r) => { setSelectedRide(r); setDetailsOpen(true); }}
+          onRefresh={fetchDriverData}
+          loading={loading}
+        />
+      );
       case "history": return <HistoryTab history={history} loading={loading} />;
       case "documents": return <DocumentsTab docList={docList} onView={handleViewDoc} onUpload={handleUploadClick} onRemove={handleRemoveDoc} />;
       case "earnings": return <EarningsTab history={history} />;
@@ -1026,6 +1097,122 @@ const DriverPortal = () => {
         onChange={handleFileChange}
         accept="image/*,.pdf"
       />
+
+      {/* Document Viewer Modal */}
+      {/* Ride Details Modal */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-2xl overflow-hidden p-0 rounded-3xl border-none shadow-2xl bg-background">
+          {selectedRide && (
+            <div className="flex flex-col">
+              <div className="h-32 bg-primary relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-transparent z-10" />
+                <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+                <div className="absolute left-6 bottom-6 z-20 flex items-center gap-3">
+                  <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-lg">
+                    <Navigation size={28} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-display font-black text-white leading-tight">Ride Details</h3>
+                    <p className="text-white/70 text-xs font-bold uppercase tracking-widest mt-1">Request #{selectedRide.id.slice(-6).toUpperCase()}</p>
+                  </div>
+                </div>
+                <button onClick={() => setDetailsOpen(false)} className="absolute top-4 right-4 z-30 p-2 rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-8">
+                <div className="flex flex-col gap-6">
+                  {/* Route Visualizer */}
+                  <div className="relative pl-8 space-y-8 before:content-[''] before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-gradient-to-b before:from-primary before:to-amber-500 before:border-l before:border-dashed before:border-border">
+                    <div className="relative">
+                      <div className="absolute -left-[29px] top-1.5 h-4 w-4 rounded-full bg-primary border-4 border-background shadow-sm" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Pickup Location</p>
+                      <p className="text-base font-bold text-foreground leading-tight">{selectedRide.pickup}</p>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute -left-[29px] top-1.5 h-4 w-4 rounded-sm bg-amber-500 border-4 border-background shadow-sm" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-1">Destination</p>
+                      <p className="text-base font-bold text-foreground leading-tight">{selectedRide.dest}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="p-4 rounded-2xl bg-secondary/40 border border-border/50">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Distance & Time</p>
+                      <div className="flex items-center gap-2">
+                        <MapPin size={16} className="text-primary" />
+                        <span className="text-sm font-bold text-foreground">{selectedRide.dist}</span>
+                        <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                        <span className="text-sm font-bold text-foreground">{selectedRide.time}</span>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-secondary/40 border border-border/50">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Ride Mode</p>
+                      <div className="flex items-center gap-2">
+                        <Shield size={16} style={{ color: selectedRide.modeColor }} />
+                        <span className="text-sm font-bold capitalize" style={{ color: selectedRide.modeColor }}>{selectedRide.mode} Mode</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-border/60 p-5 bg-background shadow-sm">
+                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-border/40">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center text-lg font-black text-muted-foreground">
+                          {(selectedRide.passenger_name || "P")[0]}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-foreground">{selectedRide.passenger_name || "Rider"}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Star size={12} className="fill-amber-400 text-amber-400" />
+                            <span className="text-xs font-bold text-muted-foreground">{selectedRide.rating} Rating</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Estimated fare</p>
+                        <p className="text-xl font-black text-foreground">{selectedRide.fare}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                        <User size={14} />
+                        <span>{selectedRide.passengers} Passenger{selectedRide.passengers > 1 ? "s" : ""}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                        <DollarSign size={14} className="text-emerald-600" />
+                        <span>Payment via SafeGo Wallet</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex gap-3">
+                  <button
+                    onClick={() => {
+                      handleAcceptRide(selectedRide.id, selectedRide.dest);
+                      setDetailsOpen(false);
+                    }}
+                    className="flex-1 rounded-2xl bg-primary py-4 text-sm font-black text-white hover:brightness-110 transition-all shadow-xl shadow-primary/20 active:scale-95"
+                  >
+                    Accept Ride Request
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDeclineRide(selectedRide.id);
+                      setDetailsOpen(false);
+                    }}
+                    className="rounded-2xl border border-border px-8 py-4 text-sm font-bold text-red-500 hover:bg-red-50 hover:border-red-100 transition-colors"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Document Viewer Modal */}
       <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>

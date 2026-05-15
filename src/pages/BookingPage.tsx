@@ -502,6 +502,15 @@ const BookingPage = () => {
     }
   }, [voiceState]);
 
+  useEffect(() => {
+    if (pickup.trim() && destination.trim() && !routeFound && !isAnalyzing) {
+      const timer = setTimeout(() => {
+        handleFindRoute();
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [pickup, destination, routeFound, isAnalyzing]);
+
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
@@ -531,6 +540,7 @@ const BookingPage = () => {
     setIsSearchingPickup(true);
 
     if (pickupTimeoutRef.current) clearTimeout(pickupTimeoutRef.current);
+    setRouteFound(false);
     pickupTimeoutRef.current = setTimeout(async () => {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=8&addressdetails=1&countrycodes=in`);
@@ -557,6 +567,7 @@ const BookingPage = () => {
     setIsSearchingDest(true);
 
     if (destTimeoutRef.current) clearTimeout(destTimeoutRef.current);
+    setRouteFound(false);
     destTimeoutRef.current = setTimeout(async () => {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=8&addressdetails=1&countrycodes=in`);
@@ -1090,21 +1101,23 @@ const BookingPage = () => {
                     <input type="tel" placeholder="Family or caregiver's number" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                   </div>
                 )}
-                <div className="mt-10 mb-4 relative z-20">
-                  <button
-                    onClick={handleFindRoute}
-                    disabled={isAnalyzing}
-                    className="w-full relative group flex items-center justify-center gap-3 rounded-2xl py-5 text-sm font-black text-white transition-all shadow-xl hover:shadow-2xl active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed overflow-hidden"
-                    style={{ backgroundColor: mode.accent }}
-                  >
-                    <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out pointer-events-none" />
-                    {isAnalyzing ? (
-                      <><Loader2 size={20} className="animate-spin" /> RUNNING PREDICTIVE ANALYSIS...</>
-                    ) : (
-                      <><Navigation size={20} className="group-hover:rotate-12 transition-transform" /> START SAFETY ROUTING</>
-                    )}
-                  </button>
-                </div>
+                {isAnalyzing && (
+                  <div className="mt-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+                    <div className="rounded-[2.5rem] bg-card premium-shadow border border-border/40 p-10 text-center relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-1 bg-secondary overflow-hidden">
+                        <div className="h-full bg-primary animate-progress-fast" style={{ backgroundColor: mode.accent }} />
+                      </div>
+                      <div className="mx-auto w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mb-4 animate-bounce">
+                        <Loader2 size={32} style={{ color: mode.accent }} className="animate-spin" />
+                      </div>
+                      <h3 className="text-lg font-black text-foreground">AI Intelligence Matrix</h3>
+                      <p className="text-xs text-muted-foreground mt-2 font-medium max-w-[240px] mx-auto">
+                        Generating predictive safety score and analyzing real-time traffic nodes...
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {routeFound && !isAnalyzing && (
                   <div className="mt-8 space-y-6 animate-in slide-in-from-bottom-8 fade-in duration-700 pb-12">
                     <div className="rounded-[2.5rem] bg-card premium-shadow border border-border/40 p-8 relative overflow-hidden transition-all hover:-translate-y-1">
