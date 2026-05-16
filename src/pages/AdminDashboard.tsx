@@ -79,6 +79,39 @@ const AdminDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [activePop, setActivePop] = useState<{ title: string, type: string } | null>(null);
   const [selectedSOS, setSelectedSOS] = useState<any | null>(null);
+  const [sosElapsed, setSosElapsed] = useState("00:00.00");
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (selectedSOS && selectedSOS.status === 'active') {
+      interval = setInterval(() => {
+        const start = new Date(selectedSOS.created_at).getTime();
+        const now = Date.now();
+        const diff = now - start;
+        
+        if (diff < 0) {
+          setSosElapsed("00:00.00");
+          return;
+        }
+        
+        const m = Math.floor(diff / 60000).toString().padStart(2, '0');
+        const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+        const ms = Math.floor((diff % 1000) / 10).toString().padStart(2, '0');
+        setSosElapsed(`${m}:${s}.${ms}`);
+      }, 47);
+    } else if (selectedSOS && selectedSOS.status !== 'active') {
+      const start = new Date(selectedSOS.created_at).getTime();
+      const end = selectedSOS.updated_at ? new Date(selectedSOS.updated_at).getTime() : Date.now();
+      const diff = Math.max(0, end - start);
+      const m = Math.floor(diff / 60000).toString().padStart(2, '0');
+      const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+      const ms = Math.floor((diff % 1000) / 10).toString().padStart(2, '0');
+      setSosElapsed(`${m}:${s}.${ms}`);
+    } else {
+      setSosElapsed("00:00.00");
+    }
+    return () => clearInterval(interval);
+  }, [selectedSOS]);
 
   const addNotification = (title: string, description: string, type: 'success' | 'info' | 'error' = 'info', sourceId?: string) => {
     const newNotif = {
@@ -398,17 +431,12 @@ const AdminDashboard = () => {
     ));
 
     // Optimistic Update for UI snappiness
-    setSosAlerts(prev => prev.map(a => a._id === alertId ? { ...a, status: status } : a));
+    const timestamp = new Date().toISOString();
+    setSosAlerts(prev => prev.map(a => a._id === alertId ? { ...a, status: status, updated_at: timestamp } : a));
 
-    // Auto-select next active alert if the current one was resolved
+    // Update the currently viewed SOS so the dynamic clock stops immediately
     if (selectedSOS?._id === alertId) {
-      setTimeout(() => {
-        setSosAlerts(current => {
-          const nextActive = current.find(a => a.status === 'active');
-          if (nextActive) setSelectedSOS(nextActive);
-          return current;
-        });
-      }, 500);
+      setSelectedSOS((prev: any) => prev ? { ...prev, status: status, updated_at: timestamp } : null);
     }
 
     // If it's a mock ID (like 'sos1'), handle it locally
@@ -545,7 +573,10 @@ const AdminDashboard = () => {
               <p className="text-[10px] font-black uppercase tracking-widest text-primary mt-1">SaaS Command Center v4.5.2</p>
             </div>
           </div>
-          <div className="flex items-center gap-6 relative">
+          <div 
+            className="flex items-center gap-6 relative"
+            onMouseLeave={() => setShowNotifications(false)}
+          >
             {/* Quick Pop Animation */}
             {activePop && (
               <div className="absolute top-1/2 -left-48 -translate-y-1/2 animate-in fade-in slide-in-from-right-8 duration-300 pointer-events-none z-[60]">
@@ -567,33 +598,35 @@ const AdminDashboard = () => {
             </button>
 
             {showNotifications && (
-              <div className="absolute top-20 right-0 w-[400px] bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
-                <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Notifications</h3>
-                  <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-1 rounded-lg">{notifications.length} Total</span>
-                </div>
-                <div className="max-h-[450px] overflow-y-auto p-4 space-y-3">
-                  {notifications.map((n) => (
-                    <div key={n.id} className="p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group">
-                      <div className="flex gap-4">
-                        <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center ${n.type === 'success' ? 'bg-emerald-50 text-emerald-500' : n.type === 'error' ? 'bg-rose-50 text-rose-500' : 'bg-blue-50 text-blue-500'}`}>
-                          {n.type === 'success' ? <Check size={18} /> : n.type === 'error' ? <AlertCircle size={18} /> : <Info size={18} />}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-xs font-bold text-slate-900">{n.title}</h4>
-                          <p className="text-[11px] text-slate-500 font-medium mt-1 leading-relaxed">{n.description}</p>
-                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-2">{n.time}</p>
+              <div className="absolute top-14 right-0 pt-6 z-50">
+                <div className="w-[400px] bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Notifications</h3>
+                    <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-1 rounded-lg">{notifications.length} Total</span>
+                  </div>
+                  <div className="max-h-[450px] overflow-y-auto p-4 space-y-3">
+                    {notifications.map((n) => (
+                      <div key={n.id} className="p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group">
+                        <div className="flex gap-4">
+                          <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center ${n.type === 'success' ? 'bg-emerald-50 text-emerald-500' : n.type === 'error' ? 'bg-rose-50 text-rose-500' : 'bg-blue-50 text-blue-500'}`}>
+                            {n.type === 'success' ? <Check size={18} /> : n.type === 'error' ? <AlertCircle size={18} /> : <Info size={18} />}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-xs font-bold text-slate-900">{n.title}</h4>
+                            <p className="text-[11px] text-slate-500 font-medium mt-1 leading-relaxed">{n.description}</p>
+                            <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-2">{n.time}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setNotifications([])}
+                    className="w-full p-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-rose-500 transition-colors bg-white border-t border-slate-50"
+                  >
+                    Clear Command Log
+                  </button>
                 </div>
-                <button
-                  onClick={() => setNotifications([])}
-                  className="w-full p-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-rose-500 transition-colors bg-white border-t border-slate-50"
-                >
-                  Clear Command Log
-                </button>
               </div>
             )}
           </div>
@@ -1421,7 +1454,7 @@ const AdminDashboard = () => {
                           </div>
                           <div className="text-right">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedSOS.status === 'active' ? 'Elapsed Time' : 'Time to Resolve'}</p>
-                            <p className="text-2xl font-black text-slate-900 mt-1">{selectedSOS.status === 'active' ? '04:12.82' : '02:45.10'}</p>
+                            <p className="text-2xl font-black text-slate-900 mt-1">{sosElapsed}</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
