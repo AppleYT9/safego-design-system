@@ -10,7 +10,7 @@ from app.models import User, Driver, Vehicle, Ride, SOSAlert, DriverDocument, Us
 from app.schemas import (
     AdminStats, RidesByMode, SafetyScoreStat, DriverApproval, DocumentReview,
     UserResponse, DriverResponse, RideResponse, SOSResponse, DriverDocumentResponse,
-    UserToggleActive, AdminUserCreate, AdminUserUpdate
+    UserToggleActive, AdminUserCreate, AdminUserUpdate, DriverOnlineStatus
 )
 from app.utils.dependencies import get_current_admin
 from app.utils.security import hash_password
@@ -203,6 +203,17 @@ async def approve_driver(driver_id: str, payload: DriverApproval, admin: User = 
     return await _driver_dict(driver)
 
 
+@router.put("/drivers/{driver_id}/online-status", response_model=DriverResponse)
+async def toggle_driver_online(driver_id: str, payload: DriverOnlineStatus, admin: User = Depends(get_current_admin)):
+    driver = await Driver.get(PydanticObjectId(driver_id))
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    driver.is_online = payload.is_online
+    driver.updated_at = datetime.now(timezone.utc)
+    await driver.save()
+    return await _driver_dict(driver)
+
+
 @router.put("/drivers/{driver_id}/documents/{doc_id}", response_model=DriverDocumentResponse)
 async def review_document(driver_id: str, doc_id: str, payload: DocumentReview, admin: User = Depends(get_current_admin)):
     doc = await DriverDocument.find_one(DriverDocument.id == PydanticObjectId(doc_id), DriverDocument.driver_id == PydanticObjectId(driver_id))
@@ -362,19 +373,28 @@ async def update_user(user_id: str, payload: AdminUserUpdate, admin: User = Depe
 
 @router.delete("/users/{user_id}", status_code=204)
 async def delete_user(user_id: str, admin: User = Depends(get_current_admin)):
-    user = await User.get(PydanticObjectId(user_id))
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        user_obj_id = PydanticObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
 
-    # If user is a driver, we might need to handle Driver record too
-    if user.role == UserRole.driver:
-        driver = await Driver.find_one(Driver.user_id == user.id)
-        if driver:
-            # Delete vehicle too?
-            vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
-            if vehicle:
-                await vehicle.delete()
-            await driver.delete()
+    # Clean up associated Driver and Vehicle records regardless of user role
+    driver = await Driver.find_one(Driver.user_id == user_obj_id)
+    if driver:
+        # Delete vehicle too
+        vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
+        if vehicle:
+            await vehicle.delete()
+        
+        # Delete documents
+        docs = await DriverDocument.find(DriverDocument.driver_id == driver.id).to_list()
+        for doc in docs:
+            await doc.delete()
+            
+        await driver.delete()
 
-    await user.delete()
+    user = await User.get(user_obj_id)
+    if user:
+        await user.delete()
+    
     return None

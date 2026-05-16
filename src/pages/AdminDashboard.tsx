@@ -341,6 +341,41 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleToggleDriverOnline = async (driverId: string, isOnline: boolean) => {
+    setDriversList(prev => prev.map(d => d._id === driverId ? { ...d, is_online: isOnline } : d));
+    try {
+      const res = await fetch(`${API_URL}/api/admin/drivers/${driverId}/online-status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+        body: JSON.stringify({ is_online: isOnline })
+      });
+      if (!res.ok) throw new Error();
+      toast.success(`Node is now ${isOnline ? 'ONLINE' : 'OFFLINE'}.`);
+    } catch (err) {
+      toast.error("Failed to update status.");
+      fetchDrivers();
+    }
+  };
+
+  const handleDeleteDriver = async (userId: string) => {
+    if (!confirm("Are you sure you want to terminate this node completely? This will delete their identity and vehicle records.")) return;
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      });
+      if (res.ok) {
+        toast.success("Node Terminated Successfully.");
+        fetchDrivers();
+        fetchStats();
+      } else {
+        toast.error("Termination failed.");
+      }
+    } catch (err) {
+      toast.error("Network Error.");
+    }
+  };
+
   const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -1157,7 +1192,15 @@ const AdminDashboard = () => {
                                   </button>
                                 </>
                               ) : (
-                                <button className="h-9 px-4 rounded-lg bg-white border border-slate-200 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-primary hover:border-primary/30 transition-all">Dossier</button>
+                                <>
+                                  <button onClick={() => handleToggleDriverOnline(d._id, !d.is_online)} className={`h-9 px-3 rounded-lg border text-[10px] font-bold uppercase tracking-widest shadow-sm transition-all flex items-center justify-center ${d.is_online ? 'bg-slate-50 border-slate-200 text-slate-500 hover:text-amber-500 hover:border-amber-200' : 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100'}`}>
+                                    {d.is_online ? <WifiOff size={14} className="mr-1" /> : <Wifi size={14} className="mr-1" />}
+                                    {d.is_online ? 'Offline' : 'Online'}
+                                  </button>
+                                  <button onClick={() => handleDeleteDriver(d.user_id)} className="h-9 w-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all">
+                                    <Trash2 size={14} />
+                                  </button>
+                                </>
                               )}
                             </div>
                           </td>
