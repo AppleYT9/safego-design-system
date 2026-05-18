@@ -8,11 +8,99 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
 import {
   Shield, Bell, MapPin, CheckCircle, ArrowRight, Star,
   Clock, Users, Car, ShieldCheck, Zap, HelpCircle, Lock,
-  Banknote, GraduationCap, Heart, CalendarCheck, Navigation
+  Banknote, GraduationCap, Heart, CalendarCheck, Navigation,
+  X, User, Globe
 } from "lucide-react";
+
+// ─── Services Hero Graphic Component ───────────────────────────────────────────
+const ServicesHeroGraphic = () => {
+  const leftCards = [
+    { title: "Cab Services", desc: "On-demand city and outstation cabs with verified drivers and transparent pricing.", top: "15%", color: "#e67e22" },
+    { title: "Traveller Rentals", desc: "Spacious travellers ideal for group travel, tours, and long-distance journeys.", top: "38%", color: "#4b5563" },
+    { title: "Luxury Car Rentals", desc: "Premium cars for weddings, business travel, and special occasions with comfort.", top: "62%", color: "#4b5563" },
+    { title: "Bus Rentals", desc: "Well-maintained buses for events, corporate travel, tours, and group movement.", top: "85%", color: "#4b5563" },
+  ];
+
+  const rightCards = [
+    { title: "Truck Rentals", desc: "Reliable trucks for goods transport, commercial, & long-distance hauling.", top: "15%", color: "#4b5563" },
+    { title: "Heavy Vehicle Services", desc: "Heavy-duty vehicles for industrial, construction, and large cargo requirements.", top: "38%", color: "#4b5563" },
+    { title: "Standby Cars", desc: "Car rentals with driver available for daily, weekly, or monthly usage.", top: "62%", color: "#4b5563" },
+    { title: "Packers & Movers", desc: "Safe and organized relocation services for homes, offices, and businesses.", top: "85%", color: "#4b5563" },
+  ];
+
+  return (
+    <div className="relative w-[700px] h-[600px] flex justify-center items-center shrink-0 scale-[0.45] sm:scale-[0.55] md:scale-75 lg:scale-[0.8] xl:scale-[0.95] origin-center">
+      
+      {/* Central Phone */}
+      <div className="relative w-[300px] h-[600px] z-20 bg-[#2d2d2d] rounded-[3rem] border-[12px] border-[#333] shadow-[0_20px_50px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col justify-center items-center">
+        {/* Notch */}
+        <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-50">
+          <div className="w-24 h-6 bg-[#333] rounded-b-2xl"></div>
+        </div>
+        
+        {/* Phone Screen with Image */}
+        <div className="w-full h-full bg-black relative">
+          <img src="/india-gate-car.png" alt="Car driving" className="w-full h-full object-cover opacity-95" />
+        </div>
+        
+        {/* Home Button */}
+        <div className="absolute bottom-4 w-full flex justify-center z-50">
+          <div className="w-12 h-12 rounded-full border-2 border-[#555] bg-[#333]"></div>
+        </div>
+      </div>
+
+      {/* Dotted lines SVG behind phone */}
+      <svg className="absolute inset-0 w-full h-full z-10 pointer-events-none" viewBox="0 0 700 600">
+        {/* Left lines */}
+        <path d="M 120 90 L 350 300" stroke="#a0a8ff" strokeWidth="2" strokeDasharray="6 6" fill="none" opacity="0.5" />
+        <path d="M 120 228 L 350 300" stroke="#a0a8ff" strokeWidth="2" strokeDasharray="6 6" fill="none" opacity="0.5" />
+        <path d="M 120 372 L 350 300" stroke="#a0a8ff" strokeWidth="2" strokeDasharray="6 6" fill="none" opacity="0.5" />
+        <path d="M 120 510 L 350 300" stroke="#a0a8ff" strokeWidth="2" strokeDasharray="6 6" fill="none" opacity="0.5" />
+        
+        {/* Right lines */}
+        <path d="M 580 90 L 350 300" stroke="#a0a8ff" strokeWidth="2" strokeDasharray="6 6" fill="none" opacity="0.5" />
+        <path d="M 580 228 L 350 300" stroke="#a0a8ff" strokeWidth="2" strokeDasharray="6 6" fill="none" opacity="0.5" />
+        <path d="M 580 372 L 350 300" stroke="#a0a8ff" strokeWidth="2" strokeDasharray="6 6" fill="none" opacity="0.5" />
+        <path d="M 580 510 L 350 300" stroke="#a0a8ff" strokeWidth="2" strokeDasharray="6 6" fill="none" opacity="0.5" />
+      </svg>
+
+      {/* Left Cards */}
+      {leftCards.map((card, i) => (
+        <motion.div 
+          key={card.title}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 + i * 0.1 }}
+          className="absolute left-[0px] w-[240px] bg-white rounded-[1.5rem] p-5 shadow-[0_15px_40px_rgba(0,0,0,0.08)] border border-gray-100 z-30 flex flex-col justify-center"
+          style={{ top: card.top, transform: 'translateY(-50%)', minHeight: '100px' }}
+        >
+          <h4 className="text-center font-bold text-[15px] mb-2" style={{ color: card.color }}>{card.title}</h4>
+          <p className="text-center text-gray-500 text-[11px] leading-relaxed">{card.desc}</p>
+        </motion.div>
+      ))}
+
+      {/* Right Cards */}
+      {rightCards.map((card, i) => (
+        <motion.div 
+          key={card.title}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5 + i * 0.1 }}
+          className="absolute right-[0px] w-[240px] bg-white rounded-[1.5rem] p-5 shadow-[0_15px_40px_rgba(0,0,0,0.08)] border border-gray-100 z-30 flex flex-col justify-center"
+          style={{ top: card.top, transform: 'translateY(-50%)', minHeight: '100px' }}
+        >
+          <h4 className="text-center font-bold text-[15px] mb-2" style={{ color: card.color }}>{card.title}</h4>
+          <p className="text-center text-gray-500 text-[11px] leading-relaxed">{card.desc}</p>
+        </motion.div>
+      ))}
+
+    </div>
+  );
+};
 
 // ─── Animated Phone Screen Component ────────────────────────────────────────
 const AnimatedPhoneScreen = () => {
@@ -247,149 +335,56 @@ const Home = () => {
       <Navbar />
 
       {/* HERO */}
-      <section className="relative min-h-[90vh] flex items-center bg-background overflow-hidden">
-        {/* Animated Background 3D Particles */}
-        <div className="absolute inset-0 pointer-events-none opacity-20">
-          {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full bg-primary/20 blur-3xl animate-pulse"
-              style={{
-                width: `${Math.random() * 300 + 100}px`,
-                height: `${Math.random() * 300 + 100}px`,
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${i * 2}s`,
-                animationDuration: `${Math.random() * 10 + 10}s`
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Faint map decoration on right */}
-        <svg className="absolute right-0 top-0 h-full w-1/2 opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="hero-map" width="50" height="50" patternUnits="userSpaceOnUse">
-              <circle cx="25" cy="25" r="1.5" fill="hsl(var(--teal))" />
-              <path d="M 0 25 L 50 25 M 25 0 L 25 50" stroke="hsl(var(--teal))" strokeWidth="0.3" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#hero-map)" />
-        </svg>
-
-        <div className="mx-auto flex w-full items-center gap-12 px-6 py-20 lg:flex-row lg:gap-16 sm:px-10 lg:px-16">
-          {/* Left */}
-          <div className="flex-1 scroll-reveal">
-            <h1 className="mt-8 font-display text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-              {t('home.title', 'Elevate Your Journey')}
+      <section className="relative min-h-[100vh] flex items-center bg-white dark:bg-background overflow-hidden pt-20 pb-12">
+        {/* Subtle Background Pattern */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.02] z-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
+        
+        <div className="mx-auto flex w-full flex-col-reverse items-center gap-16 px-6 py-12 lg:flex-row lg:gap-20 sm:px-10 lg:px-16 relative z-10">
+          
+          {/* Left Content */}
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="flex-1 text-center lg:text-left lg:-mt-16"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary font-semibold text-sm mb-6">
+              <ShieldCheck size={16} />
+              <span>Premium Safety Standard</span>
+            </div>
+            <h1 className="font-display text-5xl font-black leading-[1.1] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
+              Elevate Your Journey
             </h1>
-            <p className="mt-6 max-w-xl text-2xl font-bold leading-relaxed text-primary">
-              {t('home.subtitle', 'SafeGo ensures every woman, elderly citizen, and differently-abled passenger travels with safety, dignity, and confidence.')}
+            <p className="mt-6 max-w-2xl text-lg font-medium leading-relaxed text-primary mx-auto lg:mx-0">
+              SafeGo ensures every woman, elderly citizen, and differently-abled passenger travels with safety, dignity, and confidence.
             </p>
-            <p className="mt-6 max-w-lg text-lg font-medium leading-relaxed text-muted-foreground/80">
+            <p className="mt-4 max-w-2xl text-lg font-medium leading-relaxed text-muted-foreground mx-auto lg:mx-0">
               SafeGo adapts to you with tailored routes, verified operators, and real-time monitoring. Premium safety, accessible for all.
             </p>
-            <div className="mt-10 max-w-xl">
+
+            
+            {/* The SafeGo Promise Quote */}
+            <div className="mt-8 max-w-xl hidden lg:block text-left">
               <p className="text-[17px] font-medium text-foreground italic leading-relaxed min-h-[50px]">
                 {displayedQuote}
                 <span className="inline-block w-1 h-5 bg-primary ml-1 animate-pulse" style={{ visibility: displayedQuote.length === fullQuote.length ? 'hidden' : 'visible' }} />
               </p>
-              <p className="mt-4 text-xs font-bold tracking-widest text-primary uppercase">— The SafeGo Promise</p>
+              <p className="mt-4 text-xs font-bold tracking-widest text-primary uppercase">- THE SAFEGO PROMISE</p>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Right — Interactive 3D Booking Card */}
-          <div className="relative flex-1 scroll-reveal hidden lg:flex justify-center perspective-[2000px]">
-            {/* Radar Animation Background rings */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="absolute w-[400px] h-[400px] rounded-full border border-primary/20 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
-              {[200, 300, 400].map((s) => (
-                <div key={s} className="absolute rounded-full border border-primary/[0.08]" style={{ width: s, height: s }} />
-              ))}
-            </div>
+          {/* Right Content - Phone Mockup */}
+          <motion.div 
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex-1 flex justify-center items-center py-10 lg:py-0 relative"
+          >
+            {/* Glowing background behind phone */}
+            <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full scale-75 opacity-50 pointer-events-none"></div>
+            <ServicesHeroGraphic />
+          </motion.div>
 
-            <div
-              ref={cardRef}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-              style={{
-                transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-                transformStyle: "preserve-3d",
-                transition: "transform 0.1s ease-out"
-              }}
-              className="relative z-10 w-[380px] group rounded-[2.5rem] border-2 border-border/50 bg-background/80 backdrop-blur-xl p-8 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] transition-all duration-300 hover:border-primary/40"
-            >
-              {/* Inner elements with translation on Z-axis for depth */}
-              <div style={{ transform: "translateZ(30px)" }} className="mb-6 flex items-center justify-between">
-                <div>
-                  <h3 className="font-display text-xl font-bold text-foreground">Quick Book</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Select your specialized ride</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Car className="text-primary" size={20} />
-                </div>
-              </div>
-
-              <div style={{ transform: "translateZ(45px)" }} className="grid grid-cols-2 gap-3 mb-6">
-                <Link to="/book/pink" className="flex flex-col items-center justify-center rounded-xl border border-mode-pink/20 bg-mode-pink-light/50 p-3 transition-colors hover:bg-mode-pink-light">
-                  <Shield className="text-mode-pink mb-1" size={18} />
-                  <span className="text-xs font-semibold text-mode-pink">Pink Mode</span>
-                </Link>
-                <Link to="/book/pwd" className="flex flex-col items-center justify-center rounded-xl border border-mode-purple/20 bg-mode-purple-light/50 p-3 transition-colors hover:bg-mode-purple-light">
-                  <Users className="text-mode-purple mb-1" size={18} />
-                  <span className="text-xs font-semibold text-mode-purple">PWD Mode</span>
-                </Link>
-                <Link to="/book/elderly" className="flex flex-col items-center justify-center rounded-xl border border-mode-blue/20 bg-mode-blue-light/50 p-3 transition-colors hover:bg-mode-blue-light">
-                  <Heart className="text-mode-blue mb-1" size={18} />
-                  <span className="text-xs font-semibold text-mode-blue">Elderly Mode</span>
-                </Link>
-                <Link to="/book/normal" className="flex flex-col items-center justify-center rounded-xl border border-primary/20 bg-primary/5 p-3 transition-colors hover:bg-primary/10">
-                  <MapPin className="text-primary mb-1" size={18} />
-                  <span className="text-xs font-semibold text-primary">Standard</span>
-                </Link>
-              </div>
-
-              <div style={{ transform: "translateZ(20px)" }} className="flex flex-col gap-3 relative">
-                {/* Connecting line between inputs */}
-                <div className="absolute left-[15px] top-[24px] bottom-[24px] w-[2px] bg-border z-0"></div>
-                <div className="relative z-10 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
-                  <div className="h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-primary/20" />
-                  <span className="opacity-50">Current Location</span>
-                </div>
-                <div className="relative z-10 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
-                  <div className="h-2.5 w-2.5 rounded-sm bg-destructive ring-4 ring-destructive/20" />
-                  <span className="opacity-50">Where to?</span>
-                </div>
-              </div>
-
-              <Link to="/book/normal" style={{ transform: "translateZ(60px)" }} className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-4 text-sm font-bold text-background transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98]">
-                Book Ride Now <ArrowRight size={16} />
-              </Link>
-            </div>
-
-            {/* Orbiting badges with high Z-translation */}
-            <div
-              className="absolute -right-6 top-16 z-20 flex animate-bounce items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 shadow-xl"
-              style={{
-                animationDuration: '3s',
-                transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(100px)`
-              }}
-            >
-              <ShieldCheck size={20} className="text-primary" />
-              <span className="text-sm font-bold text-foreground">Verified ✓</span>
-            </div>
-            <div
-              className="absolute -left-8 bottom-24 z-20 flex animate-bounce items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 shadow-xl"
-              style={{
-                animationDuration: '4s',
-                animationDelay: '1s',
-                transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(120px)`
-              }}
-            >
-              <Clock size={20} className="text-mode-pink" />
-              <span className="text-sm font-bold text-foreground">24/7 Monitored</span>
-            </div>
-          </div>
         </div>
       </section>
 
