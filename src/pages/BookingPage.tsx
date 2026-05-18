@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getModeConfig, modes } from "@/config/modeConfig";
 import type { RideMode } from "@/config/modeConfig";
 import { Navbar } from "@/components/Navbar";
+import { useTranslation } from "react-i18next";
 import { useVoiceAssistant } from "@/contexts/VoiceAssistantContext";
 import { SafetyScoreBar } from "@/components/SafetyScoreBar";
 import {
@@ -31,6 +32,7 @@ const generateNearbyCabs = (lat: number, lng: number, mode: string = "normal") =
 declare global { interface Window { L: any } }
 
 const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRouteExtracted, onCabSelect, simulatingTravel, onTravelComplete }: { accent: string, mode: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, routePolyline?: string | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void, simulatingTravel?: boolean, onTravelComplete?: () => void }) => {
+  const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const [cabs, setCabs] = useState<any[]>([]);
@@ -331,8 +333,8 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
       {locating && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-secondary/95 z-20">
           <Locate size={32} className="text-primary animate-pulse" />
-          <p className="text-sm font-semibold text-foreground">Finding your location…</p>
-          <p className="text-xs text-muted-foreground">Please allow location access if prompted</p>
+          <p className="text-sm font-semibold text-foreground">{t('booking.finding_location', 'Finding your location…')}</p>
+          <p className="text-xs text-muted-foreground">{t('booking.allow_access', 'Please allow location access if prompted')}</p>
         </div>
       )}
       {locError && !locating && (
@@ -412,6 +414,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
 
 // ─── Main Booking Page ───────────────────────────────────────────────────────
 const BookingPage = () => {
+  const { t } = useTranslation();
   const { mode: modeId } = useParams<{ mode: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -536,6 +539,7 @@ const BookingPage = () => {
   const handlePickupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setPickup(val);
+    setPickupCoords(null); // Reset coords so we fetch new ones if they don't select from dropdown
     if (!val.trim()) {
       setPickupSuggestions([]);
       setShowPickupDropdown(false);
@@ -563,6 +567,7 @@ const BookingPage = () => {
   const handleDestChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setDestination(val);
+    setDestinationCoords(null); // Reset coords so we fetch new ones if they don't select from dropdown
     if (!val.trim()) {
       setDestSuggestions([]);
       setShowDestDropdown(false);
@@ -637,14 +642,33 @@ const BookingPage = () => {
     setTriggerRoute({ from: pickup, to: destination });
 
     try {
+      let finalPickupCoords = pickupCoords;
+      let finalDestCoords = destinationCoords;
+
+      // Automatically resolve coordinates if user typed and hit Enter without selecting
+      if (!finalPickupCoords) {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup)}&limit=1`);
+        const data = await res.json();
+        if (data && data.length > 0) finalPickupCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      }
+      
+      if (!finalDestCoords) {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1`);
+        const data = await res.json();
+        if (data && data.length > 0) finalDestCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      }
+
+      if (finalPickupCoords) setPickupCoords(finalPickupCoords);
+      if (finalDestCoords) setDestinationCoords(finalDestCoords);
+
       const res = await fetch(`${API_URL}/api/map/route`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          pickup_latitude: pickupCoords?.lat || 22.3,
-          pickup_longitude: pickupCoords?.lng || 73.19,
-          destination_latitude: destinationCoords?.lat || 22.35,
-          destination_longitude: destinationCoords?.lng || 73.24,
+          pickup_latitude: finalPickupCoords?.lat || 22.3,
+          pickup_longitude: finalPickupCoords?.lng || 73.19,
+          destination_latitude: finalDestCoords?.lat || 22.35,
+          destination_longitude: finalDestCoords?.lng || 73.24,
           mode: mode.id
         })
       });
@@ -809,16 +833,16 @@ const BookingPage = () => {
                 </div>
                 <div className="mt-8">
                   <h1 className="font-display text-3xl font-black tracking-tight text-foreground lg:text-4xl">
-                    Ready for a <span className="text-primary" style={{ color: mode.accent }}>Safe Journey?</span>
+                    {t('booking.ready_for', 'Ready for a')} <span className="text-primary" style={{ color: mode.accent }}>{t('booking.safe_journey', 'Safe Journey?')}</span>
                   </h1>
-                  <p className="mt-2 text-muted-foreground text-sm font-medium">Configure your pickup and destination for a secure ride.</p>
+                  <p className="mt-2 text-muted-foreground text-sm font-medium">{t('booking.configure_pickup', 'Configure your pickup and destination for a secure ride.')}</p>
                 </div>
                 <div className="mt-8 rounded-[2rem] border border-border/40 bg-card p-8 premium-shadow relative transition-all hover:-translate-y-1">
                   <div className="flex items-center gap-2 mb-6">
                     <div className="p-2 rounded-lg" style={{ backgroundColor: `${mode.accent}15` }}>
                       <Navigation size={16} style={{ color: mode.accent }} />
                     </div>
-                    <h3 className="text-sm font-bold text-foreground">Route Details</h3>
+                    <h3 className="text-sm font-bold text-foreground">{t('booking.route_details', 'Route Details')}</h3>
                   </div>
                   <div className="flex flex-col gap-0 relative">
                     <div className="flex items-center gap-3 relative z-50">
@@ -830,7 +854,7 @@ const BookingPage = () => {
                           onFocus={() => setShowPickupDropdown(true)}
                           onBlur={() => setTimeout(() => setShowPickupDropdown(false), 200)}
                           className="w-full rounded-xl border border-border dark:border-white/10 bg-secondary/60 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors pr-10 dark:text-white dark:placeholder:text-white/30"
-                          placeholder="Pickup location"
+                          placeholder={t('booking.pickup_location', 'Pickup location')}
                         />
                         {showPickupDropdown && (pickupSuggestions.length > 0 || isSearchingPickup) && (
                           <div className="absolute top-[105%] left-0 right-0 z-[60] max-h-64 overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl animate-in fade-in zoom-in-95 duration-200 p-2">
@@ -886,7 +910,7 @@ const BookingPage = () => {
                             }
                           }}
                           className="w-full rounded-xl border border-border dark:border-white/10 bg-secondary/60 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30"
-                          placeholder="Destination"
+                          placeholder={t('booking.destination', 'Destination')}
                         />
                         {showDestDropdown && (destSuggestions.length > 0 || isSearchingDest) && (
                           <div className="absolute top-[105%] left-0 right-0 z-[60] max-h-64 overflow-y-auto rounded-2xl border border-border bg-background shadow-2xl animate-in fade-in zoom-in-95 duration-200 p-2">
@@ -921,13 +945,13 @@ const BookingPage = () => {
                   </div>
                   <div className="mt-6 grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Date</label>
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">{t('booking.date', 'Date')}</label>
                       <div className="relative">
                         <input type="date" className="w-full rounded-xl border border-border dark:border-white/10 bg-secondary/30 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-all focus:ring-4 focus:ring-primary/5 dark:text-white dark:[color-scheme:dark]" />
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Time</label>
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">{t('booking.time', 'Time')}</label>
                       <div className="relative">
                         <input type="time" className="w-full rounded-xl border border-border dark:border-white/10 bg-secondary/30 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-all focus:ring-4 focus:ring-primary/5 dark:text-white dark:[color-scheme:dark]" />
                       </div>
@@ -939,8 +963,8 @@ const BookingPage = () => {
                         <Users size={20} style={{ color: mode.accent }} />
                       </div>
                       <div className="flex flex-col">
-                        <label className="text-sm font-black text-foreground leading-none">Passengers</label>
-                        <p className="text-[10px] text-muted-foreground font-bold mt-1 uppercase tracking-tight">How many people?</p>
+                        <label className="text-sm font-black text-foreground leading-none">{t('booking.passengers', 'Passengers')}</label>
+                        <p className="text-[10px] text-muted-foreground font-bold mt-1 uppercase tracking-tight">{t('booking.how_many', 'How many people?')}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 bg-background rounded-2xl p-1.5 shadow-sm border border-border/50">
@@ -986,8 +1010,8 @@ const BookingPage = () => {
                   )}
                 </div>
                 <div className="mt-10 mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-foreground">Service Type</h3>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tap to switch</span>
+                  <h3 className="text-sm font-bold text-foreground">{t('booking.service_type', 'Service Type')}</h3>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('booking.tap_switch', 'Tap to switch')}</span>
                 </div>
                 <div className="grid grid-cols-4 gap-4">
                   {modes.map((m) => {
@@ -1020,7 +1044,7 @@ const BookingPage = () => {
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-foreground leading-tight">{mode.name}</h3>
-                      <p className="text-[10px] text-muted-foreground font-medium">Standard safety protocols active</p>
+                      <p className="text-[10px] text-muted-foreground font-medium">{t('booking.standard_safety', 'Standard safety protocols active')}</p>
                     </div>
                     {mode.id === "pink" && (
                       <span className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tighter border shadow-sm animate-pulse" style={{ backgroundColor: mode.lightBg, color: mode.accent, borderColor: `${mode.accent}40` }}>

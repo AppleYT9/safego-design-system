@@ -3,6 +3,7 @@ import { StatsCard } from "@/components/StatsCard";
 import { modes } from "@/config/modeConfig";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   LayoutDashboard, Car, Shield, Users, Settings,
@@ -34,6 +35,7 @@ const statusColors: Record<string, string> = {
 };
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -451,14 +453,14 @@ const Dashboard = () => {
         <nav className="mt-6 flex flex-col gap-1">
           {navItems.map((item) => (
             <button
-              key={item.label}
+              key={t(`dashboard.nav.${item.label.toLowerCase().replace(" ", "_")}`, item.label)}
               onClick={() => setActiveTab(item.label)}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${activeTab === item.label
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
             >
-              <item.icon size={18} /> {item.label}
+              <item.icon size={18} /> {t(`dashboard.nav.${item.label.toLowerCase().replace(" ", "_")}`, item.label)}
             </button>
           ))}
         </nav>
@@ -476,7 +478,7 @@ const Dashboard = () => {
       <main className="flex-1 overflow-y-auto bg-secondary p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-3xl font-display font-bold text-foreground">{activeTab}</h2>
+            <h2 className="text-3xl font-display font-bold text-foreground">{t(`dashboard.tabs.${activeTab.toLowerCase().replace(" ", "_")}`, activeTab)}</h2>
             <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
           </div>
           <div className="flex items-center gap-4">

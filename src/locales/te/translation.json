@@ -1,0 +1,73 @@
+{
+  "dashboard": {
+    "nav": {
+      "dashboard": "డాష్‌బోర్డ్",
+      "my_rides": "నా రైడ్‌లు",
+      "safety_reports": "భద్రతా నివేదికలు",
+      "emergency_contacts": "అత్యవసర పరిచయాలు",
+      "settings": "సెట్టింగులు",
+      "available_rides": "అందుబాటులో ఉన్న రైడ్‌లు",
+      "my_history": "నా చరిత్ర",
+      "documents": "పత్రాలు",
+      "earnings": "సంపాదన"
+    },
+    "tabs": {
+      "dashboard": "డాష్‌బోర్డ్",
+      "my_rides": "నా రైడ్‌లు",
+      "safety_reports": "భద్రతా నివేదికలు",
+      "emergency_contacts": "అత్యవసర పరిచయాలు",
+      "settings": "సెట్టింగులు",
+      "available_rides": "అందుబాటులో ఉన్న రైడ్‌లు",
+      "my_history": "నా చరిత్ర",
+      "documents": "పత్రాలు",
+      "earnings": "సంపాదన"
+    }
+  },
+  "nav": {
+    "home": "హోమ్",
+    "dashboard": "డాష్‌బోర్డ్",
+    "drive_with_us": "మాతో డ్రైవ్ చేయండి",
+    "safety": "భద్రత",
+    "about": "గురించి",
+    "login": "లాగిన్",
+    "signup": "సైన్ అప్",
+    "signout": "సైన్ అవుట్",
+    "book": "బుక్ చేయండి"
+  },
+  "home": {
+    "title": "మీ రైడ్, మీ నియమాలు",
+    "subtitle": "అందరికీ సురక్షితమైన, నమ్మదగిన మరియు అందుబాటులో ఉన్న రవాణా.",
+    "book_now": "ఇప్పుడే బుక్ చేయండి",
+    "schedule": "తరువాత షెడ్యూల్ చేయండి"
+  },
+  "safety": {
+    "title": "భద్రతా కమాండ్ సెంటర్",
+    "sos_button": "SOS ని ట్రిగ్గర్ చేయండి",
+    "emergency_contacts": "అత్యవసర పరిచయాలు",
+    "add_contact": "పరిచయాన్ని జోడించండి"
+  },
+  "auth": {
+    "welcome": "మళ్లీ స్వాగతం",
+    "create_account": "ఖాతాను సృష్టించండి",
+    "email": "ఇమెయిల్",
+    "password": "పాస్ వర్డ్",
+    "signin": "సైన్ ఇన్ చేయండి"
+  },
+  "booking": {
+    "ready_for": "సిద్ధంగా ఉన్నారా",
+    "safe_journey": "సురక్షిత ప్రయాణానికి?",
+    "configure_pickup": "సురక్షిత రైడ్ కోసం మీ పికప్ మరియు గమ్యాన్ని కాన్ఫిగర్ చేయండి.",
+    "route_details": "మార్గం వివరాలు",
+    "pickup_location": "పికప్ స్థానం",
+    "destination": "గమ్యం",
+    "date": "తేదీ",
+    "time": "సమయం",
+    "passengers": "ప్రయాణీకులు",
+    "how_many": "ఎంత మంది?",
+    "service_type": "సేవ రకం",
+    "tap_switch": "మార్చడానికి నొక్కండి",
+    "standard_safety": "ప్రామాణిక భద్రతా ప్రోటోకాల్స్ యాక్టివ్",
+    "finding_location": "మీ స్థానాన్ని కనుగొంటున్నాము…",
+    "allow_access": "అడిగితే దయచేసి స్థాన ప్రాప్యతను అనుమతించండి"
+  }
+}

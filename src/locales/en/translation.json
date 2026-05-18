@@ -1,0 +1,73 @@
+{
+  "dashboard": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "my_rides": "My Rides",
+      "safety_reports": "Safety Reports",
+      "emergency_contacts": "Emergency Contacts",
+      "settings": "Settings",
+      "available_rides": "Available Rides",
+      "my_history": "My History",
+      "documents": "Documents",
+      "earnings": "Earnings"
+    },
+    "tabs": {
+      "dashboard": "Dashboard",
+      "my_rides": "My Rides",
+      "safety_reports": "Safety Reports",
+      "emergency_contacts": "Emergency Contacts",
+      "settings": "Settings",
+      "available_rides": "Available Rides",
+      "my_history": "My History",
+      "documents": "Documents",
+      "earnings": "Earnings"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "drive_with_us": "Drive with Us",
+    "safety": "Safety",
+    "about": "About",
+    "login": "Login",
+    "signup": "Sign Up",
+    "signout": "Sign Out",
+    "book": "Book"
+  },
+  "home": {
+    "title": "Elevate Your Journey",
+    "subtitle": "SafeGo ensures every woman, elderly citizen, and differently-abled passenger travels with safety, dignity, and confidence.",
+    "book_now": "Book Now",
+    "schedule": "Schedule Later"
+  },
+  "safety": {
+    "title": "Safety Command Center",
+    "sos_button": "TRIGGER SOS",
+    "emergency_contacts": "Emergency Contacts",
+    "add_contact": "Add Contact"
+  },
+  "auth": {
+    "welcome": "Welcome Back",
+    "create_account": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "signin": "Sign In"
+  },
+  "booking": {
+    "ready_for": "Ready for a",
+    "safe_journey": "Safe Journey?",
+    "configure_pickup": "Configure your pickup and destination for a secure ride.",
+    "route_details": "Route Details",
+    "pickup_location": "Pickup location",
+    "destination": "Destination",
+    "date": "Date",
+    "time": "Time",
+    "passengers": "Passengers",
+    "how_many": "How many people?",
+    "service_type": "Service Type",
+    "tap_switch": "Tap to switch",
+    "standard_safety": "Standard safety protocols active",
+    "finding_location": "Finding your location…",
+    "allow_access": "Please allow location access if prompted"
+  }
+}

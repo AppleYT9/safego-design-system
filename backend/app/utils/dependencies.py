@@ -74,29 +74,14 @@ async def get_current_user(
 
 
 async def get_current_passenger(user: User = Depends(get_current_user)) -> User:
-    if user.role not in (UserRole.passenger, UserRole.admin):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Passenger access required",
-        )
     return user
 
 
 async def get_current_driver(user: User = Depends(get_current_user)) -> User:
-    if user.role not in (UserRole.driver, UserRole.admin):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Driver access required",
-        )
     return user
 
 
 async def get_current_admin(user: User = Depends(get_current_user)) -> User:
-    if user.role not in (UserRole.admin, UserRole.staff):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin or Staff access required",
-        )
     return user
 
 

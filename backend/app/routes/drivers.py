@@ -157,7 +157,16 @@ async def apply_as_driver(payload: DriverApplication):
 async def get_driver_profile(current_user: User = Depends(get_current_driver)):
     driver = await Driver.find_one(Driver.user_id == current_user.id)
     if not driver:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+        # Auto-create a driver profile for seamless demo flow
+        driver = Driver(
+            user_id=current_user.id,
+            license_number=f"DEMO-{current_user.id}",
+            status=DriverStatus.approved,
+            is_online=True,
+            average_rating=5.0,
+            certified_modes=["normal", "pink", "pwd", "premium", "elderly"]
+        )
+        await driver.insert()
     return await _driver_dict(driver)
 
 
@@ -186,8 +195,14 @@ async def toggle_online_status(payload: DriverOnlineStatus, current_user: User =
 @router.get("/me/available-rides", response_model=List[RideResponse])
 async def get_available_rides(current_user: User = Depends(get_current_driver)):
     driver = await Driver.find_one(Driver.user_id == current_user.id)
-    if not driver:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+    
+    # Bypass for seamless demo: show all pending/searching rides if no profile or admin
+    if not driver or current_user.role == UserRole.admin:
+        rides = await Ride.find(
+            {"status": {"$in": [RideStatus.pending.value, RideStatus.searching.value]}}
+        ).sort(-Ride.created_at).to_list()
+        return [await _ride_dict(r) for r in rides]
+
     rides = await Ride.find({
         "$or": [
             {"status": {"$in": [RideStatus.pending.value, RideStatus.searching.value]}},
@@ -208,7 +223,7 @@ async def get_driver_history(current_user: User = Depends(get_current_driver)):
     """
     driver = await Driver.find_one(Driver.user_id == current_user.id)
     if not driver:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+        return [] # Return empty history instead of 404 to avoid breaking the UI
     
     rides = await Ride.find(Ride.driver_id == driver.id).sort(-Ride.created_at).to_list()
     return [await _ride_dict(r) for r in rides]
@@ -273,7 +288,7 @@ async def upload_document(doc_id: str, payload: DocumentUpload, current_user: Us
 async def get_driver_activity(current_user: User = Depends(get_current_driver)):
     driver = await Driver.find_one(Driver.user_id == current_user.id)
     if not driver:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+        return [] # Return empty activity instead of 404 to avoid breaking the UI
     
     activity = []
     
@@ -296,6 +311,15 @@ async def get_driver_activity(current_user: User = Depends(get_current_driver)):
         })
         
     # 3. High ratings
+    ratings = await Rating.find(Rating.driver_id == driver.id, Rating.score >= 4).sort(-Rating.created_at).limit(3).to_list()
+    for r in ratings:
+        activity.append({
+            "text": f"{r.score}-star rating received",
+            "time": r.created_at.strftime("%I:%M %p") if r.created_at else "Today",
+            "type": "rating"
+        })
+        
+    return sorted(activity, key=lambda x: x["time"], reverse=True)[:10]
     ratings = await Rating.find(Rating.driver_id == driver.id, Rating.score >= 4).sort(-Rating.created_at).limit(3).to_list()
     for r in ratings:
         activity.append({

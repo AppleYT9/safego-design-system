@@ -7,6 +7,7 @@ import { modes } from "@/config/modeConfig";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Shield, Bell, MapPin, CheckCircle, ArrowRight, Star,
   Clock, Users, Car, ShieldCheck, Zap, HelpCircle, Lock,
@@ -194,6 +195,7 @@ const AnimatedPhoneScreen = () => {
 };
 
 const Home = () => {
+  const { t } = useTranslation();
   const [activeMode, setActiveMode] = useState("all");
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
@@ -279,9 +281,12 @@ const Home = () => {
           {/* Left */}
           <div className="flex-1 scroll-reveal">
             <h1 className="mt-8 font-display text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-              Real Safety for<br /><span className="text-primary">Every</span> Passenger.
+              {t('home.title', 'Elevate Your Journey')}
             </h1>
-            <p className="mt-8 max-w-lg text-lg font-medium leading-relaxed text-muted-foreground/80">
+            <p className="mt-6 max-w-xl text-2xl font-bold leading-relaxed text-primary">
+              {t('home.subtitle', 'SafeGo ensures every woman, elderly citizen, and differently-abled passenger travels with safety, dignity, and confidence.')}
+            </p>
+            <p className="mt-6 max-w-lg text-lg font-medium leading-relaxed text-muted-foreground/80">
               SafeGo adapts to you with tailored routes, verified operators, and real-time monitoring. Premium safety, accessible for all.
             </p>
             <div className="mt-10 max-w-xl">

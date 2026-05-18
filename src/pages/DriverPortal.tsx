@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { SafeGoLogo } from "@/components/SafeGoLogo";
 import { useLocation, Link } from "react-router-dom";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { toast } from "sonner";
 import {
   LayoutDashboard, Car, FileText, DollarSign, Settings, LogOut, Star, Check, Clock,
@@ -323,6 +325,7 @@ const HistoryTab = ({
   history: any[],
   loading: boolean
 }) => {
+  const { t } = useTranslation();
   if (loading && history.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed border-border bg-background/50">
@@ -488,6 +491,7 @@ const DocumentsTab = ({
 };
 
 const EarningsTab = ({ history }: { history: any[] }) => {
+  const { t } = useTranslation();
   const completedRides = history.filter(r => r.status === "completed");
   const totalRides = completedRides.length;
   const totalEarnings = completedRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "")), 0);
@@ -653,6 +657,7 @@ const EarningsTab = ({ history }: { history: any[] }) => {
 };
 
 const SettingsTab = () => {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState({
     firstName: "James",
@@ -798,6 +803,7 @@ const SettingsTab = () => {
 // ───────── Main Component ─────────
 
 const DriverPortal = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
   const [driver, setDriver] = useState<any>(null);
@@ -1280,7 +1286,7 @@ const DriverPortal = () => {
           <nav className="mt-4 flex flex-col gap-1.5 px-4 flex-1">
             {navItems.map((item) => (
               <button
-                key={item.label}
+                key={t(`dashboard.nav.${item.label.toLowerCase().replace(" ", "_")}`, item.label)}
                 onClick={() => setActiveTab(item.tab)}
                 className={`flex items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-bold tracking-tight transition-all text-left w-full group ${activeTab === item.tab
                   ? "bg-primary text-white shadow-xl shadow-primary/20"
@@ -1288,7 +1294,7 @@ const DriverPortal = () => {
                   }`}
               >
                 <item.icon size={20} className={activeTab === item.tab ? "text-white" : "text-muted-foreground group-hover:text-primary transition-colors"} />
-                {item.label}
+                {t(`dashboard.nav.${item.label.toLowerCase().replace(" ", "_")}`, item.label)}
                 {activeTab === item.tab && <ChevronRight size={16} className="ml-auto opacity-70" />}
               </button>
             ))}
@@ -1310,9 +1316,12 @@ const DriverPortal = () => {
         {/* Mobile Header */}
         <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-md px-4 py-3 lg:hidden">
           <SafeGoLogo size={22} />
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-xl p-2.5 bg-secondary/50 border border-border/50 text-foreground shadow-sm">
-            <Menu size={22} />
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-xl p-2.5 bg-secondary/50 border border-border/50 text-foreground shadow-sm">
+              <Menu size={22} />
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu Overlay */}
@@ -1329,14 +1338,14 @@ const DriverPortal = () => {
               <nav className="flex flex-col gap-2 flex-1">
                 {navItems.map((item) => (
                   <button
-                    key={item.label}
+                    key={t(`dashboard.nav.${item.label.toLowerCase().replace(" ", "_")}`, item.label)}
                     onClick={() => { setActiveTab(item.tab); setMobileMenuOpen(false); }}
                     className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-sm font-bold transition-all text-left w-full ${activeTab === item.tab
                       ? "bg-primary text-white shadow-lg shadow-primary/20"
                       : "text-muted-foreground hover:bg-secondary"
                       }`}
                   >
-                    <item.icon size={20} /> {item.label}
+                    <item.icon size={20} /> {t(`dashboard.nav.${item.label.toLowerCase().replace(" ", "_")}`, item.label)}
                   </button>
                 ))}
               </nav>
@@ -1354,8 +1363,11 @@ const DriverPortal = () => {
         )}
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-transparent p-4 pt-24 lg:p-10 lg:pt-8">
-          <div className="max-w-6xl mx-auto">
+        <main className="flex-1 overflow-y-auto bg-transparent p-4 pt-24 lg:p-10 lg:pt-8 relative">
+          <div className="absolute top-4 right-4 lg:top-8 lg:right-10 z-10 hidden lg:block">
+             <LanguageSwitcher />
+          </div>
+          <div className="max-w-6xl mx-auto lg:pt-12">
             {renderActiveTab()}
           </div>
         </main>

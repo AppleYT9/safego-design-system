@@ -1,0 +1,73 @@
+{
+  "dashboard": {
+    "nav": {
+      "dashboard": "डैशबोर्ड",
+      "my_rides": "मेरी सवारी",
+      "safety_reports": "सुरक्षा रिपोर्ट",
+      "emergency_contacts": "आपातकालीन संपर्क",
+      "settings": "सेटिंग्स",
+      "available_rides": "उपलब्ध सवारी",
+      "my_history": "मेरा इतिहास",
+      "documents": "दस्तावेज़",
+      "earnings": "कमाई"
+    },
+    "tabs": {
+      "dashboard": "डैशबोर्ड",
+      "my_rides": "मेरी सवारी",
+      "safety_reports": "सुरक्षा रिपोर्ट",
+      "emergency_contacts": "आपातकालीन संपर्क",
+      "settings": "सेटिंग्स",
+      "available_rides": "उपलब्ध सवारी",
+      "my_history": "मेरा इतिहास",
+      "documents": "दस्तावेज़",
+      "earnings": "कमाई"
+    }
+  },
+  "nav": {
+    "home": "होम",
+    "dashboard": "डैशबोर्ड",
+    "drive_with_us": "हमारे साथ चलाएं",
+    "safety": "सुरक्षा",
+    "about": "हमारे बारे में",
+    "login": "लॉग इन",
+    "signup": "साइन अप",
+    "signout": "साइन आउट",
+    "book": "बुक करें"
+  },
+  "home": {
+    "title": "अपनी यात्रा को बेहतरीन बनाएं",
+    "subtitle": "SafeGo यह सुनिश्चित करता है कि प्रत्येक महिला, बुजुर्ग नागरिक और दिव्यांग यात्री सुरक्षा, गरिमा और आत्मविश्वास के साथ यात्रा करें।",
+    "book_now": "अभी बुक करें",
+    "schedule": "बाद में शेड्यूल करें"
+  },
+  "safety": {
+    "title": "सुरक्षा कमांड सेंटर",
+    "sos_button": "SOS ट्रिगर करें",
+    "emergency_contacts": "आपातकालीन संपर्क",
+    "add_contact": "संपर्क जोड़ें"
+  },
+  "auth": {
+    "welcome": "वापसी पर स्वागत है",
+    "create_account": "खाता बनाएं",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "signin": "साइन इन करें"
+  },
+  "booking": {
+    "ready_for": "के लिए तैयार हैं एक",
+    "safe_journey": "सुरक्षित यात्रा?",
+    "configure_pickup": "सुरक्षित सवारी के लिए अपना पिकअप और गंतव्य कॉन्फ़िगर करें।",
+    "route_details": "मार्ग विवरण",
+    "pickup_location": "पिकअप स्थान",
+    "destination": "मंज़िल",
+    "date": "तारीख",
+    "time": "समय",
+    "passengers": "यात्री",
+    "how_many": "कितने लोग?",
+    "service_type": "सेवा का प्रकार",
+    "tap_switch": "बदलने के लिए टैप करें",
+    "standard_safety": "मानक सुरक्षा प्रोटोकॉल सक्रिय",
+    "finding_location": "आपका स्थान खोजा जा रहा है…",
+    "allow_access": "यदि कहा जाए तो कृपया स्थान पहुंच की अनुमति दें"
+  }
+}
