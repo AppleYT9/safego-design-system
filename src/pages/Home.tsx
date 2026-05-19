@@ -762,181 +762,118 @@ const ServicesHeroGraphic = () => {
   );
 };
 
-// ─── Animated Phone Screen Component ────────────────────────────────────────
-const AnimatedPhoneScreen = () => {
-  const [eta, setEta] = useState(7);
-  const [progress, setProgress] = useState(0);
-  const [showBadge, setShowBadge] = useState(false);
-  const animRef = useRef<number | null>(null);
-  const startRef = useRef<number | null>(null);
-
-  // SVG path for the route - an organic curve inside the map area
-  const PATH = "M 20 100 C 40 80, 60 110, 80 90 C 100 70, 110 95, 130 85 C 150 75, 165 90, 180 75";
-  const PATH_LENGTH = 200; // approximate length
-
-  // Car travels along path
-  const getCarPos = (t: number) => {
-    // parametric approximation along the bezier
-    const x = 20 + t * 160;
-    // simple sine wave to stay near the path
-    const y = 100 - t * 25 + Math.sin(t * Math.PI * 3) * 8;
-    return { x, y };
-  };
+// ─── Safety Dashboard Widget Component ───────────────────────────────────────────
+const SafetyDashboardWidget = () => {
+  const [currentTime, setCurrentTime] = useState("");
+  const [activeCheck, setActiveCheck] = useState("Sentinel AI Active");
+  
+  const checks = [
+    "Analyzing street illumination...",
+    "Scanning municipal safety reports...",
+    "Monitoring active GPS coordinates...",
+    "Verifying driver biometrics...",
+    "Telemetry speed scan in progress...",
+    "Continuous audio guard scanning...",
+    "AI safe-routing optimized..."
+  ];
 
   useEffect(() => {
-    const duration = 4000; // 4s per loop
-    const loop = (ts: number) => {
-      if (!startRef.current) startRef.current = ts;
-      const elapsed = (ts - startRef.current) % (duration + 1200); // 1.2s pause
-      const t = Math.min(elapsed / duration, 1);
-      setProgress(t);
-      animRef.current = requestAnimationFrame(loop);
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toTimeString().split(" ")[0]);
     };
-    animRef.current = requestAnimationFrame(loop);
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
 
-    // Show AI badge after 1s
-    const badgeTimer = setTimeout(() => setShowBadge(true), 1200);
-
-    // Tick ETA down
-    const etaTimer = setInterval(() => {
-      setEta(prev => (prev <= 1 ? 7 : prev - 1));
-    }, 1000);
+    let idx = 0;
+    const checkTimer = setInterval(() => {
+      idx = (idx + 1) % checks.length;
+      setActiveCheck(checks[idx]);
+    }, 3000);
 
     return () => {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-      clearTimeout(badgeTimer);
-      clearInterval(etaTimer);
+      clearInterval(timer);
+      clearInterval(checkTimer);
     };
   }, []);
 
-  const carPos = getCarPos(Math.min(progress, 0.98));
-  const dashOffset = PATH_LENGTH * (1 - progress);
-
   return (
-    <div className="flex h-full flex-col">
-      {/* Phone header */}
-      <div className="bg-foreground px-4 py-3 flex items-center justify-between">
-        <div>
-          <p className="text-xs text-background/70">SafeGo</p>
-          <p className="text-sm font-semibold text-background">Book a Ride</p>
+    <div className="relative w-full max-w-[480px] rounded-3xl border border-white/10 bg-[#0b0f19] p-6 shadow-[0_25px_60px_rgba(0,0,0,0.4)] overflow-hidden text-left font-sans">
+      {/* Background glow effects */}
+      <div className="absolute top-[-50px] right-[-50px] h-[150px] w-[150px] rounded-full bg-primary/20 blur-[60px] pointer-events-none" />
+      <div className="absolute bottom-[-50px] left-[-50px] h-[150px] w-[150px] rounded-full bg-rose-500/10 blur-[60px] pointer-events-none" />
+
+      {/* Header bar */}
+      <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </div>
+          <div>
+            <h3 className="text-xs font-black tracking-wider uppercase text-emerald-400 font-display">
+              🛡️ Sentinel AI Active
+            </h3>
+            <p className="text-[9.5px] font-semibold text-white/50 mt-0.5 tracking-tight font-mono">
+              {activeCheck}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-          <span className="text-[9px] text-primary font-bold">LIVE</span>
+        <div className="text-right">
+          <span className="text-[11px] font-bold text-white/70 font-mono tracking-widest">{currentTime}</span>
         </div>
       </div>
 
-      {/* Mode pills */}
-      <div className="bg-secondary px-3 pt-2 pb-1 flex gap-1.5">
-        {modes.map(m => (
-          <span key={m.id} className="rounded-full px-2 py-0.5 text-[9px] font-medium" style={{ backgroundColor: m.lightBg, color: m.accent }}>
-            {m.name.replace(" Mode", "")}
-          </span>
+      {/* Grid statistics metrics */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {[
+          { label: "AI Safety Rating", val: "99.9%", color: "text-emerald-400" },
+          { label: "Dispatch Response", val: "< 2.4 min", color: "text-primary" },
+          { label: "Live Escort Hubs", val: "Active 24/7", color: "text-rose-400" }
+        ].map((stat, i) => (
+          <div key={i} className="bg-white/[0.03] border border-white/5 rounded-xl p-3 flex flex-col justify-between">
+            <span className="text-[9px] font-medium text-white/40 leading-tight uppercase tracking-wider">{stat.label}</span>
+            <span className={`text-[14px] font-extrabold mt-1.5 ${stat.color}`}>{stat.val}</span>
+          </div>
         ))}
       </div>
 
-      {/* ── Animated Map Area ── */}
-      <div className="relative mx-3 mt-2 h-[115px] rounded-xl overflow-hidden bg-[#f0f4f0] dark:bg-zinc-800/60 border border-border flex-shrink-0">
-        {/* Grid background */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.12]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="ph-grid" width="16" height="16" patternUnits="userSpaceOnUse">
-              <path d="M 16 0 L 0 0 0 16" fill="none" stroke="currentColor" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#ph-grid)" />
-        </svg>
+      {/* Core Security Protocols List */}
+      <div className="space-y-4">
+        <h4 className="text-[11px] font-bold uppercase tracking-wider text-white/60 mb-2 font-display">Automated Shield Protocols</h4>
 
-        {/* Animated SVG route */}
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 130" preserveAspectRatio="none">
-          {/* Route background (faint) */}
-          <path
-            d={PATH}
-            fill="none"
-            stroke="hsl(var(--teal))"
-            strokeWidth="3"
-            strokeDasharray="5 4"
-            opacity="0.2"
-          />
-          {/* Animating route draw */}
-          <path
-            d={PATH}
-            fill="none"
-            stroke="hsl(var(--teal))"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={`${PATH_LENGTH} ${PATH_LENGTH}`}
-            strokeDashoffset={dashOffset}
-            style={{ transition: "stroke-dashoffset 0.05s linear" }}
-            opacity="0.9"
-          />
-
-          {/* ── Pickup Waypoint (Start) ── */}
-          <circle cx="20" cy="100" r="5" fill="hsl(var(--teal))" opacity="0.3">
-            <animate attributeName="r" values="5;8;5" dur="1.5s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.5s" repeatCount="indefinite" />
-          </circle>
-          <circle cx="20" cy="100" r="3.5" fill="hsl(var(--teal))" />
-
-          {/* ── Dropoff Waypoint (End) ── */}
-          <circle cx="180" cy="75" r="4" fill="hsl(var(--destructive))" opacity="0.3">
-            <animate attributeName="r" values="4;7;4" dur="2s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />
-          </circle>
-          <rect x="177" y="72" width="6" height="6" rx="1" fill="hsl(var(--destructive))" />
-
-          {/* ── Animated Car Dot ── */}
-          <g transform={`translate(${carPos.x - 7}, ${carPos.y - 7})`}>
-            {/* Glow ring */}
-            <circle cx="7" cy="7" r="10" fill="hsl(var(--teal))" opacity="0.15">
-              <animate attributeName="r" values="8;14;8" dur="1s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.2;0;0.2" dur="1s" repeatCount="indefinite" />
-            </circle>
-            {/* Car body */}
-            <circle cx="7" cy="7" r="6" fill="hsl(var(--teal))" />
-            <circle cx="7" cy="7" r="3.5" fill="white" opacity="0.9" />
-          </g>
-        </svg>
-
-        {/* ETA Chip */}
-        <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-lg bg-background/90 backdrop-blur px-2 py-1 shadow-md border border-border">
-          <Clock size={9} className="text-primary" />
-          <span className="text-[9px] font-bold text-foreground">{eta} min</span>
-        </div>
-
-        {/* AI Safe Route badge — fades in after delay */}
-        <div
-          className="absolute top-2 left-2 flex items-center gap-1 rounded-lg bg-primary/90 px-2 py-1 shadow-md"
-          style={{
-            opacity: showBadge ? 1 : 0,
-            transform: showBadge ? "translateY(0)" : "translateY(-6px)",
-            transition: "opacity 0.5s ease, transform 0.5s ease"
-          }}
-        >
-          <Navigation size={8} className="text-primary-foreground" />
-          <span className="text-[8px] font-bold text-primary-foreground">AI Safe Route</span>
-        </div>
-      </div>
-
-      {/* Driver info card */}
-      <div className="mx-3 mt-2 rounded-xl border border-border bg-background p-2.5 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-mode-teal-light flex items-center justify-center flex-shrink-0">
-            <Star size={12} className="text-primary" />
+        {[
+          {
+            icon: <Cpu className="text-emerald-400" size={16} />,
+            title: "AI Safe-Route Navigation",
+            desc: "Continuous calculation analyzing active road lights, police proximity, and regional safety statistics."
+          },
+          {
+            icon: <Lock className="text-primary" size={16} />,
+            title: "Live Biometric Shield",
+            desc: "Continuous driver verification matching background and live face scans prior to passenger boarding."
+          },
+          {
+            icon: <Navigation className="text-rose-400" size={16} />,
+            title: "Dynamic Geofence Sentinel",
+            desc: "Immediate command center alerts if the vehicle deviates from the optimal path by more than 100 meters."
+          },
+          {
+            icon: <MessageSquare className="text-amber-400" size={16} />,
+            title: "Opt-In Voice Guard",
+            desc: "Real-time voice detection framework triggers silent SOS alerts if predetermined distress codes are recorded."
+          }
+        ].map((protocol, i) => (
+          <div key={i} className="flex gap-3.5 items-start bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.02] p-3 rounded-xl transition-all duration-300">
+            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/10">
+              {protocol.icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h5 className="text-[12px] font-bold text-white tracking-tight">{protocol.title}</h5>
+              <p className="text-[10px] text-white/50 leading-normal mt-0.5 font-medium">{protocol.desc}</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-semibold text-foreground">James D.</p>
-            <p className="text-[9px] text-muted-foreground">⭐ 4.9 · Toyota Vios</p>
-          </div>
-          <div className="flex-shrink-0 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-            <Navigation size={9} className="text-primary-foreground" />
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom SOS strip */}
-      <div className="mx-3 mt-2 rounded-xl bg-destructive/10 border border-destructive/20 py-1.5 text-center">
-        <span className="text-[9px] font-bold text-destructive tracking-widest">SOS · HOLD FOR EMERGENCY</span>
+        ))}
       </div>
     </div>
   );
@@ -1099,37 +1036,9 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Right phones */}
+          {/* Right Content - Safety Dashboard Widget */}
           <div className="relative flex flex-1 items-center justify-center scroll-reveal">
-            <div className="relative">
-              {/* Phone 1 */}
-              <div className="animate-float relative z-10 h-[480px] w-[240px] overflow-hidden rounded-[2.5rem] border-[6px] border-foreground bg-secondary shadow-2xl">
-                <AnimatedPhoneScreen />
-              </div>
-              {/* Phone 2 */}
-              <div className="absolute -left-16 top-12 h-[420px] w-[210px] rotate-[-8deg] overflow-hidden rounded-[2.5rem] border-[6px] border-foreground bg-foreground shadow-2xl opacity-80">
-                <div className="flex h-full flex-col p-4">
-                  <p className="text-xs text-background/50">Tracking</p>
-                  <p className="text-sm font-semibold text-background">Ride in Progress</p>
-                  <div className="mt-3 flex-1 rounded-xl bg-background/10 relative overflow-hidden">
-                    {/* Animated Map Pattern inside Phone 2 */}
-                    <div className="absolute inset-[-40px] opacity-[0.15] animate-move-map pointer-events-none text-background"
-                      style={{ backgroundImage: 'radial-gradient(circle, currentColor 1.5px, transparent 1px), linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px' }}
-                    />
-                    <div className="absolute top-1/3 left-1/3 z-10 flex items-center justify-center">
-                      <div className="h-8 w-8 rounded-full bg-background/40 animate-ping absolute duration-1000" />
-                      <div className="h-4 w-4 rounded-full border-[3px] border-foreground bg-background relative z-10 shadow-lg" />
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <SafetyScoreBar score={92} color="hsl(var(--teal))" />
-                  </div>
-                  <div className="mt-3 rounded-xl bg-destructive/20 py-2 text-center text-[10px] font-bold text-destructive">
-                    SOS
-                  </div>
-                </div>
-              </div>
-            </div>
+            <SafetyDashboardWidget />
           </div>
         </div>
       </section>
