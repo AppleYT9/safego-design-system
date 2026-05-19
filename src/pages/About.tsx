@@ -212,17 +212,9 @@ const About = () => {
             <div className="rounded-[3rem] bg-foreground p-12 text-center text-background relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
               <h2 className="text-3xl md:text-5xl font-black mb-6 relative z-10">We're just getting started.</h2>
-              <p className="text-background/70 max-w-xl mx-auto mb-10 relative z-10 italic">
+              <p className="text-background/70 max-w-xl mx-auto mb-4 relative z-10 italic">
                 "Our mission is to ensure that no passenger ever feels unsafe during their journey. Every line of code we write is a step toward a safer tomorrow."
               </p>
-              <div className="flex justify-center gap-4 relative z-10">
-                <button
-                  onClick={() => navigate("/")}
-                  className="px-8 py-3 rounded-full bg-primary text-primary-foreground font-bold hover:scale-105 transition-transform"
-                >
-                  Join the Movement
-                </button>
-              </div>
             </div>
           </div>
         </section>
