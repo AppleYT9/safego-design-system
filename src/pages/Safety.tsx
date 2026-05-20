@@ -146,7 +146,7 @@ const Safety = () => {
         // Simulate network delay for realistic feel
         const timer = setTimeout(() => {
             setPoliceStations(mockStations);
-        }, 1200);
+        }, 200);
 
         return () => clearTimeout(timer);
     }, [userLocation]);

@@ -16,7 +16,14 @@ const Splash = () => {
         console.error("Autoplay prevents video from playing:", err);
       });
     }
-  }, []);
+
+    // Safety fallback redirect after 3.5 seconds to guarantee extremely low-latency access to the home page!
+    const fallback = setTimeout(() => {
+      navigate("/home");
+    }, 3500);
+
+    return () => clearTimeout(fallback);
+  }, [navigate]);
 
   return (
     <div className="flex min-h-screen items-center justify-center relative bg-black overflow-hidden">

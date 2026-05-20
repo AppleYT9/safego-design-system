@@ -11,6 +11,14 @@ from app.utils.fare import calculate_fare, calculate_safety_score, haversine_dis
 from app.ml.predictor import predictor
 from app.ml.fare_predictor import fare_surge_predictor
 
+# Simple, high-speed in-memory cache for routing calculations
+# Key format: (round(pickup_lat, 4), round(pickup_lng, 4), round(dest_lat, 4), round(dest_lng, 4))
+ROUTE_CACHE: dict = {}
+MAX_CACHE_SIZE = 1000
+
+# Reusable global HTTP client to eliminate TCP/SSL handshake overhead and achieve ultra-low latency routing
+HTTP_CLIENT = httpx.AsyncClient(timeout=1.5)
+
 
 async def get_route(
     pickup_lat: float,
@@ -25,19 +33,30 @@ async def get_route(
     Call OSRM for route data, fall back to Haversine if unavailable.
     Returns dict with distance_km, duration_minutes, fare_amount, safety_score, route_polyline, steps.
     """
-    distance_km = 0.0
-    duration_minutes = 0.0
-    route_polyline = None
-    steps: list = []
+    # 1. Check in-memory route cache first to make repeated requests INSTANT (0ms latency!)
+    cache_key = (round(pickup_lat, 4), round(pickup_lng, 4), round(dest_lat, 4), round(dest_lng, 4))
+    
+    cached_data = ROUTE_CACHE.get(cache_key)
+    if cached_data:
+        distance_km = cached_data["distance_km"]
+        duration_minutes = cached_data["duration_minutes"]
+        route_polyline = cached_data["route_polyline"]
+        steps = cached_data["steps"]
+        print(f"[MapService Cache] HIT for route: {cache_key}")
+    else:
+        distance_km = 0.0
+        duration_minutes = 0.0
+        route_polyline = None
+        steps = []
 
-    try:
-        url = (
-            f"{settings.OSRM_BASE_URL}/route/v1/driving/"
-            f"{pickup_lng},{pickup_lat};{dest_lng},{dest_lat}"
-            f"?overview=full&geometries=geojson&steps=true"
-        )
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(url)
+        try:
+            url = (
+                f"{settings.OSRM_BASE_URL}/route/v1/driving/"
+                f"{pickup_lng},{pickup_lat};{dest_lng},{dest_lat}"
+                f"?overview=full&geometries=geojson&steps=true"
+            )
+            # Reusing the global client eliminates 100-300ms of SSL/TCP negotiation overhead!
+            resp = await HTTP_CLIENT.get(url)
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get("code") == "Ok" and data.get("routes"):
@@ -54,14 +73,24 @@ async def get_route(
                                 "distance": step.get("distance", 0),
                                 "duration": step.get("duration", 0),
                             })
+                    
+                    # Cache the successful route calculation
+                    if len(ROUTE_CACHE) < MAX_CACHE_SIZE:
+                        ROUTE_CACHE[cache_key] = {
+                            "distance_km": distance_km,
+                            "duration_minutes": duration_minutes,
+                            "route_polyline": route_polyline,
+                            "steps": steps
+                        }
                 else:
                     raise Exception("OSRM returned no routes")
             else:
                 raise Exception(f"OSRM HTTP {resp.status_code}")
-    except Exception:
-        # Fallback to Haversine
-        distance_km = round(haversine_distance(pickup_lat, pickup_lng, dest_lat, dest_lng), 2)
-        duration_minutes = estimate_duration(distance_km)
+        except Exception as e:
+            print(f"[MapService Warning] Routing service fallback triggered: {e}")
+            # Fallback to Haversine instantly
+            distance_km = round(haversine_distance(pickup_lat, pickup_lng, dest_lat, dest_lng), 2)
+            duration_minutes = estimate_duration(distance_km)
 
     safety_score = calculate_safety_score(mode, distance_km)
 

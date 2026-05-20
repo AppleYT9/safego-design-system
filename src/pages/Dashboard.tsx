@@ -212,7 +212,7 @@ const Dashboard = () => {
 
     try {
       // Simulate API call to send SOS
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       toast.success(`SOS Alert sent successfully to ${primaryContact.name} (${primaryContact.phone})! Emergency services have been notified.`, {
         id: toastId,

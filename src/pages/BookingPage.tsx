@@ -506,7 +506,7 @@ const BookingPage = () => {
     if (voiceState?.auto_search && voiceState.destination) {
       const timer = setTimeout(() => {
         handleFindRoute();
-      }, 1500);
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [voiceState]);
@@ -515,7 +515,7 @@ const BookingPage = () => {
     if (pickup.trim() && destination.trim() && !routeFound && !isAnalyzing) {
       const timer = setTimeout(() => {
         handleFindRoute();
-      }, 1200);
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [pickup, destination, routeFound, isAnalyzing]);
@@ -561,7 +561,7 @@ const BookingPage = () => {
       } finally {
         setIsSearchingPickup(false);
       }
-    }, 400);
+    }, 150);
   };
 
   const handleDestChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -589,7 +589,7 @@ const BookingPage = () => {
       } finally {
         setIsSearchingDest(false);
       }
-    }, 400);
+    }, 150);
   };
 
   const selectPickup = (place: any) => {
@@ -622,11 +622,11 @@ const BookingPage = () => {
     setTimeout(() => {
       if (Math.random() > 0.15) {
         setAskStatus("accepted");
-        setTimeout(() => handleConfirmRide(), 1500);
+        setTimeout(() => handleConfirmRide(), 300);
       } else {
         setAskStatus("rejected");
       }
-    }, 2500 + Math.random() * 2000);
+    }, 500 + Math.random() * 400);
   };
 
   const handleFindRoute = async () => {
@@ -706,7 +706,7 @@ const BookingPage = () => {
 
     setTimeout(() => {
       setChatMsgs(prev => [...prev, { sender: "driver", text: "Got it, I'm on my way!" }]);
-    }, 1500);
+    }, 400);
   };
 
   const handleConfirmRide = async () => {
