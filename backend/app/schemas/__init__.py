@@ -197,6 +197,8 @@ class RouteRequest(BaseModel):
     destination_latitude: float
     destination_longitude: float
     mode: str = "normal"
+    passenger_count: int = 1
+    scheduled_at: Optional[datetime] = None
 
 
 class RouteResponse(BaseModel):
@@ -205,6 +207,7 @@ class RouteResponse(BaseModel):
     fare_amount: float
     safety_score: int
     ai_safety_prediction: Optional[str] = "Stable"
+    surge_multiplier: Optional[float] = 1.0
     route_polyline: Optional[str] = None
     steps: Optional[List[Any]] = []
 

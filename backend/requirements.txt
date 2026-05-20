@@ -15,4 +15,7 @@ requests>=2.31.0
 twilio>=8.0.0
 # OpenAI removed - Sarvam end-to-end
 playwright>=1.42.0
-
+scikit-learn>=1.4.0
+pandas>=2.0.0
+numpy>=1.24.0
+joblib>=1.3.0

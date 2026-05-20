@@ -22,6 +22,8 @@ async def calculate_route(payload: RouteRequest):
         dest_lat=payload.destination_latitude,
         dest_lng=payload.destination_longitude,
         mode=payload.mode,
+        passenger_count=payload.passenger_count,
+        scheduled_at=payload.scheduled_at,
     )
     return RouteResponse(**result)
 

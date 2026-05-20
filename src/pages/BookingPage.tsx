@@ -488,7 +488,7 @@ const BookingPage = () => {
   const [rideDetails, setRideDetails] = useState({
     distance: "12.4 km", distanceNum: 12.4, score: 94,
     etaNum: 24, traffic: "Light", riskFactors: 1,
-    aiPrediction: "Stable", fare: 0
+    aiPrediction: "Stable", surgeMultiplier: 1.0, fare: 0
   });
 
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
@@ -686,6 +686,7 @@ const BookingPage = () => {
           traffic: randomTraffic,
           riskFactors: Math.floor(Math.random() * 2),
           aiPrediction: data.ai_safety_prediction || "Stable",
+          surgeMultiplier: data.surge_multiplier || 1.0,
           fare: data.fare_amount
         });
         setRoutePolyline(data.route_polyline);
@@ -1192,7 +1193,15 @@ const BookingPage = () => {
                             </div>
                             <div>
                               <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Estimated Fare</span>
-                              <div className="text-2xl font-black text-foreground">₹{rideDetails.fare.toLocaleString()}</div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-2xl font-black text-foreground">₹{rideDetails.fare.toLocaleString()}</div>
+                                {rideDetails.surgeMultiplier > 1.0 && (
+                                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 animate-pulse">
+                                    <Zap size={8} className="fill-amber-500 text-amber-500" />
+                                    {rideDetails.surgeMultiplier}x Surge
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="text-right">
@@ -1208,8 +1217,27 @@ const BookingPage = () => {
                         </div>
                         <div className="h-4 w-px bg-border/50" />
                         <div className="flex items-center gap-3">
-                          <Zap size={16} className="text-primary" />
-                          <span className="text-xs font-black uppercase tracking-widest text-foreground">AI: {rideDetails.aiPrediction}</span>
+                          <Zap 
+                            size={16} 
+                            className={`animate-pulse ${
+                              rideDetails.aiPrediction === 'Stable' 
+                                ? 'text-emerald-500' 
+                                : rideDetails.aiPrediction === 'Cautious' 
+                                ? 'text-amber-500' 
+                                : 'text-rose-500'
+                            }`} 
+                          />
+                          <span 
+                            className={`text-xs font-black uppercase tracking-widest ${
+                              rideDetails.aiPrediction === 'Stable' 
+                                ? 'text-emerald-600 dark:text-emerald-400' 
+                                : rideDetails.aiPrediction === 'Cautious' 
+                                ? 'text-amber-600 dark:text-amber-400' 
+                                : 'text-rose-600 dark:text-rose-400'
+                            }`}
+                          >
+                            AI: {rideDetails.aiPrediction}
+                          </span>
                         </div>
                       </div>
                     </div>

@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 from typing import Optional, List
+from datetime import datetime
 
 import httpx
 
 from app.config import settings
 from app.utils.fare import calculate_fare, calculate_safety_score, haversine_distance, estimate_duration
+from app.ml.predictor import predictor
+from app.ml.fare_predictor import fare_surge_predictor
 
 
 async def get_route(
@@ -15,6 +18,8 @@ async def get_route(
     dest_lat: float,
     dest_lng: float,
     mode: str = "normal",
+    passenger_count: int = 1,
+    scheduled_at: Optional[datetime] = None,
 ) -> dict:
     """
     Call OSRM for route data, fall back to Haversine if unavailable.
@@ -58,19 +63,39 @@ async def get_route(
         distance_km = round(haversine_distance(pickup_lat, pickup_lng, dest_lat, dest_lng), 2)
         duration_minutes = estimate_duration(distance_km)
 
-    fare_amount = calculate_fare(mode, distance_km)
     safety_score = calculate_safety_score(mode, distance_km)
 
-    # AI Route Prediction Logic
-    ai_prediction = "Stable"
-    from datetime import datetime
-    hour = datetime.now().hour
-    if 22 <= hour or hour <= 4:
-        ai_prediction = "Cautious" # Night time risk
-    if distance_km > 20:
-        ai_prediction = "Strategic" # Long haul optimization
-    if mode == "pink" or mode == "pwd":
-        ai_prediction = "High Priority"
+    # Resolve time variables for the ML models
+    time_ref = scheduled_at if scheduled_at else datetime.now()
+    pickup_hour = time_ref.hour
+    day_of_week = time_ref.weekday() # 0 = Monday, 6 = Sunday
+
+    # 1. Run ML safety prediction inference first (safety status is fed as a feature into the surge predictor)
+    ai_prediction, safety_confidence = predictor.predict_safety(
+        pickup_hour=pickup_hour,
+        day_of_week=day_of_week,
+        distance_km=distance_km,
+        passenger_count=passenger_count,
+        mode=mode,
+        pickup_lat=pickup_lat,
+        pickup_lng=pickup_lng,
+        dest_lat=dest_lat,
+        dest_lng=dest_lng
+    )
+
+    # 2. Run ML fare surge pricing regression inference
+    surge_multiplier, surge_confidence = fare_surge_predictor.predict_surge(
+        pickup_hour=pickup_hour,
+        day_of_week=day_of_week,
+        distance_km=distance_km,
+        passenger_count=passenger_count,
+        mode=mode,
+        ai_safety_prediction=ai_prediction
+    )
+
+    # 3. Calculate baseline fare and multiply by dynamic surge factor
+    base_fare = calculate_fare(mode, distance_km)
+    fare_amount = round(base_fare * surge_multiplier, 2)
 
     return {
         "distance_km": distance_km,
@@ -78,6 +103,7 @@ async def get_route(
         "fare_amount": fare_amount,
         "safety_score": safety_score,
         "ai_safety_prediction": ai_prediction,
+        "surge_multiplier": surge_multiplier,
         "route_polyline": route_polyline,
         "steps": steps,
     }
