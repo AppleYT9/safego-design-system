@@ -2,8 +2,12 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
+import warnings
 from datetime import datetime
 from typing import Tuple
+
+# Suppress all sklearn UserWarnings about feature names to keep console clean and fast
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # Geographical Constants
 SAFE_HUB_LAT = 22.308
@@ -54,6 +58,9 @@ class SafetyPredictor:
             try:
                 print(f"[Geographical SafetyPredictor] Loading model from {self.model_path}...")
                 self.model = joblib.load(self.model_path)
+                # CRITICAL PERFORMANCE OPTIMIZATION: Set n_jobs = 1 for fast single-sample real-time inference
+                if hasattr(self.model, "n_jobs"):
+                    self.model.n_jobs = 1
                 print(f"[Geographical SafetyPredictor] Loading scaler from {self.scaler_path}...")
                 self.scaler = joblib.load(self.scaler_path)
                 self.is_ready = True
@@ -137,44 +144,44 @@ class SafetyPredictor:
             # 1. Map mode string to numeric ID
             mode_id = self._map_mode(mode)
             
-            # 2. Assemble features into pandas DataFrame
-            features = pd.DataFrame([{
-                "pickup_hour": float(pickup_hour),
-                "day_of_week": int(day_of_week),
-                "distance_km": float(distance_km),
-                "passenger_count": int(passenger_count),
-                "ride_mode": int(mode_id),
-                "pickup_latitude": float(pickup_lat),
-                "pickup_longitude": float(pickup_lng),
-                "destination_latitude": float(dest_lat),
-                "destination_longitude": float(dest_lng),
-                "pickup_dist_to_safe_hub": float(pickup_dist_to_safe_hub),
-                "dest_dist_to_safe_hub": float(dest_dist_to_safe_hub),
-                "pickup_in_high_risk_hotspot": float(pickup_in_high_risk_hotspot)
-            }])
+            # 2. Construct raw numerical features for scaling directly (eliminates pandas overhead)
+            raw_nums = np.array([[
+                float(pickup_hour),
+                float(distance_km),
+                float(pickup_lat),
+                float(pickup_lng),
+                float(dest_lat),
+                float(dest_lng),
+                float(pickup_dist_to_safe_hub),
+                float(dest_dist_to_safe_hub),
+                float(pickup_in_high_risk_hotspot)
+            ]], dtype=np.float32)
             
-            # 3. Apply StandardScaler to numerical features
-            features_scaled = features.copy()
+            # Apply StandardScaler
+            scaled_nums = self.scaler.transform(raw_nums)[0]
             
-            numerical_cols = [
-                "pickup_hour", "distance_km", "pickup_latitude", "pickup_longitude",
-                "destination_latitude", "destination_longitude", "pickup_dist_to_safe_hub",
-                "dest_dist_to_safe_hub", "pickup_in_high_risk_hotspot"
-            ]
-            
-            features_scaled[numerical_cols] = self.scaler.transform(features[numerical_cols])
-            
-            # Ensure correct column order match with model training structure
-            feature_order = [
-                "pickup_hour", "day_of_week", "distance_km", "passenger_count", "ride_mode",
-                "pickup_latitude", "pickup_longitude", "destination_latitude", "destination_longitude",
-                "pickup_dist_to_safe_hub", "dest_dist_to_safe_hub", "pickup_in_high_risk_hotspot"
-            ]
-            features_scaled = features_scaled[feature_order]
+            # 3. Assemble full features array in exact training order
+            # ["pickup_hour", "day_of_week", "distance_km", "passenger_count", "ride_mode",
+            #  "pickup_latitude", "pickup_longitude", "destination_latitude", "destination_longitude",
+            #  "pickup_dist_to_safe_hub", "dest_dist_to_safe_hub", "pickup_in_high_risk_hotspot"]
+            features_arr = np.array([[
+                scaled_nums[0],        # pickup_hour
+                float(day_of_week),    # day_of_week
+                scaled_nums[1],        # distance_km
+                float(passenger_count), # passenger_count
+                float(mode_id),        # ride_mode
+                scaled_nums[2],        # pickup_latitude
+                scaled_nums[3],        # pickup_longitude
+                scaled_nums[4],        # destination_latitude
+                scaled_nums[5],        # destination_longitude
+                scaled_nums[6],        # pickup_dist_to_safe_hub
+                scaled_nums[7],        # dest_dist_to_safe_hub
+                scaled_nums[8]         # pickup_in_high_risk_hotspot
+            ]], dtype=np.float32)
             
             # 4. Perform Live Inference
-            pred_class = int(self.model.predict(features_scaled)[0])
-            probabilities = self.model.predict_proba(features_scaled)[0]
+            pred_class = int(self.model.predict(features_arr)[0])
+            probabilities = self.model.predict_proba(features_arr)[0]
             confidence = float(probabilities[pred_class])
             
             prediction_label = self._get_safety_label(pred_class)
@@ -186,6 +193,7 @@ class SafetyPredictor:
             print(f"[Geographical SafetyPredictor Error] Inference failure: {e}")
             fallback_label = self._fallback_rule_logic(pickup_hour, pickup_dist_to_safe_hub, pickup_in_high_risk_hotspot, mode)
             return fallback_label, 1.0
+
 
 # Singleton instance
 predictor = SafetyPredictor()
