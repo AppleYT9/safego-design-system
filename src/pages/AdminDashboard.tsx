@@ -151,6 +151,7 @@ const AdminDashboard = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [fluxRange, setFluxRange] = useState('1H');
   const [fleetGenderFilter, setFleetGenderFilter] = useState<'all' | 'male' | 'female'>('all');
+  const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'staff' | 'passenger' | 'driver'>('all');
 
   const getFluxData = () => {
     switch (fluxRange) {
@@ -1049,20 +1050,58 @@ const AdminDashboard = () => {
 
           {activeTab === "users" && (
             <div className="animate-in fade-in duration-500 space-y-6">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-2">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">Identity Registry</h3>
+                  <h3 className="text-xl font-bold text-slate-900 font-display">Identity Registry</h3>
                   <p className="text-sm text-slate-500 mt-1 font-medium">Manage and monitor all system nodes and user access.</p>
                 </div>
-                <button
-                  onClick={() => setIsCreateUserOpen(true)}
-                  className="h-11 px-5 rounded-xl bg-primary text-white text-sm font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:brightness-110 transition-all"
-                >
-                  <UserPlus size={18} /> Provision Identity
-                </button>
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* DYNAMIC SEARCH NODE */}
+                  <div className="relative">
+                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search node profiles..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="h-11 pl-10 pr-10 w-60 rounded-xl bg-slate-50 border border-slate-100 focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none font-bold text-xs transition-all shadow-inner"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* ROLE ARCHITECTURE FILTER */}
+                  <div className="flex bg-slate-100 p-1 rounded-xl">
+                    {(['all', 'admin', 'staff', 'passenger', 'driver'] as const).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setUserRoleFilter(r)}
+                        className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${userRoleFilter === r
+                          ? 'bg-white text-slate-900 shadow-sm scale-105'
+                          : 'text-slate-400 hover:text-slate-600'
+                          }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setIsCreateUserOpen(true)}
+                    className="h-11 px-5 rounded-xl bg-primary text-white text-sm font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:brightness-110 transition-all shrink-0 animate-in zoom-in-95"
+                  >
+                    <UserPlus size={18} /> Provision Identity
+                  </button>
+                </div>
               </div>
 
-              <Card noPadding className="overflow-hidden border-slate-200/60">
+              <Card noPadding className="overflow-hidden border-slate-200/60 shadow-xl">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -1075,47 +1114,49 @@ const AdminDashboard = () => {
                   <tbody className="divide-y divide-slate-50">
                     {isSearching ? (
                       <tr><td colSpan={4} className="px-8 py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
-                    ) : usersList.length > 0 ? usersList.map((u) => (
-                      <tr key={u._id} className="hover:bg-slate-50/30 transition-colors group">
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-md">
-                              {u.full_name.charAt(0).toUpperCase()}
+                    ) : usersList.filter(u => userRoleFilter === 'all' || u.role?.toLowerCase() === userRoleFilter).length > 0 ? (
+                      usersList.filter(u => userRoleFilter === 'all' || u.role?.toLowerCase() === userRoleFilter).map((u) => (
+                        <tr key={u._id} className="hover:bg-slate-50/30 transition-colors group">
+                          <td className="px-8 py-5">
+                            <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-md">
+                                {u.full_name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-900">{u.full_name}</p>
+                                <p className="text-xs font-medium text-slate-400 mt-0.5">{u.email}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-900">{u.full_name}</p>
-                              <p className="text-xs font-medium text-slate-400 mt-0.5">{u.email}</p>
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="inline-flex flex-col gap-1">
+                              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-center ${u.role === 'admin' ? 'bg-slate-900 text-white' :
+                                u.role === 'staff' ? 'bg-blue-500 text-white' :
+                                  'bg-slate-100 text-slate-600'
+                                }`}>{u.role}</span>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div className="inline-flex flex-col gap-1">
-                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-center ${u.role === 'admin' ? 'bg-slate-900 text-white' :
-                              u.role === 'staff' ? 'bg-blue-500 text-white' :
-                                'bg-slate-100 text-slate-600'
-                              }`}>{u.role}</span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-2">
-                            <div className={`h-1.5 w-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                            <span className={`text-[10px] font-bold uppercase tracking-widest ${u.is_active ? 'text-emerald-600' : 'text-red-500'}`}>
-                              {u.is_active ? 'Online' : 'Offline'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center justify-end gap-2">
-                            {canPerformAction('write') && (
-                              <button onClick={() => { setEditingUser(u); setIsEditUserOpen(true); }} className="h-9 w-9 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary hover:border-primary/30 transition-all"><Edit2 size={14} /></button>
-                            )}
-                            {canPerformAction('delete') && (
-                              <button onClick={() => { setUserToDelete(u); setIsDeletingUser(true); }} className="h-9 w-9 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all"><Trash2 size={14} /></button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )) : (
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="flex items-center gap-2">
+                              <div className={`h-1.5 w-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                              <span className={`text-[10px] font-bold uppercase tracking-widest ${u.is_active ? 'text-emerald-600' : 'text-red-500'}`}>
+                                {u.is_active ? 'Online' : 'Offline'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="flex items-center justify-end gap-2">
+                              {canPerformAction('write') && (
+                                <button onClick={() => { setEditingUser(u); setIsEditUserOpen(true); }} className="h-9 w-9 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary hover:border-primary/30 transition-all"><Edit2 size={14} /></button>
+                              )}
+                              {canPerformAction('delete') && (
+                                <button onClick={() => { setUserToDelete(u); setIsDeletingUser(true); }} className="h-9 w-9 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all"><Trash2 size={14} /></button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr><td colSpan={4} className="px-8 py-20 text-center"><div className="flex flex-col items-center gap-3 text-slate-300"><Search size={40} /><p className="font-semibold text-sm">No results found</p></div></td></tr>
                     )}
                   </tbody>
