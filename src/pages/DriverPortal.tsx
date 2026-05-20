@@ -335,7 +335,7 @@ const HistoryTab = ({
     );
   }
 
-  const completedRides = history.filter(r => r.status === "completed");
+  const completedRides = history.filter(r => r.status !== "failed" && r.status !== "cancelled");
   const totalEarnings = completedRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "")), 0);
   const totalTips = completedRides.reduce((sum, r) => sum + parseInt(r.tip.replace("₹", "").replace(",", "")), 0);
 
@@ -374,8 +374,8 @@ const HistoryTab = ({
         <div className="divide-y divide-border">
           {history.map((r, i) => (
             <div key={r.id} className="flex flex-wrap items-center gap-4 p-5 hover:bg-secondary/30 transition-all group animate-in slide-in-from-bottom-2" style={{ animationDelay: `${i * 30}ms` }}>
-              <div className={`flex h-12 w-12 items-center justify-center rounded-full shrink-0 shadow-sm ${r.status === "completed" ? "bg-emerald-100/50" : "bg-red-50"}`}>
-                {r.status === "completed" ? <Check size={20} className="text-emerald-600" /> : <X size={20} className="text-red-500" />}
+              <div className={`flex h-12 w-12 items-center justify-center rounded-full shrink-0 shadow-sm ${r.status !== "failed" && r.status !== "cancelled" ? "bg-emerald-100/50" : "bg-red-50"}`}>
+                {r.status !== "failed" && r.status !== "cancelled" ? <Check size={20} className="text-emerald-600" /> : <X size={20} className="text-red-500" />}
               </div>
               <div className="flex-1 min-w-[200px]">
                 <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{r.pickup} → {r.dest}</p>
@@ -389,8 +389,8 @@ const HistoryTab = ({
                 {r.tip !== "₹0" && <p className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded mt-0.5">+{r.tip} Tip</p>}
               </div>
               <div className="flex flex-col items-end gap-2">
-                <span className={`rounded-xl px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${r.status === "completed" ? "bg-emerald-500 text-white" : "bg-red-100 text-red-600"}`}>
-                  {r.status === "completed" ? "Success" : "Failed"}
+                <span className={`rounded-xl px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${r.status !== "failed" && r.status !== "cancelled" ? "bg-emerald-500 text-white" : "bg-red-100 text-red-600"}`}>
+                  {r.status !== "failed" && r.status !== "cancelled" ? "Success" : "Failed"}
                 </span>
                 {r.rating > 0 && (
                   <div className="flex items-center gap-0.5">
@@ -492,7 +492,7 @@ const DocumentsTab = ({
 
 const EarningsTab = ({ history }: { history: any[] }) => {
   const { t } = useTranslation();
-  const completedRides = history.filter(r => r.status === "completed");
+  const completedRides = history.filter(r => r.status !== "failed" && r.status !== "cancelled");
   const totalRides = completedRides.length;
   const totalEarnings = completedRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "")), 0);
 
