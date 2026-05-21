@@ -8,7 +8,7 @@ import { useVoiceAssistant } from "@/contexts/VoiceAssistantContext";
 import { SafetyScoreBar } from "@/components/SafetyScoreBar";
 import {
   ArrowLeft, Star, MessageCircle, Shield, Loader2, CheckCircle2,
-  MapPin, Navigation, Car, AlertCircle, Locate, Send, X, Users, Zap
+  MapPin, Navigation, Car, AlertCircle, Locate, Send, X, Users, Zap, Activity
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
@@ -78,7 +78,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
         <style>@keyframes pulse-ring { 0% { transform:scale(1); opacity:0.8; } 100% { transform:scale(2.5); opacity:0; } }</style>
       `;
       const youIcon = L.divIcon({ html: pulseHtml, className: "", iconSize: [22, 22], iconAnchor: [11, 11] });
-      L.marker([lat, lng], { icon: youIcon }).addTo(map).bindPopup("<b>📍 You are here</b>");
+      L.marker([lat, lng], { icon: youIcon }).addTo(map).bindPopup("<b>" + t('booking.you_are_here', '📍 You are here') + "</b>");
 
       L.circle([lat, lng], { radius: 60, color: "#3b82f6", fillOpacity: 0.08, weight: 1.5 }).addTo(map);
 
@@ -92,14 +92,14 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
               ${(cab.name || "D").split(" ").map((n: string) => n[0]).join("")}
             </div>
             <div style="background:hsl(var(--card));border-radius:6px;padding:1px 5px;font-size:9px;font-weight:700;color:hsl(var(--card-foreground));margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;">
-              ${cab.eta} min
+              ${t('booking.minutes_format', '{{minutes}} min', { minutes: cab.eta })}
             </div>
           </div>
         `;
         const cabIcon = L.divIcon({ html: cabHtml, className: "", iconSize: [36, 52], iconAnchor: [18, 52] });
         L.marker([cab.lat, cab.lng], { icon: cabIcon })
           .addTo(map)
-          .bindPopup(`<b>${cab.name}</b><br>⭐ ${cab.rating} &nbsp;·&nbsp; ETA ${cab.eta} min`);
+          .bindPopup(`<b>${cab.name}</b><br>⭐ ${cab.rating} &nbsp;·&nbsp; ${t('booking.eta_minutes', 'ETA {{minutes}}m', { minutes: cab.eta })}`);
       });
 
       setLocating(false);
@@ -315,10 +315,10 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
 
         const pulseHtml = `<div style="position:relative;width:22px;height:22px;"><div style="background:#3b82f6;border-radius:50%;width:22px;height:22px;border:3px solid white;box-shadow:0 2px 8px rgba(59,130,246,0.6);"></div></div>`;
         const youIcon = L.divIcon({ html: pulseHtml, className: "", iconSize: [22, 22], iconAnchor: [11, 11] });
-        L.marker([centerLoc.lat, centerLoc.lng], { icon: youIcon }).addTo(mapInstanceRef.current).bindPopup("<b>📍 You are here</b>");
+        L.marker([centerLoc.lat, centerLoc.lng], { icon: youIcon }).addTo(mapInstanceRef.current).bindPopup("<b>" + t('booking.you_are_here', '📍 You are here') + "</b>");
 
         fallbackCabs.forEach((cab: any) => {
-          const cabHtml = `<div style="position:relative;display:flex;flex-direction:column;align-items:center;"><div style="background:${accent};color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);">${(cab.name || "D").split(" ").map((n: string) => n[0]).join("")}</div><div style="background:hsl(var(--card));border-radius:6px;padding:1px 5px;font-size:9px;font-weight:700;color:hsl(var(--card-foreground));margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;">${cab.eta} min</div></div>`;
+          const cabHtml = `<div style="position:relative;display:flex;flex-direction:column;align-items:center;"><div style="background:${accent};color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);">${(cab.name || "D").split(" ").map((n: string) => n[0]).join("")}</div><div style="background:hsl(var(--card));border-radius:6px;padding:1px 5px;font-size:9px;font-weight:700;color:hsl(var(--card-foreground));margin-top:2px;box-shadow:0 1px 4px rgba(0,0,0,0.15);white-space:nowrap;">${t('booking.minutes_format', '{{minutes}} min', { minutes: cab.eta })}</div></div>`;
           const cabIcon = L.divIcon({ html: cabHtml, className: "", iconSize: [36, 52], iconAnchor: [18, 52] });
           L.marker([cab.lat, cab.lng], { icon: cabIcon }).addTo(mapInstanceRef.current).bindPopup(`<b>${cab.name}</b>`);
         });
@@ -340,7 +340,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
       {locError && !locating && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-xl bg-amber-500/95 backdrop-blur px-4 py-2 shadow-lg text-white text-xs font-semibold whitespace-nowrap">
           <AlertCircle size={13} />
-          Using default location · Enable GPS for best results
+          {t('booking.gps_warning', 'Using default location · Enable GPS for best results')}
         </div>
       )}
       {!locating && (
@@ -349,7 +349,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
           style={{ backgroundColor: accent }}
         >
           <Car size={12} />
-          {cabs.length} Cabs Nearby
+          {t('booking.cabs_nearby', '{{count}} Cabs Nearby', { count: cabs.length })}
         </div>
       )}
       {!locating && cabs.length > 0 && (
@@ -472,7 +472,7 @@ const BookingPage = () => {
         setIsLocatingAddress(false);
       },
       () => {
-        alert("Unable to retrieve location. Please check browser permissions.");
+        alert(t('booking.location_alert', 'Unable to retrieve location. Please check browser permissions.'));
         setIsLocatingAddress(false);
       },
       { timeout: 10000 }
@@ -490,6 +490,30 @@ const BookingPage = () => {
     etaNum: 24, traffic: "Light", riskFactors: 1,
     aiPrediction: "Stable", surgeMultiplier: 1.0, fare: 0
   });
+
+  const [isRerouted, setIsRerouted] = useState(false);
+  const [isReroutingAlternative, setIsReroutingAlternative] = useState(false);
+
+  const handleRerouteLowTraffic = () => {
+    setIsReroutingAlternative(true);
+    setTimeout(() => {
+      setRideDetails(prev => {
+        const newDistanceNum = Number((prev.distanceNum * 1.08).toFixed(2));
+        const newEtaNum = Math.max(3, Math.round(prev.etaNum * 0.7)); // 30% time saved!
+        return {
+          ...prev,
+          traffic: "Light",
+          distanceNum: newDistanceNum,
+          distance: `${newDistanceNum} km`,
+          etaNum: newEtaNum,
+          score: Math.min(100, prev.score + 5), // Safer bypass
+          aiPrediction: "Stable"
+        };
+      });
+      setIsRerouted(true);
+      setIsReroutingAlternative(false);
+    }, 1200);
+  };
 
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
   const [askStatus, setAskStatus] = useState<"idle" | "asking" | "accepted" | "rejected">("idle");
@@ -631,11 +655,13 @@ const BookingPage = () => {
 
   const handleFindRoute = async () => {
     if (!pickup.trim() || !destination.trim()) {
-      alert("Please enter both a pickup location and a destination.");
+      alert(t('booking.enter_both_alert', 'Please enter both a pickup location and a destination.'));
       return;
     }
     setIsAnalyzing(true);
     setRouteFound(false);
+    setIsRerouted(false);
+    setIsReroutingAlternative(false);
     setSelectedDriver(null);
     setAskStatus("idle");
     setChatOpen(false);
@@ -719,7 +745,7 @@ const BookingPage = () => {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("Please login to book a ride");
+      alert(t('booking.login_to_book_alert', 'Please login to book a ride'));
       navigate("/login");
       return;
     }
@@ -759,7 +785,7 @@ const BookingPage = () => {
     } catch (err) {
       console.error(err);
       setAskStatus("rejected");
-      alert("Error booking ride. Please try again.");
+      alert(t('booking.error_booking_alert', 'Error booking ride. Please try again.'));
     }
   };
 
@@ -818,8 +844,8 @@ const BookingPage = () => {
                   <div className="mb-4 flex items-center gap-3 rounded-2xl bg-green-500 p-4 text-white shadow-lg animate-in slide-in-from-top-4 fade-in duration-500">
                     <CheckCircle2 size={22} />
                     <div>
-                      <p className="font-bold">Ride Confirmed!</p>
-                      <p className="text-sm text-green-50">Your driver is on the way. Safest route selected.</p>
+                      <p className="font-bold">{t('booking.ride_confirmed', 'Ride Confirmed!')}</p>
+                      <p className="text-sm text-green-50">{t('booking.driver_on_way', 'Your driver is on the way. Safest route selected.')}</p>
                     </div>
                   </div>
                 )}
@@ -862,7 +888,7 @@ const BookingPage = () => {
                             {isSearchingPickup && (
                               <div className="flex items-center gap-3 px-4 py-3 text-xs text-muted-foreground italic">
                                 <Loader2 size={14} className="animate-spin text-primary" />
-                                Analyzing places...
+                                {t('booking.analyzing_places', 'Analyzing places...')}
                               </div>
                             )}
                             {pickupSuggestions.map((place, i) => (
@@ -878,7 +904,7 @@ const BookingPage = () => {
                                   <MapPin size={14} className="text-muted-foreground group-hover:text-primary transition-colors" />
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                  <span className="font-bold text-foreground truncate">{place.display_name?.split(',')[0] || "Location"}</span>
+                                  <span className="font-bold text-foreground truncate">{place.display_name?.split(',')[0] || t('booking.location_label', 'Location')}</span>
                                   <span className="text-[10px] text-muted-foreground truncate">{place.display_name?.split(',').slice(1).join(',').trim() || ""}</span>
                                 </div>
                               </div>
@@ -918,7 +944,7 @@ const BookingPage = () => {
                             {isSearchingDest && (
                               <div className="flex items-center gap-3 px-4 py-3 text-xs text-muted-foreground italic">
                                 <Loader2 size={14} className="animate-spin text-primary" />
-                                Analyzing places...
+                                {t('booking.analyzing_places', 'Analyzing places...')}
                               </div>
                             )}
                             {destSuggestions.map((place, i) => (
@@ -934,7 +960,7 @@ const BookingPage = () => {
                                   <MapPin size={14} className="text-muted-foreground group-hover:text-primary transition-colors" />
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                  <span className="font-bold text-foreground truncate">{place.display_name?.split(',')[0] || "Location"}</span>
+                                  <span className="font-bold text-foreground truncate">{place.display_name?.split(',')[0] || t('booking.location_label', 'Location')}</span>
                                   <span className="text-[10px] text-muted-foreground truncate">{place.display_name?.split(',').slice(1).join(',').trim() || ""}</span>
                                 </div>
                               </div>
@@ -988,14 +1014,14 @@ const BookingPage = () => {
                   </div>
                   {passengers > 1 && (
                     <div className="mt-4 p-6 rounded-[2rem] border border-border/40 bg-card premium-shadow animate-in fade-in slide-in-from-top-2 duration-300">
-                      <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Passenger Details</h4>
+                      <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">{t('booking.passenger_details', 'Passenger Details')}</h4>
                       <div className="space-y-3">
                         {Array.from({ length: passengers - 1 }).map((_, i) => (
                           <div key={i} className="flex flex-col gap-1.5">
-                            <label className="text-[10px] font-bold text-muted-foreground ml-1">Passenger {i + 2} Name</label>
+                            <label className="text-[10px] font-bold text-muted-foreground ml-1">{t('booking.passenger_name_label', 'Passenger {{index}} Name', { index: i + 2 })}</label>
                             <input
                               type="text"
-                              placeholder={`Enter name for passenger ${i + 2}`}
+                              placeholder={t('booking.enter_name_placeholder', 'Enter name for passenger {{index}}', { index: i + 2 })}
                               className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30"
                               value={passengerDetails[i] || ""}
                               onChange={(e) => {
@@ -1029,7 +1055,7 @@ const BookingPage = () => {
                         )}
                         <m.icon size={28} className="mb-3 transition-transform group-hover:scale-110" style={{ color: isActive ? m.accent : "hsl(var(--muted-foreground))" }} />
                         <span className="text-[10px] font-black tracking-widest text-center uppercase" style={isActive ? { color: m.accent } : { color: "hsl(var(--muted-foreground))" }}>
-                          {m.name.replace(" Mode", "")}
+                          {t(`booking.mode_${m.id}`, m.name.replace(" Mode", ""))}
                         </span>
                         {isActive && (
                           <div className="absolute bottom-0 left-0 right-0 h-1.5" style={{ backgroundColor: m.accent }} />
@@ -1044,12 +1070,12 @@ const BookingPage = () => {
                       <mode.icon size={18} style={{ color: mode.accent }} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-foreground leading-tight">{mode.name}</h3>
+                      <h3 className="text-sm font-bold text-foreground leading-tight">{t(`booking.mode_${mode.id}`, mode.name.replace(" Mode", "")) + " Mode"}</h3>
                       <p className="text-[10px] text-muted-foreground font-medium">{t('booking.standard_safety', 'Standard safety protocols active')}</p>
                     </div>
                     {mode.id === "pink" && (
                       <span className="ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-tighter border shadow-sm animate-pulse" style={{ backgroundColor: mode.lightBg, color: mode.accent, borderColor: `${mode.accent}40` }}>
-                        <Shield size={10} /> Verified
+                        <Shield size={10} /> {t('booking.verified', 'Verified')}
                       </span>
                     )}
                   </div>
@@ -1059,7 +1085,7 @@ const BookingPage = () => {
                         <div className="h-4 w-4 rounded-full flex items-center justify-center shrink-0 shadow-sm" style={{ backgroundColor: `${mode.accent}20` }}>
                           <CheckCircle2 size={10} style={{ color: mode.accent }} />
                         </div>
-                        {feat}
+                        {t(`booking.feature_${feat.toLowerCase().replace(/[^a-z0-9]/g, '_')}`, feat)}
                       </li>
                     ))}
                   </ul>
@@ -1067,36 +1093,45 @@ const BookingPage = () => {
                 {mode.id === "pwd" && (
                   <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                      <Shield size={16} className="text-[hsl(var(--purple))]" /> Accessibility Needs
+                      <Shield size={16} className="text-[hsl(var(--purple))]" /> {t('booking.accessibility_needs', 'Accessibility Needs')}
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
-                      {["Wheelchair Accessible Vehicle", "Driver Assistance Required", "Vision Assistance", "Hearing Assistance"].map((n, i) => (
+                      {[
+                        { key: "pwd_wheelchair", fallback: "Wheelchair Accessible Vehicle" },
+                        { key: "pwd_assistance", fallback: "Driver Assistance Required" },
+                        { key: "pwd_vision", fallback: "Vision Assistance" },
+                        { key: "pwd_hearing", fallback: "Hearing Assistance" }
+                      ].map((n, i) => (
                         <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-3 hover:bg-secondary cursor-pointer transition-all text-xs font-semibold text-foreground/90">
                           <input type="checkbox" className="accent-[hsl(var(--purple))] h-4 w-4 cursor-pointer" />
-                          {n}
+                          {t(`booking.${n.key}`, n.fallback)}
                         </label>
                       ))}
                     </div>
-                    <h3 className="text-sm font-bold text-foreground mt-6 mb-3">Emergency Contact</h3>
-                    <input type="tel" placeholder="+63 912 345 6789" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
+                    <h3 className="text-sm font-bold text-foreground mt-6 mb-3">{t('booking.emergency_contact', 'Emergency Contact')}</h3>
+                    <input type="tel" placeholder={t('booking.emergency_phone_placeholder', '+63 912 345 6789')} className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                   </div>
                 )}
                 {mode.id === "pink" && (
                   <div className="flex flex-col gap-4">
                     <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
                       <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                        <Shield size={16} className="text-[hsl(var(--pink))]" /> Safety Preferences
+                        <Shield size={16} className="text-[hsl(var(--pink))]" /> {t('booking.safety_preferences', 'Safety Preferences')}
                       </h3>
                       <div className="grid grid-cols-1 gap-2">
-                        {["Prefer Female Driver", "Share Live Location with Emergency Contact", "Enable Auto SOS in unsafe situations"].map((n, i) => (
+                        {[
+                          { key: "pink_female", fallback: "Prefer Female Driver" },
+                          { key: "pink_share", fallback: "Share Live Location with Emergency Contact" },
+                          { key: "pink_sos", fallback: "Enable Auto SOS in unsafe situations" }
+                        ].map((n, i) => (
                           <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-3 hover:bg-secondary cursor-pointer transition-all text-xs font-semibold text-foreground/90">
                             <input type="checkbox" defaultChecked={i === 0} className="accent-[hsl(var(--pink))] h-4 w-4 cursor-pointer" />
-                            {n}
+                            {t(`booking.${n.key}`, n.fallback)}
                           </label>
                         ))}
                       </div>
-                      <h3 className="text-sm font-bold text-foreground mt-6 mb-3">Emergency Contact</h3>
-                      <input type="tel" placeholder="Emergency contact number" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
+                      <h3 className="text-sm font-bold text-foreground mt-6 mb-3">{t('booking.emergency_contact', 'Emergency Contact')}</h3>
+                      <input type="tel" placeholder={t('booking.emergency_contact_placeholder', 'Emergency contact number')} className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                     </div>
                     <div className="rounded-[2rem] border border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/20 p-5 animate-in fade-in zoom-in-95 duration-500">
                       <div className="flex gap-3">
@@ -1104,11 +1139,9 @@ const BookingPage = () => {
                           <AlertCircle size={18} className="text-amber-600 dark:text-amber-500" />
                         </div>
                         <div>
-                          <h4 className="text-xs font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-1">Important Pink Mode Policy</h4>
+                          <h4 className="text-xs font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-1">{t('booking.pink_mode_policy_title', 'Important Pink Mode Policy')}</h4>
                           <p className="text-[11px] font-medium leading-relaxed text-amber-800/80 dark:text-amber-200/60">
-                            Pink Mode is a female-focused safety service. If male passengers accompany the traveler,
-                            the driver reserves the right to cancel the ride on the spot if they feel uncomfortable.
-                            Please ensure all travelers are disclosed.
+                            {t('booking.pink_mode_policy_desc', 'Pink Mode is a female-focused safety service. If male passengers accompany the traveler, the driver reserves the right to cancel the ride on the spot if they feel uncomfortable. Please ensure all travelers are disclosed.')}
                           </p>
                         </div>
                       </div>
@@ -1118,18 +1151,22 @@ const BookingPage = () => {
                 {mode.id === "elderly" && (
                   <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
                     <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                      <Shield size={16} className="text-[hsl(var(--blue))]" /> Assistance Options
+                      <Shield size={16} className="text-[hsl(var(--blue))]" /> {t('booking.assistance_options', 'Assistance Options')}
                     </h3>
                     <div className="grid grid-cols-1 gap-2">
-                      {["Driver Assistance Required", "Help with Boarding and Exiting Vehicle", "Medical Support Contact"].map((n, i) => (
+                      {[
+                        { key: "elderly_assistance", fallback: "Driver Assistance Required" },
+                        { key: "elderly_boarding", fallback: "Help with Boarding and Exiting Vehicle" },
+                        { key: "elderly_medical", fallback: "Medical Support Contact" }
+                      ].map((n, i) => (
                         <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-3 hover:bg-secondary cursor-pointer transition-all text-xs font-semibold text-foreground/90">
                           <input type="checkbox" className="accent-[hsl(var(--blue))] h-4 w-4 cursor-pointer" />
-                          {n}
+                          {t(`booking.${n.key}`, n.fallback)}
                         </label>
                       ))}
                     </div>
-                    <h3 className="text-sm font-bold text-foreground mt-6 mb-3">Emergency Contact</h3>
-                    <input type="tel" placeholder="Family or caregiver's number" className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
+                    <h3 className="text-sm font-bold text-foreground mt-6 mb-3">{t('booking.emergency_contact', 'Emergency Contact')}</h3>
+                    <input type="tel" placeholder={t('booking.elderly_contact_placeholder', "Family or caregiver's number")} className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                   </div>
                 )}
                 {isAnalyzing && (
@@ -1141,9 +1178,9 @@ const BookingPage = () => {
                       <div className="mx-auto w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mb-4 animate-bounce">
                         <Loader2 size={32} style={{ color: mode.accent }} className="animate-spin" />
                       </div>
-                      <h3 className="text-lg font-black text-foreground">AI Intelligence Matrix</h3>
+                      <h3 className="text-lg font-black text-foreground">{t('booking.ai_matrix_title', 'AI Intelligence Matrix')}</h3>
                       <p className="text-xs text-muted-foreground mt-2 font-medium max-w-[240px] mx-auto">
-                        Generating predictive safety score and analyzing real-time traffic nodes...
+                        {t('booking.ai_matrix_desc', 'Generating predictive safety score and analyzing real-time traffic nodes...')}
                       </p>
                     </div>
                   </div>
@@ -1151,71 +1188,159 @@ const BookingPage = () => {
 
                 {routeFound && !isAnalyzing && (
                   <div className="mt-8 space-y-6 animate-in slide-in-from-bottom-8 fade-in duration-700 pb-12">
-                    <div className="rounded-[2.5rem] bg-card premium-shadow border border-border/40 p-8 relative overflow-hidden transition-all hover:-translate-y-1">
-                      <div className="absolute top-0 right-0 p-4 opacity-5">
-                        <Shield size={120} style={{ color: mode.accent }} />
+                    {/* PREMIUM REDESIGNED AI INTELLIGENCE CARD */}
+                    <div className="rounded-[2.5rem] bg-gradient-to-b from-card via-card/95 to-card/90 border border-border/40 p-8 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 premium-shadow">
+                      {/* Subtle, glowing radial ambient lighting matched to the active mode's color */}
+                      <div 
+                        className="absolute -right-20 -top-20 w-80 h-80 rounded-full blur-[100px] opacity-10 transition-all duration-700 pointer-events-none"
+                        style={{ backgroundColor: mode.accent }}
+                      />
+                      
+                      <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+                        <Shield size={140} style={{ color: mode.accent }} />
                       </div>
-                      <div className="flex items-center gap-2 mb-6">
-                        <div className="p-1.5 rounded-full bg-green-500/10">
-                          <CheckCircle2 size={16} className="text-green-500" />
-                        </div>
-                        <h4 className="text-sm font-black uppercase tracking-widest text-foreground">AI Intelligence Report</h4>
-                      </div>
-                      <div className="relative z-10">
-                        <SafetyScoreBar score={rideDetails.score} color={mode.accent} />
-                      </div>
-                      <div className="mt-8 grid grid-cols-2 gap-4">
-                        <div className="p-4 rounded-2xl bg-secondary/40 border border-border/50 transition-colors hover:bg-secondary/60">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Route Length</span>
-                          <div className="mt-1 flex items-center gap-2">
-                            <MapPin size={16} style={{ color: mode.accent }} />
-                            <span className="text-lg font-black text-foreground">{rideDetails.distance}</span>
+
+                      {/* Header with high-tech badge styling */}
+                      <div className="flex items-center justify-between mb-8 pb-4 border-b border-border/10">
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-2xl flex items-center justify-center bg-green-500/10 border border-green-500/20 shadow-sm shadow-green-500/5">
+                            <CheckCircle2 size={18} className="text-green-500" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-black uppercase tracking-[0.15em] text-foreground">{t('booking.ai_report_title', 'AI Intelligence Report')}</h4>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 font-bold uppercase tracking-tight">{t('booking.ai_report_subtitle', 'Real-time Safety & Route Audit')}</p>
                           </div>
                         </div>
-                        <div className="p-4 rounded-2xl bg-secondary/40 border border-border/50 transition-colors hover:bg-secondary/60">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Travel Time</span>
-                          <div className="mt-1 flex items-center gap-2">
-                            <Navigation size={16} className="text-blue-500" />
-                            <span className="text-lg font-black text-foreground">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/80 border border-border/60 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                          {t('booking.active_audit', 'Active Audit')}
+                        </div>
+                      </div>
+
+                      {/* Safety Score with Glowing Card Container */}
+                      <div className="relative z-10 p-5 rounded-3xl bg-secondary/20 dark:bg-white/[0.01] border border-border/20 shadow-inner">
+                        <SafetyScoreBar score={rideDetails.score} color={mode.accent} />
+                      </div>
+
+                      {/* Route metrics grid with modern styling & dynamic hover shifts */}
+                      <div className="mt-6 grid grid-cols-2 gap-4">
+                        <div className="p-5 rounded-3xl bg-secondary/30 dark:bg-white/[0.01] border border-border/30 transition-all duration-300 hover:bg-secondary/50 hover:border-border/50 shadow-sm flex flex-col justify-between">
+                          <span className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground opacity-60">{t('booking.route_length', 'Route Length')}</span>
+                          <div className="mt-3 flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-background shadow-sm border border-border/30">
+                              <MapPin size={16} style={{ color: mode.accent }} />
+                            </div>
+                            <span className="text-xl font-black text-foreground tracking-tight">{rideDetails.distance}</span>
+                          </div>
+                        </div>
+                        <div className="p-5 rounded-3xl bg-secondary/30 dark:bg-white/[0.01] border border-border/30 transition-all duration-300 hover:bg-secondary/50 hover:border-border/50 shadow-sm flex flex-col justify-between">
+                          <span className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground opacity-60">{t('booking.travel_time', 'Travel Time')}</span>
+                          <div className="mt-3 flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-background shadow-sm border border-border/30">
+                              <Navigation size={16} className="text-blue-500" />
+                            </div>
+                            <span className="text-xl font-black text-foreground tracking-tight">
                               {rideDetails.etaNum > 60
-                                ? `${Math.floor(rideDetails.etaNum / 60)}h ${Math.round(rideDetails.etaNum % 60)}m`
-                                : `${Math.round(rideDetails.etaNum)} min`}
+                                ? t('booking.hours_minutes_format', '{{hours}}h {{minutes}}m', { hours: Math.floor(rideDetails.etaNum / 60), minutes: Math.round(rideDetails.etaNum % 60) })
+                                : t('booking.minutes_format', '{{minutes}} min', { minutes: Math.round(rideDetails.etaNum) })}
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/20 transition-all hover:bg-primary/10">
+                      {/* Redesigned estimated fare: looks like an executive luxury slip */}
+                      <div className="mt-5 p-5 rounded-3xl bg-gradient-to-r from-primary/[0.03] to-primary/[0.08] border border-primary/20 dark:border-primary/10 transition-all duration-300 hover:brightness-105 shadow-sm">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-primary/10">
-                              <Star size={18} className="text-primary fill-primary" />
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+                              <Star size={20} className="text-primary fill-primary" />
                             </div>
                             <div>
-                              <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Estimated Fare</span>
-                              <div className="flex items-center gap-3">
-                                <div className="text-2xl font-black text-foreground">₹{rideDetails.fare.toLocaleString()}</div>
+                              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-primary/60">{t('booking.estimated_fare', 'Estimated Fare')}</span>
+                              <div className="flex items-center gap-3 mt-1">
+                                <div className="text-2xl font-black text-foreground tracking-tight">₹{rideDetails.fare.toLocaleString()}</div>
                                 {rideDetails.surgeMultiplier > 1.0 && (
-                                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 animate-pulse">
-                                    <Zap size={8} className="fill-amber-500 text-amber-500" />
-                                    {rideDetails.surgeMultiplier}x Surge
+                                  <div 
+                                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] border animate-pulse shadow-sm"
+                                    style={{
+                                      backgroundColor: `${mode.accent}15`,
+                                      borderColor: `${mode.accent}30`,
+                                      color: mode.accent
+                                    }}
+                                  >
+                                    <Zap size={8} className="fill-current" style={{ color: mode.accent }} />
+                                    {t('booking.surge_label', '{{multiplier}}x Surge', { multiplier: rideDetails.surgeMultiplier })}
                                   </div>
                                 )}
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Incl. Taxes</span>
-                            <div className="text-xs font-bold text-green-600">Secure Payment</div>
+                            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground opacity-60">{t('booking.incl_taxes', 'Incl. Taxes')}</span>
+                            <div className="text-xs font-black text-green-600 mt-1 uppercase tracking-wider">{t('booking.secure_pay', 'Secure Pay')}</div>
                           </div>
                         </div>
                       </div>
-                      <div className="mt-4 flex items-center justify-between p-4 rounded-2xl bg-background/50 border border-border/30">
-                        <div className="flex items-center gap-3">
-                          <div className={`h-3 w-3 rounded-full shadow-sm animate-pulse ${rideDetails.traffic === 'Light' ? 'bg-green-500' : rideDetails.traffic === 'Moderate' ? 'bg-amber-500' : 'bg-red-500'}`} />
-                          <span className="text-xs font-black uppercase tracking-widest text-foreground">{rideDetails.traffic} Traffic</span>
+
+                      {/* Heavy Traffic Optimization Alert */}
+                      {(rideDetails.traffic === 'Moderate' || rideDetails.traffic === 'Heavy') && !isRerouted && (
+                        <div className="mt-5 p-4 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-foreground animate-in zoom-in-95 duration-300">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-xl flex items-center justify-center bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                                <Activity size={16} className="animate-pulse" />
+                              </div>
+                              <div>
+                                <h5 className="text-[11px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">{t('booking.gridlock_detected', 'Gridlock Detected')}</h5>
+                                <p className="text-[9px] text-muted-foreground mt-0.5 font-bold uppercase tracking-tight">{t('booking.ai_detour', 'AI identified a low-traffic detour')}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={handleRerouteLowTraffic}
+                              disabled={isReroutingAlternative}
+                              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-[9px] font-black uppercase tracking-wider transition-all duration-300 active:scale-95 disabled:opacity-50 flex items-center gap-1.5 shadow-md shadow-amber-500/20"
+                            >
+                              {isReroutingAlternative ? (
+                                <>
+                                  <Loader2 size={10} className="animate-spin" />
+                                  {t('booking.routing_loader', 'Routing...')}
+                                </>
+                              ) : (
+                                <>
+                                  <Zap size={10} className="fill-current" />
+                                  {t('booking.reroute_btn', 'Reroute')}
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
-                        <div className="h-4 w-px bg-border/50" />
+                      )}
+
+                      {/* Rerouted corridor active success box */}
+                      {isRerouted && (
+                        <div className="mt-5 p-4 rounded-3xl bg-green-500/10 border border-green-500/20 text-foreground animate-in slide-in-from-top-2 duration-300">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-xl flex items-center justify-center bg-green-500/20 text-green-600 dark:text-green-400">
+                              <CheckCircle2 size={16} />
+                            </div>
+                            <div>
+                              <h5 className="text-[11px] font-black uppercase tracking-wider text-green-700 dark:text-green-400">{t('booking.alternative_route_active', 'Alternative Route Active')}</h5>
+                              <p className="text-[9px] text-muted-foreground mt-0.5 font-bold uppercase tracking-tight">{t('booking.low_traffic_selected', 'Low-traffic corridor selected successfully')}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Redesigned dashboard status metrics footer */}
+                      <div className="mt-5 flex items-center justify-between p-4 rounded-2xl bg-secondary/40 dark:bg-black/20 border border-border/20 shadow-inner">
+                        <div className="flex items-center gap-3">
+                          <div className="relative flex h-3 w-3">
+                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${rideDetails.traffic === 'Light' ? 'bg-green-400' : rideDetails.traffic === 'Moderate' ? 'bg-amber-400' : 'bg-red-400'}`}></span>
+                            <span className={`relative inline-flex rounded-full h-3 w-3 ${rideDetails.traffic === 'Light' ? 'bg-green-500' : rideDetails.traffic === 'Moderate' ? 'bg-amber-500' : 'bg-red-500'}`}></span>
+                          </div>
+                          <span className="text-xs font-black uppercase tracking-[0.1em] text-foreground">{t('booking.traffic_label', '{{level}} Traffic', { level: t(`booking.traffic_${rideDetails.traffic.toLowerCase()}`, rideDetails.traffic) })}</span>
+                        </div>
+                        <div className="h-4 w-px bg-border/40" />
                         <div className="flex items-center gap-3">
                           <Zap 
                             size={16} 
@@ -1228,7 +1353,7 @@ const BookingPage = () => {
                             }`} 
                           />
                           <span 
-                            className={`text-xs font-black uppercase tracking-widest ${
+                            className={`text-xs font-black uppercase tracking-[0.1em] ${
                               rideDetails.aiPrediction === 'Stable' 
                                 ? 'text-emerald-600 dark:text-emerald-400' 
                                 : rideDetails.aiPrediction === 'Cautious' 
@@ -1236,27 +1361,27 @@ const BookingPage = () => {
                                 : 'text-rose-600 dark:text-rose-400'
                             }`}
                           >
-                            AI: {rideDetails.aiPrediction}
+                            {t('booking.ai_prediction_label', 'AI: {{prediction}}', { prediction: t(`booking.prediction_${rideDetails.aiPrediction.toLowerCase().replace(' ', '_')}`, rideDetails.aiPrediction) })}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="pt-4">
-                      <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4 pl-1 text-center">Available Operators Nearby</h3>
+                      <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-4 pl-1 text-center">{t('booking.available_operators', 'Available Operators Nearby')}</h3>
                       {!selectedDriver ? (
                         <div className="group rounded-[2rem] border-2 border-dashed border-border/60 bg-secondary/10 p-10 text-center transition-all hover:bg-secondary/20 active:scale-[0.99] cursor-default">
                           <div className="mx-auto w-12 h-12 rounded-full bg-background flex items-center justify-center shadow-sm mb-4 group-hover:rotate-12 transition-transform">
                             <Car size={24} className="text-muted-foreground" />
                           </div>
-                          <p className="text-sm font-bold text-foreground">Awaiting Selection</p>
-                          <p className="text-xs text-muted-foreground mt-1 font-medium">Please tap a vehicle on the interactive map.</p>
+                          <p className="text-sm font-bold text-foreground">{t('booking.awaiting_selection', 'Awaiting Selection')}</p>
+                          <p className="text-xs text-muted-foreground mt-1 font-medium">{t('booking.tap_map_instruction', 'Please tap a vehicle on the interactive map.')}</p>
                         </div>
                       ) : (
                         <div className="rounded-[2.5rem] bg-card border border-border/40 p-8 premium-shadow animate-in slide-in-from-bottom-4 duration-500 relative transition-all hover:-translate-y-1">
                           <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary text-[10px] font-black uppercase tracking-[0.1em] text-muted-foreground">
                               <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                              Active Status
+                              {t('booking.active_status', 'Active Status')}
                             </div>
                             <div className="flex items-center gap-1 font-black text-amber-500 text-xs">
                               <Star size={14} className="fill-current" />
@@ -1272,11 +1397,11 @@ const BookingPage = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xl font-black text-foreground tracking-tight leading-none">{selectedDriver.name}</p>
-                              <p className="text-xs text-muted-foreground mt-2 font-black uppercase tracking-widest opacity-60">Plate: ABC 123</p>
+                              <p className="text-xs text-muted-foreground mt-2 font-black uppercase tracking-widest opacity-60">{t('booking.plate_label', 'Plate: {{plate}}', { plate: "ABC 123" })}</p>
                             </div>
                             <div className="text-right">
                               <span className="block text-2xl font-black text-foreground tracking-tighter">₹{selectedDriver.price}</span>
-                              <span className="block mt-1 text-[10px] font-bold text-blue-600 uppercase tracking-widest">ETA {selectedDriver.eta}m</span>
+                              <span className="block mt-1 text-[10px] font-bold text-blue-600 uppercase tracking-widest">{t('booking.eta_minutes', 'ETA {{minutes}}m', { minutes: selectedDriver.eta })}</span>
                             </div>
                           </div>
                           <div className={`mt-8 transition-all duration-500 ${askStatus === "rejected" ? "opacity-40" : "opacity-100"}`}>
@@ -1285,7 +1410,7 @@ const BookingPage = () => {
                                 <div className="flex items-center justify-between px-4 py-3">
                                   <div className="flex items-center gap-2">
                                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Operator Console</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{t('booking.operator_console', 'Operator Console')}</span>
                                   </div>
                                   <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-full hover:bg-background transition-colors"><X size={14} /></button>
                                 </div>
@@ -1293,7 +1418,7 @@ const BookingPage = () => {
                                   {chatMsgs.length === 0 && (
                                     <div className="flex flex-col items-center justify-center h-full opacity-30">
                                       <MessageCircle size={32} />
-                                      <p className="text-[10px] font-bold uppercase mt-2">New Conversation</p>
+                                      <p className="text-[10px] font-bold uppercase mt-2">{t('booking.new_conversation', 'New Conversation')}</p>
                                     </div>
                                   )}
                                   {chatMsgs.map((msg, i) => (
@@ -1308,7 +1433,7 @@ const BookingPage = () => {
                                     onChange={e => setChatInput(e.target.value)}
                                     onKeyDown={e => e.key === "Enter" && handleSendMessage()}
                                     className="flex-1 bg-background/80 backdrop-blur-md border border-border/50 rounded-2xl px-5 py-3 text-xs outline-none focus:ring-4 focus:ring-primary/10 transition-all"
-                                    placeholder="Secure message..."
+                                    placeholder={t('booking.secure_message_placeholder', 'Secure message...')}
                                   />
                                   <button onClick={handleSendMessage} disabled={!chatInput.trim()} className="bg-primary text-primary-foreground p-3.5 rounded-2xl disabled:opacity-50 hover:shadow-xl hover:scale-105 active:scale-95 transition-all">
                                     <Send size={18} />
@@ -1323,7 +1448,7 @@ const BookingPage = () => {
                                   </div>
                                   <input
                                     type="text"
-                                    placeholder="Add specialized instructions..."
+                                    placeholder={t('booking.instructions_placeholder', 'Add specialized instructions...')}
                                     className="w-full rounded-2xl border border-border/60 bg-secondary/30 pl-11 pr-5 py-4 text-xs font-semibold outline-none focus:bg-background transition-all focus:ring-4 focus:ring-primary/5"
                                     disabled={askStatus !== "idle"}
                                   />
@@ -1336,7 +1461,7 @@ const BookingPage = () => {
                                   >
                                     <div className="flex items-center justify-center gap-2">
                                       <MessageCircle size={14} className="transition-transform group-hover:scale-110" />
-                                      Direct Contact
+                                      {t('booking.direct_contact', 'Direct Contact')}
                                     </div>
                                   </button>
                                   <button
@@ -1347,11 +1472,11 @@ const BookingPage = () => {
                                   >
                                     <div className="flex items-center justify-center gap-2">
                                       {askStatus === "idle" || askStatus === "rejected" ? (
-                                        <>SEND REQUEST</>
+                                        <>{t('booking.send_request', 'SEND REQUEST')}</>
                                       ) : askStatus === "asking" ? (
-                                        <><Loader2 size={16} className="animate-spin" /> PENDING...</>
+                                        <><Loader2 size={16} className="animate-spin" /> {t('booking.pending', 'PENDING...')}</>
                                       ) : (
-                                        <>SECURE BOOKING NOW</>
+                                        <>{t('booking.secure_booking_now', 'SECURE BOOKING NOW')}</>
                                       )}
                                     </div>
                                   </button>
@@ -1362,7 +1487,7 @@ const BookingPage = () => {
                           {askStatus === "accepted" && (
                             <div className="mt-6 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 font-bold text-[10px] uppercase tracking-widest animate-in fade-in slide-in-from-top-2">
                               <CheckCircle2 size={12} />
-                              Driver is ready to assist you
+                              {t('booking.driver_ready', 'Driver is ready to assist you')}
                             </div>
                           )}
                         </div>
@@ -1402,7 +1527,7 @@ const BookingPage = () => {
                     transition={{ delay: 0.4 }}
                     className="text-2xl font-bold font-display text-foreground"
                   >
-                    Ride Confirmed!
+                    {t('booking.ride_confirmed', 'Ride Confirmed!')}
                   </motion.h2>
                   <motion.p
                     initial={{ opacity: 0 }}
@@ -1410,26 +1535,26 @@ const BookingPage = () => {
                     transition={{ delay: 0.6 }}
                     className="text-muted-foreground mt-2 text-sm"
                   >
-                    Your driver is on the way to your pickup location.
+                    {t('booking.driver_on_way_to_pickup', 'Your driver is on the way to your pickup location.')}
                   </motion.p>
                 </div>
                 <div className="rounded-[2.5rem] bg-card border border-border/40 premium-shadow p-8 mt-8 transition-all hover:-translate-y-1">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Driver Details</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">{t('booking.driver_details', 'Driver Details')}</h3>
                   <div className="flex items-center gap-4">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full text-lg font-bold text-white shadow-md bg-green-500">
                       {selectedDriver?.name.split(" ").map((n: string) => n[0]).join("")}
                     </div>
                     <div className="flex-1">
                       <p className="font-bold text-foreground">{selectedDriver?.name}</p>
-                      <p className="text-sm text-muted-foreground mt-0.5"><Star size={12} className="inline fill-amber-400 text-amber-400 mr-1" />{selectedDriver?.rating} Rating</p>
+                      <p className="text-sm text-muted-foreground mt-0.5"><Star size={12} className="inline fill-amber-400 text-amber-400 mr-1" />{t('booking.rating_label', '{{rating}} Rating', { rating: selectedDriver?.rating })}</p>
                     </div>
                     <div className="text-right">
                       <span className="block text-xl font-black text-foreground">₹{selectedDriver?.price}</span>
-                      <span className="block text-xs font-semibold text-blue-600 mt-1 uppercase">Arriving in {selectedDriver?.eta}m</span>
+                      <span className="block text-xs font-semibold text-blue-600 mt-1 uppercase">{t('booking.arriving_in', 'Arriving in {{minutes}}m', { minutes: selectedDriver?.eta })}</span>
                     </div>
                   </div>
                   <div className="mt-6 pt-6 border-t border-border">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Destination</h3>
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">{t('booking.destination', 'Destination')}</h3>
                     <p className="text-sm font-medium text-foreground">{destination}</p>
                   </div>
                 </div>
@@ -1438,7 +1563,7 @@ const BookingPage = () => {
                   className="w-full mt-8 rounded-xl py-4 text-sm font-bold text-white hover:brightness-110 transition-all shadow-md active:scale-[0.98]"
                   style={{ backgroundColor: mode.accent }}
                 >
-                  Simulate Ride Completion
+                  {t('booking.simulate_ride_completion', 'Simulate Ride Completion')}
                 </button>
               </div>
             )}
@@ -1448,11 +1573,11 @@ const BookingPage = () => {
                   <div className="mx-auto w-16 h-16 flex items-center justify-center rounded-full mb-4 shadow-sm" style={{ backgroundColor: `${mode.accent}20`, color: mode.accent }}>
                     <Star size={32} className="fill-current" />
                   </div>
-                  <h2 className="text-2xl font-bold font-display text-foreground">You've reached your destination!</h2>
-                  <p className="text-muted-foreground mt-2 text-sm">How was your journey with {selectedDriver?.name}?</p>
+                  <h2 className="text-2xl font-bold font-display text-foreground">{t('booking.destination_reached', "You've reached your destination!")}</h2>
+                  <p className="text-muted-foreground mt-2 text-sm">{t('booking.how_was_journey', 'How was your journey with {{driver}}?', { driver: selectedDriver?.name })}</p>
                 </div>
                 <div className="rounded-[2.5rem] bg-card border border-border/40 premium-shadow p-8 mt-8 text-center flex flex-col items-center transition-all hover:-translate-y-1">
-                  <h3 className="text-sm font-bold text-foreground mb-4">Rate your driver</h3>
+                  <h3 className="text-sm font-bold text-foreground mb-4">{t('booking.rate_driver', 'Rate your driver')}</h3>
                   <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((star) => {
                       let delayClass = "";
@@ -1478,15 +1603,23 @@ const BookingPage = () => {
                     })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-4 font-medium min-h-[16px]">
-                    {rating === 5 ? "Excellent service!" : rating === 4 ? "Great ride!" : rating === 3 ? "It was okay." : rating > 0 ? "Needs improvement" : " "}
+                    {rating === 5 
+                      ? t('booking.rating_excellent', 'Excellent service!') 
+                      : rating === 4 
+                      ? t('booking.rating_great', 'Great ride!') 
+                      : rating === 3 
+                      ? t('booking.rating_okay', 'It was okay.') 
+                      : rating > 0 
+                      ? t('booking.rating_poor', 'Needs improvement') 
+                      : " "}
                   </p>
                   <div className="w-full mt-6 text-left">
-                    <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 block">Leave a review (optional)</label>
+                    <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 block">{t('booking.leave_review_optional', 'Leave a review (optional)')}</label>
                     <textarea
                       rows={4}
                       value={reviewText}
                       onChange={(e) => setReviewText(e.target.value)}
-                      placeholder={`Tell us what you liked about ${selectedDriver?.name}...`}
+                      placeholder={t('booking.review_placeholder', 'Tell us what you liked about {{driver}}...', { driver: selectedDriver?.name })}
                       className="w-full rounded-xl border border-border bg-secondary/30 dark:bg-white/5 p-3 text-sm focus:border-primary outline-none transition-colors resize-none dark:text-white dark:placeholder:text-white/30"
                     />
                   </div>
@@ -1497,10 +1630,10 @@ const BookingPage = () => {
                   className="w-full mt-6 rounded-xl py-4 text-sm font-bold text-white transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98]"
                   style={{ backgroundColor: rating > 0 ? mode.accent : 'hsl(var(--muted))' }}
                 >
-                  Submit & Finish
+                  {t('booking.submit_finish', 'Submit & Finish')}
                 </button>
                 <button onClick={handleSubmitReview} className="w-full mt-2 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                  Skip for now
+                  {t('booking.skip_for_now', 'Skip for now')}
                 </button>
               </div>
             )}
