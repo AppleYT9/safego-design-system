@@ -893,14 +893,31 @@ const DriverPortal = () => {
   const fetchDriverData = async () => {
     const token = localStorage.getItem("token");
 
+    if (!token) {
+      localStorage.removeItem("token");
+      localStorage.setItem("userRole", "");
+      window.location.href = "/login";
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!token) throw new Error("No token");
+      const handleResponse = async (res: Response) => {
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.setItem("userRole", "");
+          window.location.href = "/login";
+          throw new Error("Unauthorized");
+        }
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      };
+
       const [profile, available, historyData, activityData] = await Promise.all([
-        fetch(`${API_URL}/api/drivers/me`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-        fetch(`${API_URL}/api/drivers/me/available-rides`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-        fetch(`${API_URL}/api/drivers/me/history`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
-        fetch(`${API_URL}/api/drivers/me/activity`, { headers: { "Authorization": `Bearer ${token}` } }).then(r => { if (!r.ok) throw new Error(); return r.json(); }),
+        fetch(`${API_URL}/api/drivers/me`, { headers: { "Authorization": `Bearer ${token}` } }).then(handleResponse),
+        fetch(`${API_URL}/api/drivers/me/available-rides`, { headers: { "Authorization": `Bearer ${token}` } }).then(handleResponse),
+        fetch(`${API_URL}/api/drivers/me/history`, { headers: { "Authorization": `Bearer ${token}` } }).then(handleResponse),
+        fetch(`${API_URL}/api/drivers/me/activity`, { headers: { "Authorization": `Bearer ${token}` } }).then(handleResponse),
       ]);
       const mapRides = (rides: any[]) => rides.map(r => ({
         id: r._id,
@@ -928,6 +945,9 @@ const DriverPortal = () => {
       setActivity(activityData);
       setRequests(mapRides(available).slice(0, 4));
     } catch (err) {
+      if (err instanceof Error && err.message === "Unauthorized") {
+        return;
+      }
       console.error("Failed to fetch driver data, using static mock data fallback:", err);
       // Silently fallback to mock data if backend is unreachable during local dev
 
