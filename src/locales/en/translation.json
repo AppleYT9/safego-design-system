@@ -183,6 +183,11 @@
     "feature_wheelchair_accessible_vehicle": "Wheelchair-Accessible Vehicle",
     "feature_voice_navigation": "Voice Navigation",
     "feature_pickup_assistance": "Pickup Assistance",
-    "feature_certified_drivers": "Certified Drivers"
+    "feature_certified_drivers": "Certified Drivers",
+    "pwd_special_cab_booked": "Special Cab Booked!",
+    "pwd_special_cab_desc": "A specialized accessible cab has been booked. Our company provides more reasonable rates for PWD users to ensure accessible and affordable transport for everyone. Your driver is specially trained to assist you.",
+    "pwd_reasonable_cost_title": "Subsidized PWD Pricing",
+    "pwd_reasonable_cost_desc": "SafeGo supports inclusion by providing subsidized, highly affordable rates for our PWD community. We ensure that accessible travel remains a basic right, not a luxury.",
+    "pwd_discount_applied": "PWD Subsidized Rate"
   }
 }

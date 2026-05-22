@@ -31,7 +31,7 @@ const generateNearbyCabs = (lat: number, lng: number, mode: string = "normal") =
 // ─── Leaflet Map Panel (no API key) ─────────────────────────────────────────
 declare global { interface Window { L: any } }
 
-const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRouteExtracted, onCabSelect, simulatingTravel, onTravelComplete }: { accent: string, mode: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, routePolyline?: string | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void, simulatingTravel?: boolean, onTravelComplete?: () => void }) => {
+const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRouteExtracted, onCabSelect, simulatingTravel, onTravelComplete, estimatedFare = 0 }: { accent: string, mode: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, routePolyline?: string | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void, simulatingTravel?: boolean, onTravelComplete?: () => void, estimatedFare?: number }) => {
   const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -327,6 +327,11 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
     }
   }, [centerLoc, accent, mode]);
 
+  const cabsWithPrices = cabs.map((cab, i) => ({
+    ...cab,
+    price: estimatedFare > 0 ? Math.round(estimatedFare * (0.98 + (i % 3) * 0.02)) : 0
+  }));
+
   return (
     <div className="relative h-full w-full bg-secondary">
       <div ref={mapContainerRef} className="absolute inset-0 z-10" />
@@ -364,7 +369,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
               scrollbarWidth: "none",
             }}
           >
-            {cabs.map((cab) => (
+            {cabsWithPrices.map((cab) => (
               <div
                 key={cab.id}
                 onClick={() => {
@@ -724,6 +729,12 @@ const BookingPage = () => {
       setIsAnalyzing(false);
     }
   };
+
+  useEffect(() => {
+    if (pickup.trim() && destination.trim()) {
+      handleFindRoute();
+    }
+  }, [modeId]);
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
@@ -1091,25 +1102,40 @@ const BookingPage = () => {
                   </ul>
                 </div>
                 {mode.id === "pwd" && (
-                  <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
-                    <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                      <Shield size={16} className="text-[hsl(var(--purple))]" /> {t('booking.accessibility_needs', 'Accessibility Needs')}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { key: "pwd_wheelchair", fallback: "Wheelchair Accessible Vehicle" },
-                        { key: "pwd_assistance", fallback: "Driver Assistance Required" },
-                        { key: "pwd_vision", fallback: "Vision Assistance" },
-                        { key: "pwd_hearing", fallback: "Hearing Assistance" }
-                      ].map((n, i) => (
-                        <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-3 hover:bg-secondary cursor-pointer transition-all text-xs font-semibold text-foreground/90">
-                          <input type="checkbox" className="accent-[hsl(var(--purple))] h-4 w-4 cursor-pointer" />
-                          {t(`booking.${n.key}`, n.fallback)}
-                        </label>
-                      ))}
+                  <div className="flex flex-col gap-4">
+                    <div className="mt-4 rounded-[2rem] border border-border/40 bg-card p-6 premium-shadow animate-in fade-in slide-in-from-bottom-2 duration-400 transition-all hover:-translate-y-1">
+                      <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                        <Shield size={16} className="text-[hsl(var(--purple))]" style={{ color: mode.accent }} /> {t('booking.accessibility_needs', 'Accessibility Needs')}
+                      </h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: "pwd_wheelchair", fallback: "Wheelchair Accessible Vehicle" },
+                          { key: "pwd_assistance", fallback: "Driver Assistance Required" },
+                          { key: "pwd_vision", fallback: "Vision Assistance" },
+                          { key: "pwd_hearing", fallback: "Hearing Assistance" }
+                        ].map((n, i) => (
+                          <label key={i} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 p-3 hover:bg-secondary cursor-pointer transition-all text-xs font-semibold text-foreground/90">
+                            <input type="checkbox" className="accent-[hsl(var(--purple))] h-4 w-4 cursor-pointer" style={{ accentColor: mode.accent }} />
+                            {t(`booking.${n.key}`, n.fallback)}
+                          </label>
+                        ))}
+                      </div>
+                      <h3 className="text-sm font-bold text-foreground mt-6 mb-3">{t('booking.emergency_contact', 'Emergency Contact')}</h3>
+                      <input type="tel" placeholder={t('booking.emergency_phone_placeholder', '+63 912 345 6789')} className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
                     </div>
-                    <h3 className="text-sm font-bold text-foreground mt-6 mb-3">{t('booking.emergency_contact', 'Emergency Contact')}</h3>
-                    <input type="tel" placeholder={t('booking.emergency_phone_placeholder', '+63 912 345 6789')} className="w-full rounded-xl border border-border bg-secondary/50 dark:bg-white/5 px-4 py-3 text-sm outline-none focus:border-primary transition-colors dark:text-white dark:placeholder:text-white/30" />
+                    <div className="rounded-[2.5rem] border border-purple-200/50 bg-purple-50/50 dark:bg-purple-950/20 p-5 animate-in fade-in zoom-in-95 duration-500">
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <AlertCircle size={18} className="text-purple-600 dark:text-purple-500" style={{ color: mode.accent }} />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black uppercase tracking-widest text-purple-700 dark:text-purple-400 mb-1">{t('booking.pwd_reasonable_cost_title', 'Subsidized PWD Pricing')}</h4>
+                          <p className="text-[11px] font-medium leading-relaxed text-purple-800/80 dark:text-purple-200/60">
+                            {t('booking.pwd_reasonable_cost_desc', 'SafeGo supports inclusion by providing subsidized, highly affordable rates for our PWD community. We ensure that accessible travel remains a basic right, not a luxury.')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
                 {mode.id === "pink" && (
@@ -1270,6 +1296,19 @@ const BookingPage = () => {
                                   >
                                     <Zap size={8} className="fill-current" style={{ color: mode.accent }} />
                                     {t('booking.surge_label', '{{multiplier}}x Surge', { multiplier: rideDetails.surgeMultiplier })}
+                                  </div>
+                                )}
+                                {mode.id === "pwd" && (
+                                  <div 
+                                    className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] border shadow-sm"
+                                    style={{
+                                      backgroundColor: `${mode.accent}15`,
+                                      borderColor: `${mode.accent}30`,
+                                      color: mode.accent
+                                    }}
+                                  >
+                                    <CheckCircle2 size={8} className="fill-current" style={{ color: mode.accent }} />
+                                    {t('booking.pwd_discount_applied', 'PWD Subsidized Rate')}
                                   </div>
                                 )}
                               </div>
@@ -1527,7 +1566,9 @@ const BookingPage = () => {
                     transition={{ delay: 0.4 }}
                     className="text-2xl font-bold font-display text-foreground"
                   >
-                    {t('booking.ride_confirmed', 'Ride Confirmed!')}
+                    {mode.id === "pwd"
+                      ? t('booking.pwd_special_cab_booked', 'Special Cab Booked!')
+                      : t('booking.ride_confirmed', 'Ride Confirmed!')}
                   </motion.h2>
                   <motion.p
                     initial={{ opacity: 0 }}
@@ -1535,7 +1576,9 @@ const BookingPage = () => {
                     transition={{ delay: 0.6 }}
                     className="text-muted-foreground mt-2 text-sm"
                   >
-                    {t('booking.driver_on_way_to_pickup', 'Your driver is on the way to your pickup location.')}
+                    {mode.id === "pwd"
+                      ? t('booking.pwd_special_cab_desc', 'A specialized accessible cab has been booked. Our company provides more reasonable rates for PWD users to ensure accessible and affordable transport for everyone. Your driver is specially trained to assist you.')
+                      : t('booking.driver_on_way_to_pickup', 'Your driver is on the way to your pickup location.')}
                   </motion.p>
                 </div>
                 <div className="rounded-[2.5rem] bg-card border border-border/40 premium-shadow p-8 mt-8 transition-all hover:-translate-y-1">
@@ -1657,6 +1700,7 @@ const BookingPage = () => {
                 setFlowState("confirmed");
                 setIsSimulatingTravel(false);
               }}
+              estimatedFare={rideDetails.fare}
             />
           </div>
         )}
