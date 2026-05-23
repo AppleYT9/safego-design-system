@@ -197,6 +197,10 @@ async def approve_driver(driver_id: str, payload: DriverApproval, admin: User = 
         driver.approved_at = datetime.now(timezone.utc)
     elif payload.status == "rejected":
         driver.status = DriverStatus.rejected
+        user = await User.get(driver.user_id)
+        if user:
+            user.role = UserRole.passenger
+            await user.save()
     else:
         raise HTTPException(status_code=400, detail="Status must be 'approved' or 'rejected'")
     await driver.save()

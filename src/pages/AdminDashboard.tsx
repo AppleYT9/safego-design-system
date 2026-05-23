@@ -365,6 +365,7 @@ const AdminDashboard = () => {
       if (res.ok) {
         toast.success(`Node ${status.toUpperCase()}: Registry Synchronization Complete.`);
         fetchDrivers(); // Hard sync
+        fetchUsers();   // Sync users list too!
       } else {
         toast.error("Protocol Error: Identity deployment failed.");
         fetchDrivers(); // Revert
@@ -401,6 +402,7 @@ const AdminDashboard = () => {
       if (res.ok) {
         toast.success("Node Terminated Successfully.");
         fetchDrivers();
+        fetchUsers();
         fetchStats();
       } else {
         toast.error("Termination failed.");
@@ -476,7 +478,7 @@ const AdminDashboard = () => {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       });
-      if (res.ok) { setIsDeletingUser(false); fetchUsers(); fetchStats(); }
+      if (res.ok) { setIsDeletingUser(false); fetchUsers(); fetchDrivers(); fetchStats(); }
     } catch (err) { } finally { setIsSubmitting(false); }
   };
 
