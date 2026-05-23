@@ -586,6 +586,37 @@ const BookingPage = () => {
     setRouteFound(false);
     pickupTimeoutRef.current = setTimeout(async () => {
       try {
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=8&lat=20.5937&lon=78.9629&lang=en`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.features && data.features.length > 0) {
+            const mapped = data.features.map((f: any) => {
+              const props = f.properties;
+              const coords = f.geometry.coordinates;
+              const parts = [
+                props.name,
+                props.street,
+                props.district,
+                props.city || props.town || props.village,
+                props.state,
+                props.country
+              ].filter(Boolean);
+              return {
+                display_name: parts.join(", "),
+                lat: coords[1].toString(),
+                lon: coords[0].toString()
+              };
+            });
+            setPickupSuggestions(mapped);
+            setIsSearchingPickup(false);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Photon geocoder failed, trying Nominatim:", e);
+      }
+
+      try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=8&addressdetails=1&countrycodes=in`);
         const data = await res.json();
         setPickupSuggestions(data);
@@ -613,6 +644,37 @@ const BookingPage = () => {
     if (destTimeoutRef.current) clearTimeout(destTimeoutRef.current);
     setRouteFound(false);
     destTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=8&lat=20.5937&lon=78.9629&lang=en`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.features && data.features.length > 0) {
+            const mapped = data.features.map((f: any) => {
+              const props = f.properties;
+              const coords = f.geometry.coordinates;
+              const parts = [
+                props.name,
+                props.street,
+                props.district,
+                props.city || props.town || props.village,
+                props.state,
+                props.country
+              ].filter(Boolean);
+              return {
+                display_name: parts.join(", "),
+                lat: coords[1].toString(),
+                lon: coords[0].toString()
+              };
+            });
+            setDestSuggestions(mapped);
+            setIsSearchingDest(false);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Photon geocoder failed, trying Nominatim:", e);
+      }
+
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=8&addressdetails=1&countrycodes=in`);
         const data = await res.json();
@@ -682,15 +744,53 @@ const BookingPage = () => {
 
       // Automatically resolve coordinates if user typed and hit Enter without selecting
       if (!finalPickupCoords) {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup)}&limit=1`);
-        const data = await res.json();
-        if (data && data.length > 0) finalPickupCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        try {
+          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(pickup)}&limit=1&lat=20.5937&lon=78.9629&lang=en`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.features && data.features.length > 0) {
+              const coords = data.features[0].geometry.coordinates;
+              finalPickupCoords = { lat: coords[1], lng: coords[0] };
+            }
+          }
+        } catch (e) {
+          console.warn("Photon lookup failed, falling back to Nominatim:", e);
+        }
+
+        if (!finalPickupCoords) {
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup)}&limit=1`);
+            const data = await res.json();
+            if (data && data.length > 0) finalPickupCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+          } catch (e) {
+            console.error("Nominatim lookup failed:", e);
+          }
+        }
       }
       
       if (!finalDestCoords) {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1`);
-        const data = await res.json();
-        if (data && data.length > 0) finalDestCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        try {
+          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(destination)}&limit=1&lat=20.5937&lon=78.9629&lang=en`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.features && data.features.length > 0) {
+              const coords = data.features[0].geometry.coordinates;
+              finalDestCoords = { lat: coords[1], lng: coords[0] };
+            }
+          }
+        } catch (e) {
+          console.warn("Photon lookup failed, falling back to Nominatim:", e);
+        }
+
+        if (!finalDestCoords) {
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1`);
+            const data = await res.json();
+            if (data && data.length > 0) finalDestCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+          } catch (e) {
+            console.error("Nominatim lookup failed:", e);
+          }
+        }
       }
 
       if (finalPickupCoords) setPickupCoords(finalPickupCoords);
