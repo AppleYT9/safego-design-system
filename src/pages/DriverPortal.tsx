@@ -1000,12 +1000,6 @@ const DriverPortal = () => {
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab as TabKey);
     }
-
-    const interval = setInterval(() => {
-      fetchDriverData(true);
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, [location.state]);
 
   const handleAcceptRide = async (id: string, dest: string) => {
