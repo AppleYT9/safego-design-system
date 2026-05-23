@@ -39,6 +39,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
   const [locating, setLocating] = useState(true);
   const [locError, setLocError] = useState(false);
   const [selectedCab, setSelectedCab] = useState<number | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   const carMarkerRef = useRef<any>(null);
   const simulationIntervalRef = useRef<any>(null);
 
@@ -57,11 +58,13 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
+        setMapReady(false);
       }
 
       const L = window.L;
       const map = L.map(mapContainerRef.current, { zoomControl: false }).setView([lat, lng], 15);
       mapInstanceRef.current = map;
+      setMapReady(true);
 
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
@@ -133,12 +136,13 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
     return () => {
       mapInstanceRef.current?.remove();
       mapInstanceRef.current = null;
+      setMapReady(false);
     };
-  }, [accent]);
+  }, []);
 
   useEffect(() => {
     const L = window.L;
-    if (!mapInstanceRef.current || !L) return;
+    if (!mapInstanceRef.current || !L || !mapReady) return;
 
     if (!triggerRoute) {
       // Clear routing layers if route is reset
@@ -243,12 +247,12 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
         console.warn("Routing failed", err);
       }
     })();
-  }, [triggerRoute, accent, routePolyline]);
+  }, [triggerRoute, accent, routePolyline, mapReady]);
 
   // Car Animation Simulation
   useEffect(() => {
     const L = window.L;
-    if (!L || !mapInstanceRef.current || !simulatingTravel || !routePolyline) return;
+    if (!L || !mapInstanceRef.current || !simulatingTravel || !routePolyline || !mapReady) return;
 
     const geojson = JSON.parse(routePolyline);
     const coordsList = geojson.coordinates.map((c: any) => [c[1], c[0]]);
@@ -297,10 +301,10 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
     return () => {
       if (simulationIntervalRef.current) clearInterval(simulationIntervalRef.current);
     };
-  }, [simulatingTravel, routePolyline, accent]);
+  }, [simulatingTravel, routePolyline, accent, mapReady]);
 
   useEffect(() => {
-    if (centerLoc && mapInstanceRef.current) {
+    if (centerLoc && mapInstanceRef.current && mapReady) {
       mapInstanceRef.current.flyTo([centerLoc.lat, centerLoc.lng], 15, { duration: 1.5 });
       const fallbackCabs = generateNearbyCabs(centerLoc.lat, centerLoc.lng, mode);
       setCabs(fallbackCabs);
@@ -308,7 +312,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
       const L = window.L;
       if (L) {
         mapInstanceRef.current.eachLayer((layer: any) => {
-          if (layer instanceof L.Marker || layer instanceof L.Circle) {
+          if ((layer instanceof L.Marker || layer instanceof L.Circle) && (!layer.options || !layer.options.isRouteLayer)) {
             mapInstanceRef.current.removeLayer(layer);
           }
         });
@@ -325,7 +329,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
       }
       setLocError(false);
     }
-  }, [centerLoc, accent, mode]);
+  }, [centerLoc, accent, mode, mapReady]);
 
   const cabsWithPrices = cabs.map((cab, i) => ({
     ...cab,
