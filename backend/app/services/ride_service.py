@@ -55,6 +55,7 @@ async def create_ride(
     passenger_count: int = 1,
     passenger_details: Optional[List[str]] = None,
     driver_id: Optional[str] = None,
+    fare_amount: Optional[float] = None,
 ) -> Ride:
     """Create a ride request and attempt to match a driver."""
     route_info = await get_route(pickup_latitude, pickup_longitude, destination_latitude, destination_longitude, mode)
@@ -71,7 +72,7 @@ async def create_ride(
         destination_longitude=destination_longitude,
         distance_km=route_info["distance_km"],
         duration_minutes=route_info["duration_minutes"],
-        fare_amount=route_info["fare_amount"],
+        fare_amount=fare_amount if fare_amount is not None else route_info["fare_amount"],
         safety_score=route_info["safety_score"],
         route_polyline=route_info["route_polyline"],
         scheduled_at=scheduled_at,

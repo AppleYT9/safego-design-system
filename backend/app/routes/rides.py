@@ -77,6 +77,7 @@ async def request_ride(payload: RideRequest, current_user: User = Depends(get_cu
         passenger_count=payload.passenger_count,
         passenger_details=payload.passenger_details,
         driver_id=payload.driver_id,
+        fare_amount=payload.fare_amount,
     )
     driver_brief = await _load_driver_brief(ride.driver_id)
     return _ride_dict(ride, driver_brief)

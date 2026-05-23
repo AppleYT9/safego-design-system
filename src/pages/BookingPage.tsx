@@ -878,7 +878,8 @@ const BookingPage = () => {
         destination_longitude: destinationCoords?.lng || (mapCenter?.lng || 73.19) + 0.05,
         passenger_count: passengers,
         passenger_details: passengerDetails.filter(d => d.trim() !== ""),
-        driver_id: selectedDriver?.driver_id || null
+        driver_id: selectedDriver?.driver_id || null,
+        fare_amount: selectedDriver?.price || rideDetails.fare
       };
 
       const res = await fetch(`${API_URL}/api/rides/request`, {
