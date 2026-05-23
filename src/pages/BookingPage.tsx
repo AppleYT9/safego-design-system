@@ -194,8 +194,8 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
         const fromQuery = encodeURIComponent(triggerRoute.from);
         const toQuery = encodeURIComponent(triggerRoute.to);
         const [resfrom, resto] = await Promise.all([
-          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${fromQuery}&limit=1`),
-          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${toQuery}&limit=1`)
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${fromQuery}&limit=1&countrycodes=in`),
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${toQuery}&limit=1&countrycodes=in`)
         ]);
         const dataFrom = await resfrom.json();
         const dataTo = await resto.json();
@@ -586,7 +586,7 @@ const BookingPage = () => {
     setRouteFound(false);
     pickupTimeoutRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=8&lat=20.5937&lon=78.9629&lang=en`);
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=8&lat=20.5937&lon=78.9629&lang=en&countrycode=in`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.features && data.features.length > 0) {
@@ -645,7 +645,7 @@ const BookingPage = () => {
     setRouteFound(false);
     destTimeoutRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=8&lat=20.5937&lon=78.9629&lang=en`);
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=8&lat=20.5937&lon=78.9629&lang=en&countrycode=in`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.features && data.features.length > 0) {
@@ -745,7 +745,7 @@ const BookingPage = () => {
       // Automatically resolve coordinates if user typed and hit Enter without selecting
       if (!finalPickupCoords) {
         try {
-          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(pickup)}&limit=1&lat=20.5937&lon=78.9629&lang=en`);
+          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(pickup)}&limit=1&lat=20.5937&lon=78.9629&lang=en&countrycode=in`);
           if (res.ok) {
             const data = await res.json();
             if (data && data.features && data.features.length > 0) {
@@ -759,7 +759,7 @@ const BookingPage = () => {
 
         if (!finalPickupCoords) {
           try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup)}&limit=1`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup)}&limit=1&countrycodes=in`);
             const data = await res.json();
             if (data && data.length > 0) finalPickupCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
           } catch (e) {
@@ -770,7 +770,7 @@ const BookingPage = () => {
       
       if (!finalDestCoords) {
         try {
-          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(destination)}&limit=1&lat=20.5937&lon=78.9629&lang=en`);
+          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(destination)}&limit=1&lat=20.5937&lon=78.9629&lang=en&countrycode=in`);
           if (res.ok) {
             const data = await res.json();
             if (data && data.features && data.features.length > 0) {
@@ -784,7 +784,7 @@ const BookingPage = () => {
 
         if (!finalDestCoords) {
           try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1&countrycodes=in`);
             const data = await res.json();
             if (data && data.length > 0) finalDestCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
           } catch (e) {
