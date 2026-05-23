@@ -336,8 +336,8 @@ const HistoryTab = ({
   }
 
   const completedRides = history.filter(r => r.status !== "failed" && r.status !== "cancelled");
-  const totalEarnings = completedRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "")), 0);
-  const totalTips = completedRides.reduce((sum, r) => sum + parseInt(r.tip.replace("₹", "").replace(",", "")), 0);
+  const totalEarnings = completedRides.reduce((sum, r) => sum + (parseInt((r.fare || "0").toString().replace("₹", "").replace(",", "")) || 0), 0);
+  const totalTips = completedRides.reduce((sum, r) => sum + (parseInt((r.tip || "0").toString().replace("₹", "").replace(",", "")) || 0), 0);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
@@ -494,7 +494,7 @@ const EarningsTab = ({ history }: { history: any[] }) => {
   const { t } = useTranslation();
   const completedRides = history.filter(r => r.status !== "failed" && r.status !== "cancelled");
   const totalRides = completedRides.length;
-  const totalEarnings = completedRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "")), 0);
+  const totalEarnings = completedRides.reduce((sum, r) => sum + (parseInt((r.fare || "0").toString().replace("₹", "").replace(",", "")) || 0), 0);
 
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const earningsByDay = days.map(day => {
@@ -509,7 +509,7 @@ const EarningsTab = ({ history }: { history: any[] }) => {
       }
       return !isNaN(dateVal.getTime()) && days[dateVal.getDay()] === day;
     });
-    const amount = dayRides.reduce((sum, r) => sum + parseInt(r.fare.replace("₹", "").replace(",", "") || "0"), 0);
+    const amount = dayRides.reduce((sum, r) => sum + (parseInt((r.fare || "0").toString().replace("₹", "").replace(",", "")) || 0), 0);
     return { day, amount, rides: dayRides.length };
   });
 
@@ -894,9 +894,11 @@ const DriverPortal = () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      localStorage.removeItem("token");
-      localStorage.setItem("userRole", "");
-      window.location.href = "/login";
+      if (!isBackground) {
+        localStorage.removeItem("token");
+        localStorage.setItem("userRole", "");
+        window.location.href = "/login";
+      }
       return;
     }
 
@@ -904,9 +906,11 @@ const DriverPortal = () => {
     try {
       const handleResponse = async (res: Response) => {
         if (res.status === 401) {
-          localStorage.removeItem("token");
-          localStorage.setItem("userRole", "");
-          window.location.href = "/login";
+          if (!isBackground) {
+            localStorage.removeItem("token");
+            localStorage.setItem("userRole", "");
+            window.location.href = "/login";
+          }
           throw new Error("Unauthorized");
         }
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -949,6 +953,10 @@ const DriverPortal = () => {
         return;
       }
       console.error("Failed to fetch driver data, using static mock data fallback:", err);
+      if (isBackground) {
+        // Do not overwrite session state with mock data during background updates
+        return;
+      }
       // Silently fallback to mock data if backend is unreachable during local dev
 
       // Static mock data fallback
@@ -1019,7 +1027,7 @@ const DriverPortal = () => {
 
     setDriver(prev => {
       if (!prev) return prev;
-      const fareValue = parseInt(rideToAccept.fare.replace("₹", "").replace(",", "")) || 0;
+      const fareValue = parseInt((rideToAccept.fare || "0").toString().replace("₹", "").replace(",", "")) || 0;
       return {
         ...prev,
         today_rides: (prev.today_rides || 0) + 1,
