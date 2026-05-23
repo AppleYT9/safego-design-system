@@ -200,8 +200,7 @@ async def approve_driver(driver_id: str, payload: DriverApproval, admin: User = 
     elif payload.status == "rejected":
         user = await User.get(driver.user_id)
         if user:
-            user.role = UserRole.passenger
-            await user.save()
+            await user.delete()
             
         vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
         if vehicle:
