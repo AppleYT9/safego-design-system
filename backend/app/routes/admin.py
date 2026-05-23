@@ -195,16 +195,27 @@ async def approve_driver(driver_id: str, payload: DriverApproval, admin: User = 
     if payload.status == "approved":
         driver.status = DriverStatus.approved
         driver.approved_at = datetime.now(timezone.utc)
+        await driver.save()
+        return await _driver_dict(driver)
     elif payload.status == "rejected":
-        driver.status = DriverStatus.rejected
         user = await User.get(driver.user_id)
         if user:
             user.role = UserRole.passenger
             await user.save()
-    else:
-        raise HTTPException(status_code=400, detail="Status must be 'approved' or 'rejected'")
-    await driver.save()
-    return await _driver_dict(driver)
+            
+        vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
+        if vehicle:
+            await vehicle.delete()
+            
+        docs = await DriverDocument.find(DriverDocument.driver_id == driver.id).to_list()
+        for doc in docs:
+            await doc.delete()
+            
+        res_data = await _driver_dict(driver)
+        res_data["status"] = "rejected"
+        
+        await driver.delete()
+        return res_data
 
 
 @router.put("/drivers/{driver_id}/online-status", response_model=DriverResponse)

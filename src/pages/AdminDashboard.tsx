@@ -354,7 +354,11 @@ const AdminDashboard = () => {
 
   const handleApproveDriver = async (driverId: string, status: 'approved' | 'rejected') => {
     // Optimistic Update for instant feedback
-    setDriversList(prev => prev.map(d => d._id === driverId ? { ...d, status: status } : d));
+    if (status === 'rejected') {
+      setDriversList(prev => prev.filter(d => d._id !== driverId));
+    } else {
+      setDriversList(prev => prev.map(d => d._id === driverId ? { ...d, status: status } : d));
+    }
 
     try {
       const res = await fetch(`${API_URL}/api/admin/drivers/${driverId}/approval`, {
@@ -363,7 +367,7 @@ const AdminDashboard = () => {
         body: JSON.stringify({ status })
       });
       if (res.ok) {
-        toast.success(`Node ${status.toUpperCase()}: Registry Synchronization Complete.`);
+        toast.success(status === 'rejected' ? 'Application Declined & Node Purged.' : `Node ${status.toUpperCase()}: Registry Synchronization Complete.`);
         fetchDrivers(); // Hard sync
         fetchUsers();   // Sync users list too!
       } else {
