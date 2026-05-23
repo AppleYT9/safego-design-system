@@ -890,7 +890,7 @@ const DriverPortal = () => {
     });
   };
 
-  const fetchDriverData = async () => {
+  const fetchDriverData = async (isBackground = false) => {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -900,7 +900,7 @@ const DriverPortal = () => {
       return;
     }
 
-    setLoading(true);
+    if (!isBackground) setLoading(true);
     try {
       const handleResponse = async (res: Response) => {
         if (res.status === 401) {
@@ -961,11 +961,12 @@ const DriverPortal = () => {
         total_rides: 1240,
       });
 
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const mockAvailable = [
-        { id: "1", pickup: "SM Megamall, Mandaluyong", dest: "BGC High Street, Taguig", dist: "3.2 km", fare: "₹185", mode: "pink", time: "2 min ago", passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 4.8 },
-        { id: "2", pickup: "Trinoma, Quezon City", dest: "UP Diliman", dist: "5.1 km", fare: "₹210", mode: "normal", time: "5 min ago", passengers: 2, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.0, rating: 4.7 },
-        { id: "3", pickup: "Makati Avenue", dest: "Ayala Triangle", dist: "1.2 km", fare: "₹120", mode: "normal", time: "1 min ago", passengers: 1, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.5, rating: 4.9 },
-        { id: "4", pickup: "Greenbelt 3", dest: "Glorietta", dist: "0.8 km", fare: "₹95", mode: "pink", time: "Just now", passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 5.0 },
+        { id: "1", pickup: "SM Megamall, Mandaluyong", dest: "BGC High Street, Taguig", dist: "3.2 km", fare: "₹185", mode: "pink", time: nowStr, passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 4.8 },
+        { id: "2", pickup: "Trinoma, Quezon City", dest: "UP Diliman", dist: "5.1 km", fare: "₹210", mode: "normal", time: nowStr, passengers: 2, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.0, rating: 4.7 },
+        { id: "3", pickup: "Makati Avenue", dest: "Ayala Triangle", dist: "1.2 km", fare: "₹120", mode: "normal", time: nowStr, passengers: 1, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.5, rating: 4.9 },
+        { id: "4", pickup: "Greenbelt 3", dest: "Glorietta", dist: "0.8 km", fare: "₹95", mode: "pink", time: nowStr, passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 5.0 },
       ];
       setAvailableRides(mockAvailable);
       setRequests(mockAvailable.slice(0, 2));
@@ -982,7 +983,7 @@ const DriverPortal = () => {
         { type: "rating", text: "Received a 5-star rating", time: "Yesterday" },
       ]);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
@@ -991,6 +992,12 @@ const DriverPortal = () => {
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab as TabKey);
     }
+
+    const interval = setInterval(() => {
+      fetchDriverData(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [location.state]);
 
   const handleAcceptRide = async (id: string, dest: string) => {
