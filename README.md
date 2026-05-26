@@ -73,7 +73,6 @@ Passengers can tailor their transportation experience based on specific safety a
 *   🌸 **Pink Mode**: Custom ride safety portal catering exclusively to women passengers, highlighting certified women drivers and safety telemetry.
 *   ♿ **PWD (Disabled Accessible) Mode**: Fully accessible layout optimized for screen readers, keyboard navigation, and wheelchair-certified vehicle dispatching.
 *   🟠 **Elderly Mode**: High-contrast, large-typography design simplified for older citizens, ensuring simple workflows and prioritized safety call check-ins.
-*   🟣 **Premium Mode**: Deluxe executive travel options utilizing luxury vehicle categories.
 
 ### 🎙️ 2. Native AI Voice Assistant
 Integrated via the browser's speech-recognition interface (`VoiceAssistantProvider`), passengers have hands-free controls while on the move. By talking naturally, a user can:
