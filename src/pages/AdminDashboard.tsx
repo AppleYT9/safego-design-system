@@ -289,23 +289,42 @@ const AdminDashboard = () => {
   const fetchSOS = async () => {
     setIsSearching(true);
     try {
+      // Fetch the latest dynamic destination from active backend rides
+      let backendDest = "";
+      try {
+        const ridesRes = await fetch(`${API_URL}/api/admin/rides/live`, {
+          headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        if (ridesRes.ok) {
+          const liveRidesData = await ridesRes.json();
+          if (liveRidesData && liveRidesData.length > 0) {
+            backendDest = liveRidesData[0].destination_address || "";
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch live rides for destination sync:", err);
+      }
+
       const res = await fetch(`${API_URL}/api/admin/sos-alerts`, {
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
       });
       if (res.ok) {
         const data = await res.json();
 
+        // Get custom destination from live backend rides, localStorage, or fallback to Ayala Triangle
+        const userDest = backendDest || localStorage.getItem('safego_current_booking_destination') || 'Ayala Triangle, Makati';
+
         // Always ensure at least some ACTIVE threats for demo purposes
         const hasActive = data.some((a: any) => a.status === 'active');
         const finalAlerts = hasActive ? data : [
           ...data,
-          { _id: 'sos_static_1', severity: 'critical', location_address: 'Ayala Triangle, Makati (Simulated)', user_id: 'SYSTEM_NODE', ride_id: 'SIM_992', status: 'active', created_at: new Date().toISOString() },
+          { _id: 'sos_static_1', severity: 'critical', location_address: `${userDest} (Simulated)`, user_id: 'SYSTEM_NODE', ride_id: 'SIM_992', status: 'active', created_at: new Date().toISOString() },
           { _id: 'sos_static_2', severity: 'moderate', location_address: 'BGC Stopover (Simulated)', user_id: 'SYSTEM_NODE', ride_id: 'SIM_441', status: 'active', created_at: new Date().toISOString() }
         ];
 
         // Ensure mock notifications exist for these simulated alerts so they can "turn green"
         if (!hasActive && notifications.filter(n => n.sourceId?.startsWith('sos_static')).length === 0) {
-          addNotification("CRITICAL SOS DETECTED", "Passenger SYSTEM_NODE triggered emergency node @ Ayala Triangle.", "error", "sos_static_1");
+          addNotification("CRITICAL SOS DETECTED", `Passenger SYSTEM_NODE triggered emergency node @ ${userDest}.`, "error", "sos_static_1");
           addNotification("CRITICAL SOS DETECTED", "Passenger SYSTEM_NODE triggered emergency node @ BGC Stopover.", "error", "sos_static_2");
         }
 
@@ -506,7 +525,11 @@ const AdminDashboard = () => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'safego_new_sos') {
         const sosData = JSON.parse(e.newValue || '{}');
-        addNotification("CRITICAL SOS DETECTED", `Passenger ${sosData.userId} has triggered an emergency node.`, "error", sosData.id);
+        if (sosData.destination) {
+          localStorage.setItem('safego_current_booking_destination', sosData.destination);
+        }
+        const alertDest = sosData.destination || 'Ayala Triangle, Makati';
+        addNotification("CRITICAL SOS DETECTED", `Passenger ${sosData.userId} has triggered an emergency node @ ${alertDest}.`, "error", sosData.id);
         setActiveTab("dashboard"); // Redirect to Operation Hub
         fetchSOS(); // Refresh list
       }

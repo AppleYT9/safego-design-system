@@ -22,10 +22,12 @@ export const SOSButton = ({ onTrigger, contacts = [] }: SOSButtonProps) => {
   const handleBuzzerClick = () => {
     setOpen(true);
     // Broadcast SOS event to the global node network (detected by Admin Dashboard)
+    const currentDest = localStorage.getItem('safego_current_booking_destination') || 'Ayala Triangle, Makati';
     localStorage.setItem('safego_new_sos', JSON.stringify({
       timestamp: new Date().toISOString(),
       userId: 'USER_882',
-      id: 'SOS_' + Math.floor(Math.random() * 1000)
+      id: 'SOS_' + Math.floor(Math.random() * 1000),
+      destination: currentDest
     }));
     if (onTrigger) {
       onTrigger();

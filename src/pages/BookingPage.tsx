@@ -446,6 +446,12 @@ const BookingPage = () => {
   const [rideConfirmed, setRideConfirmed] = useState(false);
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
+
+  useEffect(() => {
+    if (destination) {
+      localStorage.setItem('safego_current_booking_destination', destination);
+    }
+  }, [destination]);
   const [isLocatingAddress, setIsLocatingAddress] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number, lng: number } | null>(null);
   const [triggerRoute, setTriggerRoute] = useState<{ from: string, to: string } | null>(null);
