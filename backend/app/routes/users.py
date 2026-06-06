@@ -124,6 +124,46 @@ async def list_notifications(
     return [_notif_to_response(n) for n in notifs]
 
 
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_my_account(current_user: User = Depends(get_current_user)):
+    from app.models import Driver, Vehicle, DriverDocument, Ride, Rating, SOSAlert
+    
+    # Check for driver profile
+    driver = await Driver.find_one(Driver.user_id == current_user.id)
+    if driver:
+        # Delete vehicle & documents
+        await Vehicle.find(Vehicle.driver_id == driver.id).delete()
+        await DriverDocument.find(DriverDocument.driver_id == driver.id).delete()
+        
+        # Delete rides assigned to the driver
+        await Ride.find(Ride.driver_id == driver.id).delete()
+        
+        # Delete ratings for the driver
+        await Rating.find(Rating.driver_id == driver.id).delete()
+        
+        # Delete driver profile
+        await driver.delete()
+
+    # Delete rides requested by passenger
+    await Ride.find(Ride.passenger_id == current_user.id).delete()
+
+    # Delete ratings rated by the user
+    await Rating.find(Rating.rater_id == current_user.id).delete()
+
+    # Delete SOS alerts
+    await SOSAlert.find(SOSAlert.user_id == current_user.id).delete()
+
+    # Delete emergency contacts
+    await EmergencyContact.find(EmergencyContact.user_id == current_user.id).delete()
+
+    # Delete notifications
+    await Notification.find(Notification.user_id == current_user.id).delete()
+
+    # Finally delete the user document
+    await current_user.delete()
+    return None
+
+
 # ---------- Helpers ----------
 
 def _user_to_response(user: User) -> dict:

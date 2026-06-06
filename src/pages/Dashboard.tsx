@@ -5,6 +5,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { auth } from "@/lib/firebase";
+import { signOut, deleteUser } from "firebase/auth";
 import {
   LayoutDashboard, Car, Shield, Users, Settings,
   Star, TrendingUp, ArrowRight, User, Lock, Bell, Moon, MapPin,
@@ -304,6 +306,50 @@ const Dashboard = () => {
       toast.error("An error occurred");
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmDelete = window.confirm("Are you sure you want to delete your account? This action is permanent and cannot be undone.");
+    if (!confirmDelete) return;
+
+    const toastId = toast.loading("Deleting your account and data...");
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Authentication token not found");
+
+      const res = await fetch(`${API_URL}/api/users/me`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete account from database");
+      }
+
+      // Clean up Firebase Auth user if authenticated
+      try {
+        if (auth.currentUser) {
+          await deleteUser(auth.currentUser);
+        }
+      } catch (firebaseErr) {
+        console.warn("Could not delete Firebase Auth user. Signing out instead.", firebaseErr);
+        await signOut(auth);
+      }
+
+      // Clear local storage overrides
+      localStorage.removeItem("token");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("safego_accepted_rides");
+      localStorage.removeItem("safego_declined_rides");
+
+      toast.success("Account deleted successfully", { id: toastId });
+      navigate("/signup");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "An error occurred during account deletion", { id: toastId });
     }
   };
 
@@ -1158,7 +1204,12 @@ const Dashboard = () => {
                     <h5 className="font-semibold text-foreground">Delete Account</h5>
                     <p className="text-sm text-muted-foreground">Permanently delete your personal data, rides, and SOS contacts.</p>
                   </div>
-                  <button className="rounded-xl bg-destructive px-6 py-2.5 text-sm font-bold text-destructive-foreground hover:brightness-110 shrink-0">Delete Account</button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    className="rounded-xl bg-destructive px-6 py-2.5 text-sm font-bold text-destructive-foreground hover:brightness-110 shrink-0"
+                  >
+                    Delete Account
+                  </button>
                 </div>
               </section>
             </div>

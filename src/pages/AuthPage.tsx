@@ -71,6 +71,8 @@ const AuthPage = () => {
       
       const data = await res.json();
       localStorage.setItem("token", data.access_token);
+      localStorage.removeItem("safego_accepted_rides");
+      localStorage.removeItem("safego_declined_rides");
       
       const finalRole = (data.role === "admin" || result.user.email?.includes("admin")) ? "admin" : data.role;
       localStorage.setItem("userRole", finalRole);
@@ -133,6 +135,8 @@ const AuthPage = () => {
 
       // Save token
       localStorage.setItem("token", data.access_token);
+      localStorage.removeItem("safego_accepted_rides");
+      localStorage.removeItem("safego_declined_rides");
       const finalRole = (data.role === "admin" || email.includes("admin")) ? "admin" : data.role;
       localStorage.setItem("userRole", finalRole);
 

@@ -897,6 +897,8 @@ const DriverPortal = () => {
       if (!isBackground) {
         localStorage.removeItem("token");
         localStorage.setItem("userRole", "");
+        localStorage.removeItem("safego_accepted_rides");
+        localStorage.removeItem("safego_declined_rides");
         window.location.href = "/login";
       }
       return;
@@ -909,6 +911,8 @@ const DriverPortal = () => {
           if (!isBackground) {
             localStorage.removeItem("token");
             localStorage.setItem("userRole", "");
+            localStorage.removeItem("safego_accepted_rides");
+            localStorage.removeItem("safego_declined_rides");
             window.location.href = "/login";
           }
           throw new Error("Unauthorized");
@@ -943,11 +947,71 @@ const DriverPortal = () => {
         surge: 1.0
       }));
 
-      setDriver(profile);
-      setAvailableRides(mapRides(available));
-      setHistory(mapRides(historyData));
-      setActivity(activityData);
-      setRequests(mapRides(available).slice(0, 4));
+      // Get local storage values to restore state across refreshes
+      const storedAccepted = localStorage.getItem("safego_accepted_rides");
+      const acceptedRides: any[] = storedAccepted ? JSON.parse(storedAccepted) : [];
+      const acceptedIds = acceptedRides.map(r => r.id);
+
+      const storedDeclined = localStorage.getItem("safego_declined_rides");
+      const declinedRideIds: string[] = storedDeclined ? JSON.parse(storedDeclined) : [];
+
+      const mappedAvailable = mapRides(available).filter(r => !acceptedIds.includes(r.id) && !declinedRideIds.includes(r.id));
+      setAvailableRides(mappedAvailable);
+      setRequests(mappedAvailable.slice(0, 4));
+
+      // Calculate stats based on whether they were already marked completed in the backend history
+      let additionalRidesCount = 0;
+      let additionalEarnings = 0;
+
+      acceptedRides.forEach(r => {
+        const isAlreadyCompletedInBackend = historyData && historyData.some((h: any) => h._id === r.id && h.status === "completed");
+        if (!isAlreadyCompletedInBackend) {
+          additionalRidesCount += 1;
+          const fareValue = parseInt((r.fare || "0").toString().replace("₹", "").replace(",", "")) || 0;
+          additionalEarnings += fareValue;
+        }
+      });
+
+      const updatedProfile = {
+        ...profile,
+        today_rides: (profile.today_rides || 0) + additionalRidesCount,
+        today_earnings: (profile.today_earnings || 0) + additionalEarnings,
+        total_rides: (profile.total_rides || 0) + additionalRidesCount
+      };
+      setDriver(updatedProfile);
+
+      // Prepend/Modify historyData
+      let initialHistory = mapRides(historyData);
+      initialHistory = initialHistory.map(h => {
+        if (acceptedIds.includes(h.id)) {
+          return { ...h, status: "completed", date: "Today", duration: "Just now", tip: "₹0" };
+        }
+        return h;
+      });
+      const existingHistoryIds = initialHistory.map(h => h.id);
+      const ridesToPrepend = acceptedRides
+        .filter(r => !existingHistoryIds.includes(r.id))
+        .map(r => ({
+          ...r,
+          status: "completed",
+          date: "Today",
+          duration: "Just now",
+          tip: "₹0"
+        }));
+      setHistory([...ridesToPrepend, ...initialHistory]);
+
+      // Prepend activityData
+      let initialActivity = activityData || [];
+      const activityTexts = initialActivity.map((a: any) => a.text);
+      const activityToPrepend = acceptedRides
+        .filter(r => !activityTexts.some((txt: string) => txt.includes(r.dest) || (r.pickup_address && txt.includes(r.pickup_address))))
+        .map(r => ({
+          type: "ride",
+          text: `Completed ride to ${r.dest}`,
+          time: "Just now"
+        }));
+      setActivity([...activityToPrepend, ...initialActivity]);
+
     } catch (err) {
       if (err instanceof Error && err.message === "Unauthorized") {
         return;
@@ -959,14 +1023,31 @@ const DriverPortal = () => {
       }
       // Silently fallback to mock data if backend is unreachable during local dev
 
-      // Static mock data fallback
+      // Get local storage values for fallback
+      const storedAccepted = localStorage.getItem("safego_accepted_rides");
+      const acceptedRides: any[] = storedAccepted ? JSON.parse(storedAccepted) : [];
+      const acceptedIds = acceptedRides.map(r => r.id);
+
+      const storedDeclined = localStorage.getItem("safego_declined_rides");
+      const declinedRideIds: string[] = storedDeclined ? JSON.parse(storedDeclined) : [];
+
+      // Calculate stats for fallback
+      let additionalRidesCount = 0;
+      let additionalEarnings = 0;
+      acceptedRides.forEach(r => {
+        additionalRidesCount += 1;
+        const fareValue = parseInt((r.fare || "0").toString().replace("₹", "").replace(",", "")) || 0;
+        additionalEarnings += fareValue;
+      });
+
+      // Static mock data fallback with local overrides
       setDriver({
         user: { full_name: "James Dela Cruz" },
         average_rating: 4.8,
-        today_rides: 12,
-        today_earnings: 2450,
+        today_rides: 12 + additionalRidesCount,
+        today_earnings: 2450 + additionalEarnings,
         acceptance_rate: 98,
-        total_rides: 1240,
+        total_rides: 1240 + additionalRidesCount,
       });
 
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -976,20 +1057,41 @@ const DriverPortal = () => {
         { id: "3", pickup: "Makati Avenue", dest: "Ayala Triangle", dist: "1.2 km", fare: "₹120", mode: "normal", time: nowStr, passengers: 1, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.5, rating: 4.9 },
         { id: "4", pickup: "Greenbelt 3", dest: "Glorietta", dist: "0.8 km", fare: "₹95", mode: "pink", time: nowStr, passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 5.0 },
       ];
-      setAvailableRides(mockAvailable);
-      setRequests(mockAvailable.slice(0, 2));
+      
+      const filteredMock = mockAvailable.filter(r => !acceptedIds.includes(r.id) && !declinedRideIds.includes(r.id));
+      setAvailableRides(filteredMock);
+      setRequests(filteredMock.slice(0, 2));
 
-      setHistory([
+      const mockHistory = [
         { id: "h1", pickup: "NAIA Terminal 3", dest: "Makati Shangri-La", dist: "8.5 km", fare: "₹450", status: "completed", date: "Today", duration: "45 min", rating: 5, tip: "₹50" },
         { id: "h2", pickup: "Ortigas Center", dest: "Eastwood City", dist: "4.2 km", fare: "₹220", status: "completed", date: "Yesterday", duration: "25 min", rating: 4, tip: "₹0" },
         { id: "h3", pickup: "BGC", dest: "Cubao", dist: "12 km", fare: "₹380", status: "failed", date: "Mar 10, 2026", duration: "10 min", rating: 0, tip: "₹0" },
-      ]);
+      ];
+      const ridesToPrependMock = acceptedRides
+        .filter(r => !mockHistory.some(h => h.id === r.id))
+        .map(r => ({
+          ...r,
+          status: "completed",
+          date: "Today",
+          duration: "Just now",
+          tip: "₹0"
+        }));
+      setHistory([...ridesToPrependMock, ...mockHistory]);
 
-      setActivity([
+      const mockActivity = [
         { type: "ride", text: "Completed ride to BGC High Street", time: "10:30 AM" },
         { type: "document", text: "Vehicle Registration approved", time: "Yesterday" },
         { type: "rating", text: "Received a 5-star rating", time: "Yesterday" },
-      ]);
+      ];
+      const activityTextsMock = mockActivity.map(a => a.text);
+      const activityToPrependMock = acceptedRides
+        .filter(r => !activityTextsMock.some(txt => txt.includes(r.dest) || (r.pickup_address && txt.includes(r.pickup_address))))
+        .map(r => ({
+          type: "ride",
+          text: `Completed ride to ${r.dest}`,
+          time: "Just now"
+        }));
+      setActivity([...activityToPrependMock, ...mockActivity]);
     } finally {
       if (!isBackground) setLoading(false);
     }
@@ -1005,6 +1107,24 @@ const DriverPortal = () => {
   const handleAcceptRide = async (id: string, dest: string) => {
     const rideToAccept = [...availableRides, ...requests].find(r => r.id === id);
     if (!rideToAccept) return;
+
+    // Save to localStorage
+    try {
+      const storedAccepted = localStorage.getItem("safego_accepted_rides");
+      const currentAccepted = storedAccepted ? JSON.parse(storedAccepted) : [];
+      if (!currentAccepted.some((r: any) => r.id === id)) {
+        currentAccepted.push(rideToAccept);
+        localStorage.setItem("safego_accepted_rides", JSON.stringify(currentAccepted));
+      }
+      const storedDeclined = localStorage.getItem("safego_declined_rides");
+      if (storedDeclined) {
+        const currentDeclined = JSON.parse(storedDeclined);
+        const filteredDeclined = currentDeclined.filter((rid: string) => rid !== id);
+        localStorage.setItem("safego_declined_rides", JSON.stringify(filteredDeclined));
+      }
+    } catch (e) {
+      console.error("Failed to save accepted ride to localStorage", e);
+    }
 
     // ─── Optimistic Update (Immediate UI Feedback) ───
     setRequests(prev => prev.filter(r => r.id !== id));
@@ -1056,6 +1176,18 @@ const DriverPortal = () => {
   const handleDeclineRide = async (id: string) => {
     const rideToDecline = [...availableRides, ...requests].find(r => r.id === id);
     if (!rideToDecline) return;
+
+    // Save to localStorage
+    try {
+      const storedDeclined = localStorage.getItem("safego_declined_rides");
+      const currentDeclined = storedDeclined ? JSON.parse(storedDeclined) : [];
+      if (!currentDeclined.includes(id)) {
+        currentDeclined.push(id);
+        localStorage.setItem("safego_declined_rides", JSON.stringify(currentDeclined));
+      }
+    } catch (e) {
+      console.error("Failed to save declined ride to localStorage", e);
+    }
 
     // ─── Optimistic Update (Immediate UI Feedback) ───
     setRequests(prev => prev.filter(r => r.id !== id));
@@ -1333,6 +1465,8 @@ const DriverPortal = () => {
               onClick={() => {
                 localStorage.removeItem("token");
                 localStorage.setItem("userRole", "");
+                localStorage.removeItem("safego_accepted_rides");
+                localStorage.removeItem("safego_declined_rides");
                 window.location.href = "/login";
               }}
               className="flex items-center justify-center gap-3 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-4 py-3.5 text-[13px] font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] active:scale-[0.97] w-full text-left"
@@ -1381,6 +1515,8 @@ const DriverPortal = () => {
               <button
                 onClick={() => {
                   localStorage.removeItem("token");
+                  localStorage.removeItem("safego_accepted_rides");
+                  localStorage.removeItem("safego_declined_rides");
                   window.location.href = "/login";
                 }}
                 className="flex items-center justify-center gap-4 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-5 py-4 text-sm font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.3)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] mt-auto text-left w-full active:scale-[0.98]"

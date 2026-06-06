@@ -61,6 +61,8 @@ export const Navbar = ({ fullWidth = true }: { fullWidth?: boolean }) => {
                 onClick={async () => {
                   await signOut(auth);
                   localStorage.removeItem("token");
+                  localStorage.removeItem("safego_accepted_rides");
+                  localStorage.removeItem("safego_declined_rides");
                   window.location.href = "/login";
                 }}
                 className="rounded-full bg-[#ef4444] hover:bg-[#dc2626] text-white px-6 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:shadow-[0_0_25px_rgba(239,68,68,0.6)] premium-shadow"
@@ -119,6 +121,8 @@ export const Navbar = ({ fullWidth = true }: { fullWidth?: boolean }) => {
                     onClick={async () => {
                       await signOut(auth);
                       localStorage.removeItem("token");
+                      localStorage.removeItem("safego_accepted_rides");
+                      localStorage.removeItem("safego_declined_rides");
                       setOpen(false);
                       window.location.href = "/login";
                     }}

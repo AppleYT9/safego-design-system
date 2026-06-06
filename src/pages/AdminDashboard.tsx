@@ -88,12 +88,12 @@ const AdminDashboard = () => {
         const start = new Date(selectedSOS.created_at).getTime();
         const now = Date.now();
         const diff = now - start;
-        
+
         if (diff < 0) {
           setSosElapsed("00:00.00");
           return;
         }
-        
+
         const m = Math.floor(diff / 60000).toString().padStart(2, '0');
         const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
         const ms = Math.floor((diff % 1000) / 10).toString().padStart(2, '0');
@@ -209,23 +209,23 @@ const AdminDashboard = () => {
   const fetchCurrentUser = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-      
+
       const res = await fetch(`${API_URL}/api/auth/me`, {
         headers: { "Authorization": `Bearer ${token}` },
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       if (res.ok) {
         const data = await res.json();
-        setCurrentUser({ 
-          role: data.role, 
-          name: data.full_name || "Admin Node" 
+        setCurrentUser({
+          role: data.role,
+          name: data.full_name || "Admin Node"
         });
       }
     } catch (err) {
@@ -580,7 +580,7 @@ const AdminDashboard = () => {
               <p className="text-[10px] font-black uppercase tracking-widest text-primary mt-1">SaaS Command Center v4.5.2</p>
             </div>
           </div>
-          <div 
+          <div
             className="flex items-center gap-6 relative"
             onMouseLeave={() => setShowNotifications(false)}
           >
@@ -1447,8 +1447,8 @@ const AdminDashboard = () => {
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {sosAlerts.length > 0 ? sosAlerts.map((sos) => (
-                          <tr 
-                            key={sos._id} 
+                          <tr
+                            key={sos._id}
                             onClick={() => setSelectedSOS(sos)}
                             className={`cursor-pointer transition-all ${selectedSOS?._id === sos._id ? 'bg-rose-50/50' : 'hover:bg-slate-50/30'}`}
                           >
@@ -1457,9 +1457,8 @@ const AdminDashboard = () => {
                               <p className="text-[10px] font-medium text-slate-400 uppercase mt-0.5">{sos.location_address}</p>
                             </td>
                             <td className="px-8 py-5">
-                              <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${
-                                sos.severity === 'critical' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white'
-                              }`}>
+                              <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${sos.severity === 'critical' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-white'
+                                }`}>
                                 {sos.severity}
                               </span>
                             </td>
