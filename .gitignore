@@ -25,3 +25,13 @@ dist-ssr
 .env
 backend/.env
 backend/firebase-service-account.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+backend/venv/
+backend/.pytest_cache/
+
+# RAG Vector Database (ChromaDB)
+backend/app/rag/vector_db/

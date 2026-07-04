@@ -66,6 +66,7 @@ const Modal = ({ isOpen, onClose, title, children }: any) => {
 };
 
 const AdminDashboard = () => {
+  // ── Main AdminDashboard state (continued) ─────────────────────────
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [stats, setStats] = useState<any>(null);
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -1705,6 +1706,8 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
+
+
         </main>
       </div>
 

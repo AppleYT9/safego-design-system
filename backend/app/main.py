@@ -55,7 +55,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS Middleware
+# CORS Middleware (trigger reload)
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=settings.allowed_origins_list,

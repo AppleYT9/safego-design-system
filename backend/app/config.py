@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     SARVAM_API_KEY: str = ""
     SARVAM_LANGUAGE: str = "en-IN"
 
+
     @property
     def allowed_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
