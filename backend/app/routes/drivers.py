@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.models import User, Driver, Vehicle, DriverDocument, Ride, RideStatus, UserRole, DocumentStatus, Rating
+from app.models import User, Driver, Vehicle, DriverDocument, Ride, RideStatus, UserRole, DocumentStatus, Rating, DriverStatus
 from app.schemas import (
     DriverRegister, DriverApplication, DriverResponse, DriverEarnings, DriverOnlineStatus,
     DriverDocumentResponse, DocumentUpload, RideResponse,

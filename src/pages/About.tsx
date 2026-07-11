@@ -113,7 +113,7 @@ const About = () => {
                 <div className="aspect-video rounded-[3rem] overflow-hidden premium-shadow relative group border border-border/50 bg-secondary/30">
                   {/* The Teamwork Vision Image */}
                   <img
-                    src="/safego_teamwork_vision.png"
+                    src="/safego_teamwork_vision.webp"
                     alt="SafeGo Team Collaboration"
                     className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                   />

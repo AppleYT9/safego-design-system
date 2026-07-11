@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "SafeGo"
     DEBUG: bool = True
     ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
-    ADMIN_EMAIL: str = "admin@safego.ph"
+    ADMIN_EMAIL: str = "madhansenthilkumar1@gmail.com"
     ADMIN_PASSWORD: str = "Admin@SafeGo2025"
     OSRM_BASE_URL: str = "http://router.project-osrm.org"
     TWILIO_ACCOUNT_SID: str = ""

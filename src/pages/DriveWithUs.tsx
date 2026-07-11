@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
@@ -12,6 +13,26 @@ import {
 
 const DriveWithUs = () => {
     const revealRef = useScrollReveal();
+    const curtainRef = useRef<HTMLDivElement>(null);
+    const [showCurtainBg, setShowCurtainBg] = useState(false);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setShowCurtainBg(entry.isIntersecting);
+            },
+            {
+                threshold: 0,
+                rootMargin: "100px 0px 100px 0px",
+            }
+        );
+
+        if (curtainRef.current) {
+            observer.observe(curtainRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
 
     const requirements = [
         {
@@ -179,11 +200,22 @@ const DriveWithUs = () => {
     ];
 
     return (
-        <div ref={revealRef}>
+        <div ref={revealRef} className="relative">
+            {/* Fixed background image for curtain reveal effect */}
+            <div 
+                className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat pointer-events-none select-none transition-opacity duration-300"
+                style={{ 
+                    backgroundImage: "url('/drivers_curtain.png')",
+                    backgroundAttachment: "fixed",
+                    opacity: showCurtainBg ? 1 : 0,
+                    visibility: showCurtainBg ? "visible" : "hidden"
+                }}
+            />
+
             <Navbar />
 
             {/* HERO SECTION - PROFESSIONAL SAAS LOOK */}
-            <section className="relative min-h-[95vh] flex items-center overflow-hidden bg-background py-20 pb-24">
+            <section className="relative min-h-[95vh] flex items-center overflow-hidden bg-background py-20 pb-24 z-10">
                 {/* Advanced Background Gradients & Grid */}
                 <div className="absolute inset-0 z-0">
                     <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
@@ -374,8 +406,26 @@ const DriveWithUs = () => {
                 </div>
             </section>
 
+            {/* SCROLL REVEAL CURTAIN SECTION */}
+            <section ref={curtainRef} className="relative h-[65vh] bg-transparent pointer-events-none select-none overflow-hidden">
+                {/* Transparent section that acts as a viewport window to the fixed background image */}
+                <div className="absolute inset-0 bg-black/45 backdrop-blur-[0.5px] flex items-center justify-center pointer-events-auto">
+                    <div className="max-w-4xl px-6 text-center scroll-reveal">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-sm mb-6 backdrop-blur-md">
+                            <Users size={14} className="text-primary-foreground" /> SAFEGO PARTNER COMMUNITY
+                        </span>
+                        <h2 className="font-display text-4xl sm:text-6xl font-black text-white leading-tight tracking-tight uppercase drop-shadow-lg">
+                            Drive with Pride. <span className="text-primary">Earn</span> with Honor.
+                        </h2>
+                        <p className="mt-4 max-w-xl mx-auto text-sm sm:text-base text-slate-200 font-bold leading-relaxed drop-shadow-md">
+                            Join a network of professional, verified partners across India who prioritize safety, comfort, and service excellence on every ride.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
             {/* WHY DRIVE WITH SAFEGO - PREMIUM GRID */}
-            <section className="relative py-28 px-4 sm:px-6 lg:px-12 bg-secondary/30">
+            <section className="py-28 px-4 sm:px-6 lg:px-12 bg-slate-50 dark:bg-zinc-900/60 relative z-10 border-t border-b border-border/10">
                 <div className="absolute inset-0 pointer-events-none opacity-[0.05]"
                     style={{ backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`, backgroundSize: '32px 32px' }}></div>
 
@@ -408,7 +458,7 @@ const DriveWithUs = () => {
             </section>
 
             {/* EQUAL OPPORTUNITY — SAAS STYLE DASHBOARD LOOK */}
-            <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background overflow-hidden">
+            <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-background overflow-hidden relative z-10">
                 <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
                     <div className="relative rounded-[3rem] border border-white/10 bg-[#0f172a] p-12 lg:p-20 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.4)] overflow-hidden">
                         {/* High-tech background elements */}
@@ -469,7 +519,7 @@ const DriveWithUs = () => {
             </section>
 
             {/* REQUIREMENTS - GRID CARDS */}
-            <section id="requirements" className="py-28 px-4 sm:px-6 lg:px-8 bg-secondary/20">
+            <section id="requirements" className="py-28 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-zinc-900/60 relative z-10 border-t border-b border-border/10">
                 <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
                     <div className="text-center scroll-reveal mb-20">
                         <span className="caption-label">The Blueprint</span>
@@ -498,7 +548,7 @@ const DriveWithUs = () => {
             </section>
 
             {/* SPECIAL MODE TRAINING */}
-            <section className="section-padding bg-background">
+            <section className="section-padding bg-white dark:bg-background relative z-10">
                 <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
                     <div className="text-center scroll-reveal">
                         <span className="caption-label">SPECIALIZED TRAINING</span>
@@ -542,7 +592,7 @@ const DriveWithUs = () => {
             </section>
 
             {/* HIRING PROCESS - SAAS VERTICAL TIMELINE */}
-            <section className="py-28 px-4 sm:px-6 lg:px-12 bg-secondary/30 relative">
+            <section className="py-28 px-4 sm:px-6 lg:px-12 bg-slate-50 dark:bg-zinc-900/60 relative z-10 border-t border-b border-border/10">
                 <div className="mx-auto w-full relative px-6 sm:px-10 lg:px-16">
                     <div className="text-center scroll-reveal mb-24">
                         <span className="caption-label">Fast Track Activation</span>
@@ -588,7 +638,7 @@ const DriveWithUs = () => {
             </section>
 
             {/* DRIVER TESTIMONIALS - MARQUEE */}
-            <section className="py-24 bg-background overflow-hidden relative">
+            <section className="py-24 bg-white dark:bg-background overflow-hidden relative z-10">
                 <div className="mx-auto w-full text-center scroll-reveal relative z-20 mb-16 px-6 sm:px-10 lg:px-16">
                     <span className="caption-label">COMMUNITY VOICES</span>
                     <h2 className="mt-4 font-display text-4xl font-bold text-foreground sm:text-5xl">Hear From Our Drivers</h2>
@@ -630,7 +680,7 @@ const DriveWithUs = () => {
             </section>
 
             {/* FAQ */}
-            <section className="section-padding section-alt">
+            <section className="section-padding bg-slate-50 dark:bg-zinc-900 relative z-10 border-t border-b border-border/10">
                 <div className="mx-auto max-w-3xl">
                     <div className="text-center scroll-reveal">
                         <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Frequently Asked Questions</h2>
@@ -679,7 +729,9 @@ const DriveWithUs = () => {
 
 
 
-            <Footer />
+            <div className="relative z-10 bg-background">
+                <Footer />
+            </div>
         </div>
     );
 };

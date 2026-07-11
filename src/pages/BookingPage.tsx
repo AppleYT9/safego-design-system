@@ -461,6 +461,7 @@ const BookingPage = () => {
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number, lng: number } | null>(null);
   const [routePolyline, setRoutePolyline] = useState<string | null>(null);
   const [isSimulatingTravel, setIsSimulatingTravel] = useState(false);
+  const [currentRideId, setCurrentRideId] = useState<string | null>(null);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -857,13 +858,6 @@ const BookingPage = () => {
   };
 
   const handleConfirmRide = async () => {
-    localStorage.setItem('safego_new_booking', JSON.stringify({
-      id: 'RID_' + Math.floor(Math.random() * 1000),
-      passenger: 'User Node #88',
-      driver: selectedDriver?.name || 'Assigned Pilot',
-      timestamp: new Date().toISOString()
-    }));
-
     const token = localStorage.getItem("token");
     if (!token) {
       alert(t('booking.login_to_book_alert', 'Please login to book a ride'));
@@ -899,6 +893,15 @@ const BookingPage = () => {
 
       if (!res.ok) throw new Error("Failed to create ride");
       const rideData = await res.json();
+      setCurrentRideId(rideData._id);
+
+      // Emit new booking event for local storage observers (Admin and Driver panels)
+      localStorage.setItem('safego_new_booking', JSON.stringify({
+        id: rideData._id,
+        passenger: 'User Node #88',
+        driver: selectedDriver?.name || 'Assigned Pilot',
+        timestamp: new Date().toISOString()
+      }));
 
       // Trigger simulation instead of immediate confirmed state
       setIsSimulatingTravel(true);
@@ -911,12 +914,46 @@ const BookingPage = () => {
     }
   };
 
-  const handleCompleteRide = () => {
+  const handleCompleteRide = async () => {
+    const token = localStorage.getItem("token");
+    if (token && currentRideId) {
+      try {
+        await fetch(`${API_URL}/api/rides/${currentRideId}/status`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ status: "completed" })
+        });
+      } catch (err) {
+        console.error("Failed to mark ride completed in database:", err);
+      }
+    }
     setFlowState("review");
     leftRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
+    const token = localStorage.getItem("token");
+    if (token && currentRideId && rating > 0) {
+      try {
+        await fetch(`${API_URL}/api/rides/${currentRideId}/rate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            score: rating,
+            comment: reviewText || "No comment provided."
+          })
+        });
+      } catch (err) {
+        console.error("Failed to submit rating to backend:", err);
+      }
+    }
+
     try {
       const saved = localStorage.getItem("safego_rides");
       if (saved) {

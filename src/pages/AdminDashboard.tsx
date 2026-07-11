@@ -224,10 +224,20 @@ const AdminDashboard = () => {
 
       if (res.ok) {
         const data = await res.json();
+        if (data.role !== "admin") {
+          toast.error("Access Denied: Admin privileges required.");
+          navigate("/home");
+          return;
+        }
         setCurrentUser({
           role: data.role,
           name: data.full_name || "Admin Node"
         });
+      } else {
+        toast.error("Session expired. Please login again.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("userRole");
+        navigate("/login");
       }
     } catch (err) {
       console.error("[ADMIN] Failed to fetch current user:", err);
@@ -508,7 +518,9 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
+    const role = localStorage.getItem("userRole");
+    if (!token || role !== "admin") {
+      toast.error("Access Denied: Admin privileges required.");
       navigate("/login");
       return;
     }

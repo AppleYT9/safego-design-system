@@ -23,10 +23,10 @@ const ServicesHeroGraphic = () => {
   const [slideshowIndex, setSlideshowIndex] = useState(0);
 
   const slideshowImages = [
-    "/taxi-yellow-1.png",
-    "/taxi-yellow-2.png",
-    "/taxi-yellow-3.png",
-    "/taxi-yellow-4.png"
+    "/taxi-yellow-1.webp",
+    "/taxi-yellow-2.webp",
+    "/taxi-yellow-3.webp",
+    "/taxi-yellow-4.webp"
   ];
 
   const ACCENT_COLOR = "#4f46e5"; // Premium Indigo
@@ -569,10 +569,10 @@ const ServicesHeroGraphic = () => {
               <div className="relative z-10 px-5 pt-12 flex flex-col text-left">
                 <div className="inline-flex items-center gap-1 bg-primary/20 backdrop-blur-md border border-white/20 px-2 py-0.5 rounded-full w-fit mb-1.5 animate-pulse">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" style={{ animationDuration: '2s' }} />
-                  <span className="text-[7.5px] text-white font-extrabold uppercase tracking-widest">LIVE IN DELHI NCR</span>
+                  <span className="text-[7.5px] text-white font-extrabold uppercase tracking-widest">LIVE IN INDIA</span>
                 </div>
                 <h3 className="text-xl font-black text-white leading-tight font-display tracking-tight drop-shadow-md">
-                  SafeGo Delhi
+                  SafeGo India
                 </h3>
                 <p className="text-[10px] font-semibold text-white/80 leading-snug drop-shadow-sm mt-0.5">
                   Your Safest Journey starts here.
@@ -886,6 +886,26 @@ const Home = () => {
   const [downloaded, setDownloaded] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
+  const curtainRef = useRef<HTMLDivElement>(null);
+  const [showCurtainBg, setShowCurtainBg] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowCurtainBg(entry.isIntersecting);
+      },
+      {
+        threshold: 0,
+        rootMargin: "100px 0px 100px 0px",
+      }
+    );
+
+    if (curtainRef.current) {
+      observer.observe(curtainRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   const revealRef = useScrollReveal([activeMode]);
   const filtered = activeMode === "all" ? modes : modes.filter((m) => m.id === activeMode);
@@ -928,11 +948,22 @@ const Home = () => {
   }, []);
 
   return (
-    <div ref={revealRef}>
+    <div ref={revealRef} className="relative">
+      {/* Fixed background image for curtain reveal effect */}
+      <div 
+        className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat pointer-events-none select-none transition-opacity duration-300"
+        style={{ 
+          backgroundImage: "url('/airport_taxis.jpg')",
+          backgroundAttachment: "fixed",
+          opacity: showCurtainBg ? 1 : 0,
+          visibility: showCurtainBg ? "visible" : "hidden"
+        }}
+      />
+
       <Navbar />
 
       {/* HERO */}
-      <section className="relative min-h-[100vh] flex items-center bg-white dark:bg-background overflow-hidden pt-20 pb-12">
+      <section className="relative min-h-[100vh] flex items-center bg-white dark:bg-background overflow-hidden pt-20 pb-12 z-10">
         {/* Subtle Background Pattern */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.02] z-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
 
@@ -988,7 +1019,7 @@ const Home = () => {
       </section>
 
       {/* RIDE MODES */}
-      <section className="section-padding section-alt">
+      <section className="section-padding bg-slate-50 dark:bg-zinc-900/60 relative z-10 border-t border-b border-border/10">
         <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
           <div className="text-center scroll-reveal">
             <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Choose Your Safe Ride</h2>
@@ -1008,7 +1039,7 @@ const Home = () => {
       </section>
 
       {/* APP SHOWCASE */}
-      <section className="section-padding bg-background">
+      <section className="section-padding bg-white dark:bg-background relative z-10">
         <div className="mx-auto flex w-full flex-col items-center gap-16 lg:flex-row px-6 sm:px-10 lg:px-16">
           {/* Left text */}
           <div className="flex-1 scroll-reveal">
@@ -1043,8 +1074,26 @@ const Home = () => {
         </div>
       </section>
 
+      {/* SCROLL REVEAL CURTAIN SECTION */}
+      <section ref={curtainRef} className="relative h-[65vh] bg-transparent pointer-events-none select-none overflow-hidden">
+        {/* Transparent section that acts as a viewport window to the fixed background image */}
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-[0.5px] flex items-center justify-center pointer-events-auto">
+          <div className="max-w-4xl px-6 text-center scroll-reveal">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-sm mb-6 backdrop-blur-md">
+              <Car size={14} className="text-primary-foreground" /> INDIA FLEET STRENGTH
+            </span>
+            <h2 className="font-display text-4xl sm:text-6xl font-black text-white leading-tight tracking-tight uppercase drop-shadow-lg">
+              India's Largest <span className="text-primary">Verified</span> Fleet
+            </h2>
+            <p className="mt-4 max-w-xl mx-auto text-sm sm:text-base text-slate-200 font-bold leading-relaxed drop-shadow-md">
+              Over 1,200+ top-rated, certified operators stationed at key hubs ready to assist you. 24/7 continuous coverage at airports, stations, and suburbs.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
-      <section id="how" className="section-padding section-alt relative overflow-hidden">
+      <section id="how" className="section-padding bg-slate-50 dark:bg-zinc-900/60 relative z-10 border-t border-b border-border/10 overflow-hidden">
         {/* Decorative background flow lines */}
         <svg className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[300px] opacity-[0.03] pointer-events-none" viewBox="0 0 1000 300" preserveAspectRatio="none">
           <path d="M0 150 C 250 50, 750 250, 1000 150" fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray="12 12" />
@@ -1096,7 +1145,7 @@ const Home = () => {
 
 
       {/* TESTIMONIALS */}
-      <section className="section-padding section-alt overflow-hidden">
+      <section className="section-padding bg-white dark:bg-background relative z-10 overflow-hidden">
         <div className="text-center scroll-reveal mb-12">
           <h2 className="font-display text-4xl font-bold text-foreground sm:text-5xl">Trusted by Thousands</h2>
           <p className="mt-3 text-lg text-muted-foreground">Real stories from real passengers</p>
@@ -1169,7 +1218,7 @@ const Home = () => {
 
 
       {/* KEY FEATURES */}
-      <section id="features" className="section-padding section-alt overflow-hidden">
+      <section id="features" className="section-padding bg-slate-50 dark:bg-zinc-900/60 relative z-10 border-t border-b border-border/10 overflow-hidden">
         <div className="mx-auto w-full px-6 sm:px-10 lg:px-16">
           <div className="scroll-reveal text-center max-w-2xl mx-auto">
             <span className="caption-label">TAKING CARE OF EVERY CLIENT</span>
@@ -1221,7 +1270,7 @@ const Home = () => {
       </section>
 
       {/* DARK CTA BANNER */}
-      <section className="px-4 py-16 sm:px-6 lg:px-8">
+      <section className="px-4 py-16 sm:px-6 lg:px-8 bg-white dark:bg-background relative z-10">
         <div className="relative mx-auto w-full overflow-hidden rounded-[2.5rem] bg-foreground px-8 py-20 text-center sm:px-16 premium-shadow">
           {/* Decorative arcs */}
           <svg className="absolute right-0 top-0 h-full w-1/2 opacity-[0.06]" viewBox="0 0 200 200">
@@ -1253,7 +1302,9 @@ const Home = () => {
         </div>
       </section>
 
-      <Footer />
+      <div className="relative z-10 bg-background">
+        <Footer />
+      </div>
     </div>
   );
 };

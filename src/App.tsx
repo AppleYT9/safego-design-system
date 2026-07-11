@@ -8,18 +8,20 @@ import { VoiceAssistantProvider } from "./contexts/VoiceAssistantContext";
 import { FloatingAssistant } from "./components/FloatingAssistant";
 import { ThemeProvider } from "./components/ThemeProvider";
 
-// Lazy-loaded pages — each page only downloads when navigated to
+// Eagerly loaded entry page for instant visual feedback on initial load
 import Splash from "./pages/Splash";
-import Home from "./pages/Home";
-import AuthPage from "./pages/AuthPage";
-import BookingPage from "./pages/BookingPage";
-import Safety from "./pages/Safety";
+
+// Lazy-loaded pages — each page only downloads when navigated to
+const Home = lazy(() => import("./pages/Home"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const BookingPage = lazy(() => import("./pages/BookingPage"));
+const Safety = lazy(() => import("./pages/Safety"));
 
 // High-latency or heavy administrative pages remain lazy-loaded
 const RideTracking = lazy(() => import("./pages/RideTracking"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DriverPortal = lazy(() => import("./pages/DriverPortal"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+import AdminDashboard from "./pages/AdminDashboard";
 const NotFound = lazy(() => import("./pages/NotFound"));
 const DriveWithUs = lazy(() => import("./pages/DriveWithUs"));
 const ApplyDriver = lazy(() => import("./pages/ApplyDriver"));
