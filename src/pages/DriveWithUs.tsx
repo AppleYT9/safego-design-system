@@ -203,7 +203,7 @@ const DriveWithUs = () => {
         <div ref={revealRef} className="relative">
             {/* Fixed background image for curtain reveal effect */}
             <div 
-                className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat pointer-events-none select-none transition-opacity duration-300"
+                className="fixed top-[80px] inset-x-0 bottom-0 -z-10 bg-cover bg-center bg-no-repeat pointer-events-none select-none transition-opacity duration-300"
                 style={{ 
                     backgroundImage: "url('/drivers_curtain.png')",
                     backgroundAttachment: "fixed",

@@ -1411,7 +1411,7 @@ const AdminDashboard = () => {
                       </div>
                       <div className="h-1.5 w-full bg-slate-50">
                         <div
-                          className="h-full bg-primary transition-all duration-[3000ms] ease-in-out relative"
+                          className="h-full bg-primary transition-all duration-3000 ease-in-out relative"
                           style={{ width: `${40 + idx * 25}%` }}
                         >
                           <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-white/20 to-transparent animate-shimmer" />

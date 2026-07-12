@@ -21,14 +21,72 @@ export const SOSButton = ({ onTrigger, contacts = [] }: SOSButtonProps) => {
 
   const handleBuzzerClick = () => {
     setOpen(true);
-    // Broadcast SOS event to the global node network (detected by Admin Dashboard)
     const currentDest = localStorage.getItem('safego_current_booking_destination') || 'Ayala Triangle, Makati';
+    const currentRideId = localStorage.getItem('safego_current_ride_id') || null;
+    const token = localStorage.getItem("token");
+    const API_URL = import.meta.env.VITE_API_URL || "";
+
+    const triggerBackendSOS = async (latitude: number, longitude: number) => {
+      if (!token) return;
+      try {
+        const response = await fetch(`${API_URL}/api/safety/sos`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            ride_id: currentRideId,
+            latitude: latitude,
+            longitude: longitude,
+            location_address: currentDest,
+            severity: "critical"
+          })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          // Broadcast SOS event to the global node network (detected by Admin Dashboard)
+          localStorage.setItem('safego_new_sos', JSON.stringify({
+            timestamp: new Date().toISOString(),
+            userId: data.user_id,
+            id: data._id || data.id || ('SOS_' + Math.floor(Math.random() * 1000)),
+            destination: currentDest,
+            latitude: latitude,
+            longitude: longitude
+          }));
+          console.log("SOS Alert successfully stored in DB:", data);
+        } else {
+          console.error("Failed to store SOS in DB:", await response.text());
+        }
+      } catch (err) {
+        console.error("Error storing SOS in DB:", err);
+      }
+    };
+
+    // Get current location and trigger backend SOS
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          triggerBackendSOS(pos.coords.latitude, pos.coords.longitude);
+        },
+        (err) => {
+          console.warn("Geolocation failed/denied. Storing SOS with fallback coordinates.", err);
+          triggerBackendSOS(12.9716, 77.5946); // Default fallback coordinates
+        },
+        { timeout: 5000 }
+      );
+    } else {
+      triggerBackendSOS(12.9716, 77.5946);
+    }
+
+    // Set fallback local storage immediately for real-time reactivity
     localStorage.setItem('safego_new_sos', JSON.stringify({
       timestamp: new Date().toISOString(),
       userId: 'USER_882',
       id: 'SOS_' + Math.floor(Math.random() * 1000),
       destination: currentDest
     }));
+
     if (onTrigger) {
       onTrigger();
     }

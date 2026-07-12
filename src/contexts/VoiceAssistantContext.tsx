@@ -18,6 +18,8 @@ interface VoiceAssistantContextType {
   stopListening: () => void;
   speak: (text: string) => void;
   setVoiceEnabled: (enabled: boolean) => void;
+  shareCurrentLocation?: () => void;
+  triggerSOS?: () => void;
 }
 
 const VoiceAssistantContext = createContext<VoiceAssistantContextType | undefined>(undefined);
@@ -318,6 +320,7 @@ export const VoiceAssistantProvider: React.FC<{ children: ReactNode }> = ({ chil
         audioLevel: 0,
         transcript, lastCommand, lastFeedback,
         voiceEnabled, startListening, stopListening, speak, setVoiceEnabled,
+        shareCurrentLocation, triggerSOS,
       }}
     >
       {children}

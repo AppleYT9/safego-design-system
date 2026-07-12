@@ -160,7 +160,7 @@ const AuthPage = () => {
       {/* Left Panel - Premium Brand Image & Overlay */}
       <div 
         className="hidden md:flex md:w-1/2 relative overflow-hidden bg-cover bg-center select-none"
-        style={{ backgroundImage: "url('/premium_taxi_login.png')" }}
+        style={{ backgroundImage: "url('/safego_taxis.jpg')" }}
       >
         {/* Dark overlay for rich contrast */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/30" />

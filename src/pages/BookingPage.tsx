@@ -194,8 +194,8 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
         const fromQuery = encodeURIComponent(triggerRoute.from);
         const toQuery = encodeURIComponent(triggerRoute.to);
         const [resfrom, resto] = await Promise.all([
-          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${fromQuery}&limit=1&countrycodes=in`),
-          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${toQuery}&limit=1&countrycodes=in`)
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${fromQuery}&limit=1`),
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${toQuery}&limit=1`)
         ]);
         const dataFrom = await resfrom.json();
         const dataTo = await resto.json();
@@ -593,7 +593,7 @@ const BookingPage = () => {
     setRouteFound(false);
     pickupTimeoutRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=8&lat=20.5937&lon=78.9629&lang=en&countrycode=in`);
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=8&lang=en`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.features && data.features.length > 0) {
@@ -624,7 +624,7 @@ const BookingPage = () => {
       }
 
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=8&addressdetails=1&countrycodes=in`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=8&addressdetails=1`);
         const data = await res.json();
         setPickupSuggestions(data);
       } catch (e) {
@@ -652,7 +652,7 @@ const BookingPage = () => {
     setRouteFound(false);
     destTimeoutRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=8&lat=20.5937&lon=78.9629&lang=en&countrycode=in`);
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(val)}&limit=8&lang=en`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.features && data.features.length > 0) {
@@ -683,7 +683,7 @@ const BookingPage = () => {
       }
 
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=8&addressdetails=1&countrycodes=in`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=8&addressdetails=1`);
         const data = await res.json();
         setDestSuggestions(data);
       } catch (e) {
@@ -752,7 +752,7 @@ const BookingPage = () => {
       // Automatically resolve coordinates if user typed and hit Enter without selecting
       if (!finalPickupCoords) {
         try {
-          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(pickup)}&limit=1&lat=20.5937&lon=78.9629&lang=en&countrycode=in`);
+          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(pickup)}&limit=1&lang=en`);
           if (res.ok) {
             const data = await res.json();
             if (data && data.features && data.features.length > 0) {
@@ -766,7 +766,7 @@ const BookingPage = () => {
 
         if (!finalPickupCoords) {
           try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup)}&limit=1&countrycodes=in`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup)}&limit=1`);
             const data = await res.json();
             if (data && data.length > 0) finalPickupCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
           } catch (e) {
@@ -777,7 +777,7 @@ const BookingPage = () => {
       
       if (!finalDestCoords) {
         try {
-          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(destination)}&limit=1&lat=20.5937&lon=78.9629&lang=en&countrycode=in`);
+          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(destination)}&limit=1&lang=en`);
           if (res.ok) {
             const data = await res.json();
             if (data && data.features && data.features.length > 0) {
@@ -791,7 +791,7 @@ const BookingPage = () => {
 
         if (!finalDestCoords) {
           try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1&countrycodes=in`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1`);
             const data = await res.json();
             if (data && data.length > 0) finalDestCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
           } catch (e) {
@@ -894,6 +894,7 @@ const BookingPage = () => {
       if (!res.ok) throw new Error("Failed to create ride");
       const rideData = await res.json();
       setCurrentRideId(rideData._id);
+      localStorage.setItem('safego_current_ride_id', rideData._id);
 
       // Emit new booking event for local storage observers (Admin and Driver panels)
       localStorage.setItem('safego_new_booking', JSON.stringify({
@@ -971,6 +972,7 @@ const BookingPage = () => {
       }
     } catch (_) { }
 
+    localStorage.removeItem('safego_current_ride_id');
     setFlowState("booking");
     setPickup("");
     setDestination("");
