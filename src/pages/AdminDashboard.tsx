@@ -636,7 +636,18 @@ const AdminDashboard = () => {
             <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary"><UserCheck size={20} /></div>
             <div><p className="text-xs font-black text-slate-900">{currentUser?.name || "Initializing..."}</p><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{currentUser?.role}</p></div>
           </div>
-          <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("userRole"); localStorage.removeItem("safego_admin_stats"); localStorage.removeItem("safego_admin_users"); localStorage.removeItem("safego_admin_drivers"); localStorage.removeItem("safego_admin_rides"); localStorage.removeItem("safego_admin_sos"); navigate("/login"); }} className="w-full flex items-center gap-4 px-6 py-4 rounded-[1.25rem] text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all text-sm font-bold border border-transparent hover:border-red-100"><LogOut size={20} /> Terminate Session</button>
+           <button onClick={() => {
+            const keysToRemove = [
+              "token", "userRole", "safego_passenger_rides", 
+              "safego_driver_profile", "safego_driver_requests", "safego_driver_available", 
+              "safego_driver_history", "safego_driver_activity", "safego_accepted_rides", 
+              "safego_declined_rides", "safego_current_ride_id", "safego_new_booking", 
+              "safego_admin_stats", "safego_admin_users", "safego_admin_drivers", 
+              "safego_admin_rides", "safego_admin_sos"
+            ];
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+            navigate("/login");
+          }} className="w-full flex items-center gap-4 px-6 py-4 rounded-[1.25rem] text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all text-sm font-bold border border-transparent hover:border-red-100"><LogOut size={20} /> Terminate Session</button>
         </div>
       </aside>
 

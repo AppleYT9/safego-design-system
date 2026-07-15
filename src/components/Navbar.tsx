@@ -60,9 +60,15 @@ export const Navbar = ({ fullWidth = true }: { fullWidth?: boolean }) => {
               <button
                 onClick={async () => {
                   await signOut(auth);
-                  localStorage.removeItem("token");
-                  localStorage.removeItem("safego_accepted_rides");
-                  localStorage.removeItem("safego_declined_rides");
+                  const keysToRemove = [
+                    "token", "userRole", "safego_passenger_rides", 
+                    "safego_driver_profile", "safego_driver_requests", "safego_driver_available", 
+                    "safego_driver_history", "safego_driver_activity", "safego_accepted_rides", 
+                    "safego_declined_rides", "safego_current_ride_id", "safego_new_booking", 
+                    "safego_admin_stats", "safego_admin_users", "safego_admin_drivers", 
+                    "safego_admin_rides", "safego_admin_sos"
+                  ];
+                  keysToRemove.forEach(k => localStorage.removeItem(k));
                   window.location.href = "/login";
                 }}
                 className="rounded-full bg-[#ef4444] hover:bg-[#dc2626] text-white px-6 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:shadow-[0_0_25px_rgba(239,68,68,0.6)] premium-shadow"
@@ -120,9 +126,15 @@ export const Navbar = ({ fullWidth = true }: { fullWidth?: boolean }) => {
                   <button
                     onClick={async () => {
                       await signOut(auth);
-                      localStorage.removeItem("token");
-                      localStorage.removeItem("safego_accepted_rides");
-                      localStorage.removeItem("safego_declined_rides");
+                      const keysToRemove = [
+                        "token", "userRole", "safego_passenger_rides", 
+                        "safego_driver_profile", "safego_driver_requests", "safego_driver_available", 
+                        "safego_driver_history", "safego_driver_activity", "safego_accepted_rides", 
+                        "safego_declined_rides", "safego_current_ride_id", "safego_new_booking", 
+                        "safego_admin_stats", "safego_admin_users", "safego_admin_drivers", 
+                        "safego_admin_rides", "safego_admin_sos"
+                      ];
+                      keysToRemove.forEach(k => localStorage.removeItem(k));
                       setOpen(false);
                       window.location.href = "/login";
                     }}
