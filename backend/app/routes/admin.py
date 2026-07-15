@@ -239,8 +239,8 @@ async def review_document(driver_id: str, doc_id: str, payload: DocumentReview, 
 
 @router.get("/rides/live", response_model=List[RideResponse])
 async def get_live_rides(admin: User = Depends(get_current_admin)):
-    # Return all rides in the system so completed ones show up as well during demo
-    rides = await Ride.find().sort(-Ride.created_at).to_list()
+    # Return last 15 rides in the system so completed ones show up as well during demo
+    rides = await Ride.find().sort(-Ride.created_at).limit(15).to_list()
     return [_ride_dict(r) for r in rides]
 
 

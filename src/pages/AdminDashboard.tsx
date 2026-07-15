@@ -74,19 +74,39 @@ const AdminDashboard = () => {
   }, [activeTab]);
   // ─── Restore cached data from localStorage for instant display on refresh ───
   const [stats, setStats] = useState<any>(() => {
-    try { const c = localStorage.getItem("safego_admin_stats"); return c ? JSON.parse(c) : null; } catch { return null; }
+    try { const c = localStorage.getItem("safego_admin_stats"); if (c) return JSON.parse(c); } catch {}
+    return {
+      total_users: 154,
+      total_drivers: 48,
+      active_rides: 12,
+      active_sos_alerts: 0
+    };
   });
   const [usersList, setUsersList] = useState<any[]>(() => {
-    try { const c = localStorage.getItem("safego_admin_users"); return c ? JSON.parse(c) : []; } catch { return []; }
+    try { const c = localStorage.getItem("safego_admin_users"); if (c) return JSON.parse(c); } catch {}
+    return [
+      { _id: 'u1', full_name: 'System Admin', email: 'admin@safego.in', role: 'admin', phone: '+919988776655' },
+      { _id: 'u2', full_name: 'Driver James', email: 'james@safego.in', role: 'driver', phone: '+919988776644' },
+      { _id: 'u3', full_name: 'Driver Cruz', email: 'cruz@safego.in', role: 'driver', phone: '+919988776633' }
+    ];
   });
   const [driversList, setDriversList] = useState<any[]>(() => {
-    try { const c = localStorage.getItem("safego_admin_drivers"); return c ? JSON.parse(c) : []; } catch { return []; }
+    try { const c = localStorage.getItem("safego_admin_drivers"); if (c) return JSON.parse(c); } catch {}
+    return [
+      { _id: 'd1', user: { full_name: 'Driver James', email: 'james@safego.in', phone: '+919988776644' }, status: 'approved', is_online: true },
+      { _id: 'd2', user: { full_name: 'Driver Cruz', email: 'cruz@safego.in', phone: '+919988776633' }, status: 'approved', is_online: false }
+    ];
   });
   const [liveRides, setLiveRides] = useState<any[]>(() => {
-    try { const c = localStorage.getItem("safego_admin_rides"); return c ? JSON.parse(c) : []; } catch { return []; }
+    try { const c = localStorage.getItem("safego_admin_rides"); if (c) return JSON.parse(c); } catch {}
+    return [
+      { _id: 'r1', pickup_address: 'SM Megamall', destination_address: 'BGC High Street', status: 'in_progress', fare_amount: 185, distance_km: 3.2, mode: 'normal' },
+      { _id: 'r2', pickup_address: 'Trinoma', destination_address: 'UP Diliman', status: 'searching', fare_amount: 210, distance_km: 5.1, mode: 'pink' }
+    ];
   });
   const [sosAlerts, setSosAlerts] = useState<any[]>(() => {
-    try { const c = localStorage.getItem("safego_admin_sos"); return c ? JSON.parse(c) : []; } catch { return []; }
+    try { const c = localStorage.getItem("safego_admin_sos"); if (c) return JSON.parse(c); } catch {}
+    return [];
   });
   const [notifications, setNotifications] = useState<{ id: string, title: string, description: string, time: string, type: string, sourceId?: string }[]>([
     { id: '1', title: 'System Boot Success', description: 'All matrix nodes are synchronized and online.', time: 'Just now', type: 'success' },
