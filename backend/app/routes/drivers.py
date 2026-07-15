@@ -86,8 +86,13 @@ def _doc_dict(doc: DriverDocument) -> dict:
     }
 
 
-async def _ride_dict(ride: Ride) -> dict:
-    passenger = await User.get(ride.passenger_id)
+async def _ride_dict(ride: Ride, passenger_map: Optional[dict] = None) -> dict:
+    passenger = None
+    if passenger_map and ride.passenger_id in passenger_map:
+        passenger = passenger_map[ride.passenger_id]
+    else:
+        passenger = await User.get(ride.passenger_id)
+        
     return {
         "_id": str(ride.id), "passenger_id": str(ride.passenger_id),
         "passenger_name": passenger.full_name if passenger else "Guest User",
@@ -231,7 +236,13 @@ async def get_available_rides(current_user: User = Depends(get_current_driver)):
     driver = await _get_or_create_driver(current_user.id)
     # Return all rides in the system so that any driver can manually present requests during the demo
     rides = await Ride.find().sort(-Ride.created_at).to_list()
-    return [await _ride_dict(r) for r in rides]
+    
+    # Batch load passengers to prevent N+1 query timeout
+    passenger_ids = list(set(r.passenger_id for r in rides if r.passenger_id))
+    passengers = await User.find({"_id": {"$in": passenger_ids}}).to_list() if passenger_ids else []
+    passenger_map = {p.id: p for p in passengers}
+    
+    return [await _ride_dict(r, passenger_map) for r in rides]
 
 
 @router.get("/me/history", response_model=List[RideResponse])
@@ -243,7 +254,13 @@ async def get_driver_history(current_user: User = Depends(get_current_driver)):
     """
     driver = await _get_or_create_driver(current_user.id)
     rides = await Ride.find(Ride.driver_id == driver.id).sort(-Ride.created_at).to_list()
-    return [await _ride_dict(r) for r in rides]
+    
+    # Batch load passengers to prevent N+1 query timeout
+    passenger_ids = list(set(r.passenger_id for r in rides if r.passenger_id))
+    passengers = await User.find({"_id": {"$in": passenger_ids}}).to_list() if passenger_ids else []
+    passenger_map = {p.id: p for p in passengers}
+    
+    return [await _ride_dict(r, passenger_map) for r in rides]
 
 
 @router.post("/me/rides/{ride_id}/accept", response_model=RideResponse)
