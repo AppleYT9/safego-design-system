@@ -816,12 +816,12 @@ const DriverPortal = () => {
       if (c) return JSON.parse(c);
     } catch {}
     return {
-      user: { full_name: "James Dela Cruz" },
-      average_rating: 4.8,
-      today_rides: 12,
-      today_earnings: 2450,
-      acceptance_rate: 98,
-      total_rides: 1240,
+      user: { full_name: "Loading Pilot..." },
+      average_rating: 0.0,
+      today_rides: 0,
+      today_earnings: 0,
+      acceptance_rate: 100,
+      total_rides: 0,
     };
   });
   const [loading, setLoading] = useState(false);
@@ -831,41 +831,28 @@ const DriverPortal = () => {
       const c = localStorage.getItem("safego_driver_requests");
       if (c) return JSON.parse(c);
     } catch {}
-    return [
-      { id: "1", pickup: "SM Megamall, Mandaluyong", dest: "BGC High Street, Taguig", dist: "3.2 km", fare: "₹185", mode: "pink", time: "10:30 AM", passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 4.8 },
-      { id: "2", pickup: "Trinoma, Quezon City", dest: "UP Diliman", dist: "5.1 km", fare: "₹210", mode: "normal", time: "10:35 AM", passengers: 2, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.0, rating: 4.7 }
-    ];
+    return [];
   });
   const [activity, setActivity] = useState<any[]>(() => {
     try {
       const c = localStorage.getItem("safego_driver_activity");
       if (c) return JSON.parse(c);
     } catch {}
-    return [
-      { type: "ride", text: "Completed ride to BGC High Street", time: "10:30 AM" },
-      { type: "document", text: "Vehicle Registration approved", time: "Yesterday" },
-      { type: "rating", text: "Received a 5-star rating", time: "Yesterday" }
-    ];
+    return [];
   });
   const [availableRides, setAvailableRides] = useState<any[]>(() => {
     try {
       const c = localStorage.getItem("safego_driver_available");
       if (c) return JSON.parse(c);
     } catch {}
-    return [
-      { id: "1", pickup: "SM Megamall, Mandaluyong", dest: "BGC High Street, Taguig", dist: "3.2 km", fare: "₹185", mode: "pink", time: "10:30 AM", passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 4.8 },
-      { id: "2", pickup: "Trinoma, Quezon City", dest: "UP Diliman", dist: "5.1 km", fare: "₹210", mode: "normal", time: "10:35 AM", passengers: 2, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.0, rating: 4.7 }
-    ];
+    return [];
   });
   const [history, setHistory] = useState<any[]>(() => {
     try {
       const c = localStorage.getItem("safego_driver_history");
       if (c) return JSON.parse(c);
     } catch {}
-    return [
-      { id: "h1", pickup: "NAIA Terminal 3", dest: "Makati Shangri-La", dist: "8.5 km", fare: "₹450", status: "completed", date: "Today", duration: "45 min", rating: 5, tip: "₹50" },
-      { id: "h2", pickup: "Ortigas Center", dest: "Eastwood City", dist: "4.2 km", fare: "₹220", status: "completed", date: "Yesterday", duration: "25 min", rating: 4, tip: "₹0" }
-    ];
+    return [];
   });
   const [docList, setDocList] = useState([
     { name: "National ID", status: "Verified", icon: Check, color: "text-emerald-600", bg: "bg-emerald-100", expiry: "No Expiry", uploaded: "Jan 15, 2026", url: "https://images.unsplash.com/photo-1544383335-248386af915e?q=80&w=2000&auto=format&fit=crop" },
@@ -1086,87 +1073,12 @@ const DriverPortal = () => {
       }
       // Silently fallback to mock data if backend is unreachable during local dev
 
-      // Get local storage values for fallback
-      const storedAccepted = localStorage.getItem("safego_accepted_rides");
-      const acceptedRides: any[] = storedAccepted ? JSON.parse(storedAccepted) : [];
-      const acceptedIds = acceptedRides.map(r => r.id);
-
-      const storedDeclined = localStorage.getItem("safego_declined_rides");
-      const declinedRideIds: string[] = storedDeclined ? JSON.parse(storedDeclined) : [];
-
-      // Calculate stats for fallback
-      let additionalRidesCount = 0;
-      let additionalEarnings = 0;
-      acceptedRides.forEach(r => {
-        additionalRidesCount += 1;
-        const fareValue = parseInt((r.fare || "0").toString().replace("₹", "").replace(",", "")) || 0;
-        additionalEarnings += fareValue;
-      });
-
-      // Static mock data fallback with local overrides
-      const fallbackDriver = {
-        user: { full_name: "James Dela Cruz" },
-        average_rating: 4.8,
-        today_rides: 12 + additionalRidesCount,
-        today_earnings: 2450 + additionalEarnings,
-        acceptance_rate: 98,
-        total_rides: 1240 + additionalRidesCount,
-      };
-      setDriver(fallbackDriver);
-
-      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const mockAvailable = [
-        { id: "1", pickup: "SM Megamall, Mandaluyong", dest: "BGC High Street, Taguig", dist: "3.2 km", fare: "₹185", mode: "pink", time: nowStr, passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 4.8 },
-        { id: "2", pickup: "Trinoma, Quezon City", dest: "UP Diliman", dist: "5.1 km", fare: "₹210", mode: "normal", time: nowStr, passengers: 2, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.0, rating: 4.7 },
-        { id: "3", pickup: "Makati Avenue", dest: "Ayala Triangle", dist: "1.2 km", fare: "₹120", mode: "normal", time: nowStr, passengers: 1, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.5, rating: 4.9 },
-        { id: "4", pickup: "Greenbelt 3", dest: "Glorietta", dist: "0.8 km", fare: "₹95", mode: "pink", time: nowStr, passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 5.0 },
-      ];
-      
-      const filteredMock = mockAvailable.filter(r => !acceptedIds.includes(r.id) && !declinedRideIds.includes(r.id));
-      setAvailableRides(filteredMock);
-      setRequests(filteredMock.slice(0, 2));
-
-      const mockHistory = [
-        { id: "h1", pickup: "NAIA Terminal 3", dest: "Makati Shangri-La", dist: "8.5 km", fare: "₹450", status: "completed", date: "Today", duration: "45 min", rating: 5, tip: "₹50" },
-        { id: "h2", pickup: "Ortigas Center", dest: "Eastwood City", dist: "4.2 km", fare: "₹220", status: "completed", date: "Yesterday", duration: "25 min", rating: 4, tip: "₹0" },
-        { id: "h3", pickup: "BGC", dest: "Cubao", dist: "12 km", fare: "₹380", status: "failed", date: "Mar 10, 2026", duration: "10 min", rating: 0, tip: "₹0" },
-      ];
-      const ridesToPrependMock = acceptedRides
-        .filter(r => !mockHistory.some(h => h.id === r.id))
-        .map(r => ({
-          ...r,
-          status: "completed",
-          date: "Today",
-          duration: "Just now",
-          tip: "₹0"
-        }));
-      const updatedHistory = [...ridesToPrependMock, ...mockHistory];
-      setHistory(updatedHistory);
-
-      const mockActivity = [
-        { type: "ride", text: "Completed ride to BGC High Street", time: "10:30 AM" },
-        { type: "document", text: "Vehicle Registration approved", time: "Yesterday" },
-        { type: "rating", text: "Received a 5-star rating", time: "Yesterday" },
-      ];
-      const activityTextsMock = mockActivity.map(a => a.text);
-      const activityToPrependMock = acceptedRides
-        .filter(r => !activityTextsMock.some(txt => txt.includes(r.dest) || (r.pickup_address && txt.includes(r.pickup_address))))
-        .map(r => ({
-          type: "ride",
-          text: `Completed ride to ${r.dest}`,
-          time: "Just now"
-        }));
-      const updatedActivity = [...activityToPrependMock, ...mockActivity];
-      setActivity(updatedActivity);
-
-      try {
-        localStorage.setItem("safego_driver_profile", JSON.stringify(fallbackDriver));
-        localStorage.setItem("safego_driver_requests", JSON.stringify(filteredMock.slice(0, 4)));
-        localStorage.setItem("safego_driver_available", JSON.stringify(filteredMock));
-        localStorage.setItem("safego_driver_history", JSON.stringify(updatedHistory));
-        localStorage.setItem("safego_driver_activity", JSON.stringify(updatedActivity));
-      } catch (e) {
-        console.warn("Failed to cache driver mock data", e);
+      console.error("Failed to fetch driver data:", err);
+      // Auto-retry after 2 seconds if the profile hasn't successfully loaded yet
+      if (driver?.user?.full_name === "Loading Pilot...") {
+        setTimeout(() => {
+          fetchDriverData();
+        }, 2000);
       }
     } finally {
       if (!isBackground) setLoading(false);
