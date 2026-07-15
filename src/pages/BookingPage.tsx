@@ -853,57 +853,110 @@ const BookingPage = () => {
     setTriggerRoute({ from: pickup, to: destination });
 
     try {
+      const LOCAL_GEOCODE_MAP: Record<string, { lat: number, lng: number }> = {
+        "delhi": { lat: 28.6139, lng: 77.2090 },
+        "namakkal": { lat: 11.2189, lng: 78.1672 },
+        "waghodia": { lat: 22.3023, lng: 73.3762 },
+        "vadodara": { lat: 22.3072, lng: 73.1812 },
+        "nadiad": { lat: 22.6916, lng: 72.8634 },
+        "hsr": { lat: 12.9141, lng: 77.6411 },
+        "indiranagar": { lat: 12.9719, lng: 77.6412 },
+        "whitefield": { lat: 12.9698, lng: 77.7500 },
+        "forum": { lat: 12.9345, lng: 77.6113 },
+        "megamall": { lat: 14.5851, lng: 121.0568 },
+        "bgc": { lat: 14.5409, lng: 121.0503 },
+        "makati": { lat: 14.5547, lng: 121.0244 },
+        "trinoma": { lat: 14.6534, lng: 121.0351 },
+        "diliman": { lat: 14.6549, lng: 121.0645 },
+      };
+
+      const resolveLocalCoords = (query: string): { lat: number, lng: number } | null => {
+        const q = query.toLowerCase();
+        for (const [key, coords] of Object.entries(LOCAL_GEOCODE_MAP)) {
+          if (q.includes(key)) return coords;
+        }
+        return null;
+      };
+
       let finalPickupCoords = pickupCoords;
       let finalDestCoords = destinationCoords;
 
       // Automatically resolve coordinates if user typed and hit Enter without selecting
       if (!finalPickupCoords) {
-        try {
-          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(pickup)}&limit=1&lang=en`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.features && data.features.length > 0) {
-              const coords = data.features[0].geometry.coordinates;
-              finalPickupCoords = { lat: coords[1], lng: coords[0] };
+        finalPickupCoords = resolveLocalCoords(pickup);
+        
+        if (!finalPickupCoords) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 800);
+            const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(pickup)}&limit=1&lang=en`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.features && data.features.length > 0) {
+                const coords = data.features[0].geometry.coordinates;
+                finalPickupCoords = { lat: coords[1], lng: coords[0] };
+              }
             }
+          } catch (e) {
+            console.warn("Photon lookup failed:", e);
           }
-        } catch (e) {
-          console.warn("Photon lookup failed, falling back to Nominatim:", e);
         }
 
         if (!finalPickupCoords) {
           try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup)}&limit=1`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 800);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup)}&limit=1`, { signal: controller.signal });
+            clearTimeout(timeoutId);
             const data = await res.json();
             if (data && data.length > 0) finalPickupCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
           } catch (e) {
             console.error("Nominatim lookup failed:", e);
           }
         }
+
+        if (!finalPickupCoords) {
+          finalPickupCoords = { lat: 22.3023, lng: 73.3762 }; // Waghodia default fallback
+        }
       }
       
       if (!finalDestCoords) {
-        try {
-          const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(destination)}&limit=1&lang=en`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.features && data.features.length > 0) {
-              const coords = data.features[0].geometry.coordinates;
-              finalDestCoords = { lat: coords[1], lng: coords[0] };
+        finalDestCoords = resolveLocalCoords(destination);
+
+        if (!finalDestCoords) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 800);
+            const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(destination)}&limit=1&lang=en`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.features && data.features.length > 0) {
+                const coords = data.features[0].geometry.coordinates;
+                finalDestCoords = { lat: coords[1], lng: coords[0] };
+              }
             }
+          } catch (e) {
+            console.warn("Photon lookup failed:", e);
           }
-        } catch (e) {
-          console.warn("Photon lookup failed, falling back to Nominatim:", e);
         }
 
         if (!finalDestCoords) {
           try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 800);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1`, { signal: controller.signal });
+            clearTimeout(timeoutId);
             const data = await res.json();
             if (data && data.length > 0) finalDestCoords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
           } catch (e) {
             console.error("Nominatim lookup failed:", e);
           }
+        }
+
+        if (!finalDestCoords) {
+          finalDestCoords = { lat: 28.6139, lng: 77.2090 }; // Delhi default fallback
         }
       }
 
