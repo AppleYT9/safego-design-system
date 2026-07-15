@@ -8,6 +8,7 @@ This document describes the end-to-end logic, optimizations, and flows implement
 - **Flow**: A passenger books a ride (e.g., to Namakkal) which is saved in the backend MongoDB database.
 - **Cache Persistence**: Fetched rides are cached in `localStorage` under the key `safego_passenger_rides`. On page refreshes, the passenger dashboard loads this cache immediately, preventing blank lists while the API completes.
 - **Status Badges**: Added lowercase fallback support for all ride statuses (`completed`, `cancelled`, `in_progress`, `driver_arriving`, `matched`, `searching`) mapped to appropriate visual color indicators.
+- **Clean Immersive Loading (No Zero Flash)**: To prevent a flash of empty layouts or zero details on first load, the passenger portal renders a premium, full-screen loading screen (`Synchronizing SafeGo User Node...`) on mount until the backend profile fetch completes, ensuring the dashboard presents real data directly.
 
 ---
 
@@ -28,6 +29,7 @@ This document describes the end-to-end logic, optimizations, and flows implement
 - **Dynamic Metrics**: The Admin Hub is configured to poll `/api/admin/stats` periodically, dynamically updating the active driver, pending application, active ride, and SOS counters.
 - **Status Badges**: Hardcoded badges are replaced with dynamic statuses and colors indicating the real live state of operations.
 - **15-Ride Query Limit**: The live rides queue `/api/admin/rides/live` is limited to the last **15 rides** sorted by creation time descending. This guarantees that the most recent bookings are instantly visible at the top.
+- **Dynamic ETA Travel Times**: The ride cards in the live rides Mission Control panel calculate the ETA dynamically using the ride's `duration_minutes` or estimated from its `distance_km` (approx. 1.5 minutes per km), instead of showing static placeholder timings.
 - **Clean Immersive Loading (No Mock Flash)**: To prevent mock data flash or blank statistics screens, the admin dashboard renders a full-screen loading screen (`Accessing SafeGo Mission Control...`) on mount until the system stats are fetched, ensuring the dashboard presents original database data directly.
 - **Performance Optimization (N+1 Query Resolution)**:
   - Previously, loading the admin user list endpoint `/api/admin/users` queried the database for driver profiles sequentially for each driver, causing a bottleneck of up to 100 sequential queries per page.
