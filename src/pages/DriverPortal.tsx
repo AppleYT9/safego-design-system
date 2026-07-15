@@ -882,7 +882,7 @@ const DriverPortal = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   const handleViewDoc = (doc: any) => {
     setSelectedDoc(doc);
