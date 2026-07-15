@@ -130,6 +130,59 @@ async def get_my_rides(current_user: User = Depends(get_current_user)):
         result.append(_ride_dict(ride, db))
     return result
 
+@router.post("/simulate-completed", response_model=RideResponse)
+async def simulate_completed_ride(current_user: User = Depends(get_current_user)):
+    import random
+    from datetime import datetime, timezone
+    from app.models import Driver, DriverStatus, User, Ride, RideStatus, RideMode
+    
+    # 1. Find a random approved driver
+    driver = await Driver.find_one(Driver.status == DriverStatus.approved)
+    if not driver:
+        # Fallback to creating a mock driver profile if none exists
+        driver = Driver(
+            user_id=current_user.id,
+            license_number="SIM-LICENSE-123",
+            status=DriverStatus.approved,
+            is_online=True,
+            certified_modes=["normal", "pink", "pwd", "premium", "elderly"]
+        )
+        await driver.insert()
+        
+    destinations = [
+        {"pickup": "SH158, Waghodia Road, Vadodara", "dest": "Nadiad, Gujarat, India", "dist": 45.5},
+        {"pickup": "Vadodara Station, Vadodara", "dest": "Delhi, India", "dist": 1000.2},
+        {"pickup": "SH158, Waghodia Road, Vadodara", "dest": "Namakkal, Tamil Nadu, India", "dist": 1300.5},
+        {"pickup": "Delhi Airport, Delhi", "dest": "Kerala, India", "dist": 2000.0}
+    ]
+    route = random.choice(destinations)
+    
+    ride = Ride(
+        passenger_id=current_user.id,
+        driver_id=driver.id,
+        mode=RideMode.normal,
+        status=RideStatus.completed,
+        pickup_address=route["pickup"],
+        destination_address=route["dest"],
+        distance_km=route["dist"],
+        duration_minutes=round(route["dist"] * 1.2, 1),
+        fare_amount=round(50 + route["dist"] * 12.5, 2),
+        safety_score=random.randint(90, 98),
+        completed_at=datetime.now(timezone.utc),
+        passenger_count=1
+    )
+    await ride.insert()
+    
+    # Increment driver stats
+    driver.total_rides = (driver.total_rides or 0) + 1
+    driver.today_rides = (driver.today_rides or 0) + 1
+    driver.today_earnings = (driver.today_earnings or 0.0) + ride.fare_amount
+    await driver.save()
+    
+    db_brief = await _load_driver_brief(ride.driver_id)
+    return _ride_dict(ride, db_brief)
+
+
 
 @router.get("/{ride_id}", response_model=RideResponse)
 async def get_ride(ride_id: str, current_user: User = Depends(get_current_user)):
