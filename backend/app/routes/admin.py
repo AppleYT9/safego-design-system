@@ -52,7 +52,9 @@ def _format_dt(dt) -> Optional[str]:
 
 def _ride_dict(r: Ride) -> dict:
     return {"_id": str(r.id), "passenger_id": str(r.passenger_id), "driver_id": str(r.driver_id) if r.driver_id else None,
-            "mode": r.mode.value, "status": r.status.value, "pickup_address": r.pickup_address,
+            "mode": r.mode.value if hasattr(r.mode, "value") else r.mode,
+            "status": r.status.value if hasattr(r.status, "value") else r.status,
+            "pickup_address": r.pickup_address,
             "pickup_latitude": r.pickup_latitude, "pickup_longitude": r.pickup_longitude,
             "destination_address": r.destination_address, "destination_latitude": r.destination_latitude,
             "destination_longitude": r.destination_longitude, "distance_km": r.distance_km,
