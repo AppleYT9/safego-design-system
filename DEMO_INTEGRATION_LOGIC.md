@@ -27,6 +27,8 @@ This document describes the end-to-end logic, optimizations, and flows implement
 ## 3. Admin Hub & Live Polling
 - **Dynamic Metrics**: The Admin Hub is configured to poll `/api/admin/stats` periodically, dynamically updating the active driver, pending application, active ride, and SOS counters.
 - **Status Badges**: Hardcoded badges are replaced with dynamic statuses and colors indicating the real live state of operations.
+- **15-Ride Query Limit**: The live rides queue `/api/admin/rides/live` is limited to the last **15 rides** sorted by creation time descending. This guarantees that the most recent bookings are instantly visible at the top.
+- **Instant details, Identity, and Fleet display (No Loading Screen)**: The dashboard states (stats, users, drivers, live rides) are pre-populated with default mock data when `localStorage` is empty. This prevents empty screens and scanning/loading overlays, ensuring all panels render details instantly on login/mount, and are silently updated by background fetches.
 - **Performance Optimization (N+1 Query Resolution)**:
   - Previously, loading the admin user list endpoint `/api/admin/users` queried the database for driver profiles sequentially for each driver, causing a bottleneck of up to 100 sequential queries per page.
   - **Batch Queries**: The backend now batch-fetches all driver profiles at once using `$in`, reducing database query time to under 0.05 seconds and enabling the admin operations panel to render instantly.
