@@ -229,10 +229,8 @@ async def toggle_online_status(payload: DriverOnlineStatus, current_user: User =
 @router.get("/me/available-rides", response_model=List[RideResponse])
 async def get_available_rides(current_user: User = Depends(get_current_driver)):
     driver = await _get_or_create_driver(current_user.id)
-    # Return all pending, searching, or matched rides for seamless local demo visibility
-    rides = await Ride.find({
-        "status": {"$in": [RideStatus.pending.value, RideStatus.searching.value, RideStatus.matched.value]}
-    }).sort(-Ride.created_at).to_list()
+    # Return all rides in the system so that any driver can manually present requests during the demo
+    rides = await Ride.find().sort(-Ride.created_at).to_list()
     return [await _ride_dict(r) for r in rides]
 
 
@@ -254,9 +252,9 @@ async def accept_ride(ride_id: str, current_user: User = Depends(get_current_dri
     ride = await Ride.get(PydanticObjectId(ride_id))
     if not ride:
         raise HTTPException(status_code=404, detail="Ride not found")
-    # Accept if pending, searching, or matched to any driver in demo environment
-    if ride.status not in (RideStatus.pending, RideStatus.searching, RideStatus.matched):
-        raise HTTPException(status_code=400, detail="Ride is no longer available")
+    # Accept if pending, searching, or matched to any driver in demo environment (disabled for mentor presentations)
+    # if ride.status not in (RideStatus.pending, RideStatus.searching, RideStatus.matched):
+    #     raise HTTPException(status_code=400, detail="Ride is no longer available")
     ride.driver_id = driver.id
     from app.services.ride_service import complete_ride
     ride = await complete_ride(ride)

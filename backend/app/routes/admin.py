@@ -239,21 +239,8 @@ async def review_document(driver_id: str, doc_id: str, payload: DocumentReview, 
 
 @router.get("/rides/live", response_model=List[RideResponse])
 async def get_live_rides(admin: User = Depends(get_current_admin)):
-    active_statuses = [
-        RideStatus.pending.value, 
-        RideStatus.searching.value, 
-        RideStatus.matched.value, 
-        RideStatus.driver_arriving.value, 
-        RideStatus.in_progress.value
-    ]
-    rides = await Ride.find({"status": {"$in": active_statuses}}).sort(-Ride.created_at).to_list()
-    
-    # If fewer than 5 active rides, fetch recent completed/cancelled rides to show real history
-    if len(rides) < 5:
-        limit = 5 - len(rides)
-        recent_past = await Ride.find({"status": {"$in": [RideStatus.completed.value, RideStatus.cancelled.value]}}).sort(-Ride.created_at).limit(limit).to_list()
-        rides.extend(recent_past)
-        
+    # Return all rides in the system so completed ones show up as well during demo
+    rides = await Ride.find().sort(-Ride.created_at).to_list()
     return [_ride_dict(r) for r in rides]
 
 
