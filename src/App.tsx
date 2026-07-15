@@ -10,22 +10,18 @@ import { ThemeProvider } from "./components/ThemeProvider";
 
 // Eagerly loaded entry page for instant visual feedback on initial load
 import Home from "./pages/Home";
-
-// Lazy-loaded pages — each page only downloads when navigated to
-const AuthPage = lazy(() => import("./pages/AuthPage"));
-const BookingPage = lazy(() => import("./pages/BookingPage"));
-const Safety = lazy(() => import("./pages/Safety"));
-
-// High-latency or heavy administrative pages remain lazy-loaded
-const RideTracking = lazy(() => import("./pages/RideTracking"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const DriverPortal = lazy(() => import("./pages/DriverPortal"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const DriveWithUs = lazy(() => import("./pages/DriveWithUs"));
-const ApplyDriver = lazy(() => import("./pages/ApplyDriver"));
-const PWDMode = lazy(() => import("./pages/PWDMode"));
-const About = lazy(() => import("./pages/About"));
+import AuthPage from "./pages/AuthPage";
+import BookingPage from "./pages/BookingPage";
+import Safety from "./pages/Safety";
+import RideTracking from "./pages/RideTracking";
+import Dashboard from "./pages/Dashboard";
+import DriverPortal from "./pages/DriverPortal";
+import AdminDashboard from "./pages/AdminDashboard";
+import NotFound from "./pages/NotFound";
+import DriveWithUs from "./pages/DriveWithUs";
+import ApplyDriver from "./pages/ApplyDriver";
+import PWDMode from "./pages/PWDMode";
+import About from "./pages/About";
 
 const queryClient = new QueryClient();
 
