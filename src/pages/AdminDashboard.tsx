@@ -1517,7 +1517,9 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-xs font-bold text-slate-900">ETA: {12 + idx * 5} MINS</p>
+                              <p className="text-xs font-bold text-slate-900">
+                                ETA: {ride.duration_minutes ? Math.round(ride.duration_minutes) : Math.max(2, Math.round((ride.distance_km || 5) * 1.5))} MINS
+                              </p>
                               <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5">On Schedule</p>
                             </div>
                           </div>

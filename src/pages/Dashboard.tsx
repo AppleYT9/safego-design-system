@@ -505,6 +505,15 @@ const Dashboard = () => {
     navigate("/pwd-mode");
   };
 
+  if (!profile.name) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4 text-white">
+        <Loader2 className="animate-spin text-primary" size={48} />
+        <p className="text-lg font-bold tracking-wider animate-pulse">Synchronizing SafeGo User Node...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
