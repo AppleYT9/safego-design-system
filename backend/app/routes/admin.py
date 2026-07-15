@@ -299,12 +299,15 @@ async def get_all_users(role: Optional[str] = Query(None), q: Optional[str] = Qu
     # Get all matching users
     users = await User.find(query).sort(-User.created_at).to_list()
     
-    # Filter out drivers that are not approved yet
+    # Batch load driver profiles to prevent N+1 sequential database queries
+    driver_user_ids = [u.id for u in users if u.role == UserRole.driver]
+    drivers = await Driver.find({"user_id": {"$in": driver_user_ids}}).to_list() if driver_user_ids else []
+    approved_driver_user_ids = {d.user_id for d in drivers if d.status == DriverStatus.approved}
+    
     filtered_users = []
     for u in users:
         if u.role == UserRole.driver:
-            driver = await Driver.find_one(Driver.user_id == u.id)
-            if not driver or driver.status != DriverStatus.approved:
+            if u.id not in approved_driver_user_ids:
                 continue
         filtered_users.append(u)
         
