@@ -9,10 +9,9 @@ import { FloatingAssistant } from "./components/FloatingAssistant";
 import { ThemeProvider } from "./components/ThemeProvider";
 
 // Eagerly loaded entry page for instant visual feedback on initial load
-import Splash from "./pages/Splash";
+import Home from "./pages/Home";
 
 // Lazy-loaded pages — each page only downloads when navigated to
-const Home = lazy(() => import("./pages/Home"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const BookingPage = lazy(() => import("./pages/BookingPage"));
 const Safety = lazy(() => import("./pages/Safety"));
@@ -21,7 +20,7 @@ const Safety = lazy(() => import("./pages/Safety"));
 const RideTracking = lazy(() => import("./pages/RideTracking"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const DriverPortal = lazy(() => import("./pages/DriverPortal"));
-import AdminDashboard from "./pages/AdminDashboard";
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const DriveWithUs = lazy(() => import("./pages/DriveWithUs"));
 const ApplyDriver = lazy(() => import("./pages/ApplyDriver"));
@@ -58,7 +57,7 @@ const App = () => (
             {/* <FloatingAssistant /> */}
             <Suspense fallback={<PageLoader />}>
               <Routes>
-                <Route path="/" element={<Splash />} />
+                <Route path="/" element={<Home />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/login" element={<AuthPage />} />
                 <Route path="/signup" element={<AuthPage />} />

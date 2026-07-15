@@ -35,3 +35,7 @@ backend/.pytest_cache/
 
 # RAG Vector Database (ChromaDB)
 backend/app/rag/vector_db/
+
+# Local databases
+mongodb_data/
+

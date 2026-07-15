@@ -16,7 +16,7 @@ import {
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-type AdminTab = "dashboard" | "users" | "drivers" | "live-rides" | "alerts" | "settings";
+type AdminTab = "dashboard" | "users" | "drivers" | "driver-requests" | "live-rides" | "alerts" | "settings";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -28,6 +28,7 @@ const navGroups = [
       { id: "live-rides", label: "Mission Control", icon: Navigation },
       { id: "users", label: "Identity Registry", icon: Users },
       { id: "drivers", label: "Fleet Intelligence", icon: Car },
+      { id: "driver-requests", label: "Driver Applications", icon: FileText },
     ],
   },
   {
@@ -152,7 +153,7 @@ const AdminDashboard = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [fluxRange, setFluxRange] = useState('1H');
   const [fleetGenderFilter, setFleetGenderFilter] = useState<'all' | 'male' | 'female'>('all');
-  const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'staff' | 'passenger' | 'driver'>('all');
+  const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'staff' | 'driver'>('all');
 
   const getFluxData = () => {
     switch (fluxRange) {
@@ -185,7 +186,7 @@ const AdminDashboard = () => {
   };
 
   const [newUser, setNewUser] = useState({
-    full_name: "", email: "", phone: "", password: "", role: "passenger",
+    full_name: "", email: "", phone: "", password: "", role: "driver",
     position: "Managed User", department: "External", gender: "other",
     is_active: true, is_verified: true
   });
@@ -376,7 +377,7 @@ const AdminDashboard = () => {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setIsCreateUserOpen(false);
-        setNewUser({ full_name: "", email: "", phone: "", password: "", role: "passenger", position: "Managed User", department: "External", gender: "other", is_active: true, is_verified: true });
+        setNewUser({ full_name: "", email: "", phone: "", password: "", role: "driver", position: "Managed User", department: "External", gender: "other", is_active: true, is_verified: true });
         fetchUsers(); fetchStats();
       } else { setFormError(data.detail || "System rejected identity deployment."); }
     } catch (err) { setFormError("CONNECTION ERROR: Verify MongoDB and Terminal are active."); } finally { setIsSubmitting(false); }
@@ -529,7 +530,7 @@ const AdminDashboard = () => {
     fetchStats();
     fetchCurrentUser();
     if (activeTab === "users") fetchUsers();
-    if (activeTab === "drivers") { fetchDrivers(); }
+    if (activeTab === "drivers" || activeTab === "driver-requests") { fetchDrivers(); }
     if (activeTab === "live-rides") fetchLiveRides();
     if (activeTab === "alerts") fetchSOS();
 
@@ -1120,7 +1121,7 @@ const AdminDashboard = () => {
 
                   {/* ROLE ARCHITECTURE FILTER */}
                   <div className="flex bg-slate-100 p-1 rounded-xl">
-                    {(['all', 'admin', 'staff', 'passenger', 'driver'] as const).map((r) => (
+                    {(['all', 'admin', 'staff', 'driver'] as const).map((r) => (
                       <button
                         key={r}
                         onClick={() => setUserRoleFilter(r)}
@@ -1156,8 +1157,8 @@ const AdminDashboard = () => {
                   <tbody className="divide-y divide-slate-50">
                     {isSearching ? (
                       <tr><td colSpan={4} className="px-8 py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
-                    ) : usersList.filter(u => userRoleFilter === 'all' || u.role?.toLowerCase() === userRoleFilter).length > 0 ? (
-                      usersList.filter(u => userRoleFilter === 'all' || u.role?.toLowerCase() === userRoleFilter).map((u) => (
+                    ) : usersList.filter(u => u.role?.toLowerCase() !== 'passenger').filter(u => userRoleFilter === 'all' || u.role?.toLowerCase() === userRoleFilter).length > 0 ? (
+                      usersList.filter(u => u.role?.toLowerCase() !== 'passenger').filter(u => userRoleFilter === 'all' || u.role?.toLowerCase() === userRoleFilter).map((u) => (
                         <tr key={u._id} className="hover:bg-slate-50/30 transition-colors group">
                           <td className="px-8 py-5">
                             <div className="flex items-center gap-4">
@@ -1245,8 +1246,8 @@ const AdminDashboard = () => {
                   <tbody className="divide-y divide-slate-50">
                     {isSearching ? (
                       <tr><td colSpan={6} className="px-8 py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
-                    ) : driversList.filter(d => fleetGenderFilter === 'all' || d.user?.gender === fleetGenderFilter).length > 0 ?
-                      driversList.filter(d => fleetGenderFilter === 'all' || d.user?.gender === fleetGenderFilter).map((d) => (
+                    ) : driversList.filter(d => d.status === 'approved').filter(d => fleetGenderFilter === 'all' || d.user?.gender === fleetGenderFilter).length > 0 ? (
+                      driversList.filter(d => d.status === 'approved').filter(d => fleetGenderFilter === 'all' || d.user?.gender === fleetGenderFilter).map((d) => (
                         <tr key={d._id} className="hover:bg-slate-50/30 transition-colors group">
                           <td className="px-8 py-5">
                             <div className="flex items-center gap-4">
@@ -1292,6 +1293,89 @@ const AdminDashboard = () => {
                           </td>
                           <td className="px-8 py-5">
                             <div className="flex items-center justify-end gap-2">
+                              <button onClick={() => handleToggleDriverOnline(d._id, !d.is_online)} className={`h-9 px-3 rounded-lg border text-[10px] font-bold uppercase tracking-widest shadow-sm transition-all flex items-center justify-center ${d.is_online ? 'bg-slate-50 border-slate-200 text-slate-500 hover:text-amber-500 hover:border-amber-200' : 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100'}`}>
+                                {d.is_online ? <WifiOff size={14} className="mr-1" /> : <Wifi size={14} className="mr-1" />}
+                                {d.is_online ? 'Offline' : 'Online'}
+                              </button>
+                              <button onClick={() => handleDeleteDriver(d.user_id)} className="h-9 w-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all">
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={6} className="px-8 py-20 text-center"><div className="flex flex-col items-center gap-3 text-slate-300"><Car size={40} /><p className="font-semibold text-sm">No Fleet Nodes Active</p></div></td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === "driver-requests" && (
+            <div className="animate-in fade-in duration-500 space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Driver Applications</h3>
+                  <p className="text-sm text-slate-500 mt-1 font-medium">Review and verify credentials of incoming driver candidates.</p>
+                </div>
+              </div>
+
+              <Card noPadding className="overflow-hidden border-slate-200/60 shadow-xl">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Driver Candidate</th>
+                      <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Vehicle Unit</th>
+                      <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Gender</th>
+                      <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>
+                      <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {isSearching ? (
+                      <tr><td colSpan={5} className="px-8 py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={32} /></td></tr>
+                    ) : driversList.filter(d => d.status === 'pending' || d.status === 'rejected').length > 0 ? (
+                      driversList.filter(d => d.status === 'pending' || d.status === 'rejected').map((d) => (
+                        <tr key={d._id} className="hover:bg-slate-50/30 transition-colors group">
+                          <td className="px-8 py-5">
+                            <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-500 border border-slate-200">
+                                {d.user?.full_name?.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-900">{d.user?.full_name}</p>
+                                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-tight">{d.license_number}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-5">
+                            <div>
+                              <p className="text-xs font-bold text-slate-700">{d.vehicle?.make} {d.vehicle?.model}</p>
+                              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{d.vehicle?.plate_number}</p>
+                            </div>
+                          </td>
+                          <td className="px-8 py-5">
+                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${d.user?.gender === 'female'
+                              ? 'bg-rose-100 text-rose-600'
+                              : d.user?.gender === 'male'
+                                ? 'bg-blue-100 text-blue-600'
+                                : 'bg-slate-100 text-slate-600'
+                              }`}>
+                              {d.user?.gender || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="flex flex-col gap-1">
+                              <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider text-center w-24 ${
+                                d.status === 'pending' ? 'bg-amber-100 text-amber-700 animate-pulse' :
+                                  'bg-rose-100 text-rose-700'
+                                }`}>{d.status === 'rejected' ? 'declined' : d.status}</span>
+                            </div>
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="flex items-center justify-end gap-2">
                               {d.status === 'pending' ? (
                                 <>
                                   <button
@@ -1308,22 +1392,17 @@ const AdminDashboard = () => {
                                   </button>
                                 </>
                               ) : (
-                                <>
-                                  <button onClick={() => handleToggleDriverOnline(d._id, !d.is_online)} className={`h-9 px-3 rounded-lg border text-[10px] font-bold uppercase tracking-widest shadow-sm transition-all flex items-center justify-center ${d.is_online ? 'bg-slate-50 border-slate-200 text-slate-500 hover:text-amber-500 hover:border-amber-200' : 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100'}`}>
-                                    {d.is_online ? <WifiOff size={14} className="mr-1" /> : <Wifi size={14} className="mr-1" />}
-                                    {d.is_online ? 'Offline' : 'Online'}
-                                  </button>
-                                  <button onClick={() => handleDeleteDriver(d.user_id)} className="h-9 w-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all">
-                                    <Trash2 size={14} />
-                                  </button>
-                                </>
+                                <button onClick={() => handleDeleteDriver(d.user_id)} className="h-9 px-4 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center gap-1.5 text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all font-bold text-[10px] uppercase tracking-wider">
+                                  <Trash2 size={14} /> Clear Record
+                                </button>
                               )}
                             </div>
                           </td>
                         </tr>
-                      )) : (
-                        <tr><td colSpan={6} className="px-8 py-20 text-center"><div className="flex flex-col items-center gap-3 text-slate-300"><Car size={40} /><p className="font-semibold text-sm">No Fleet Nodes Active</p></div></td></tr>
-                      )}
+                      ))
+                    ) : (
+                      <tr><td colSpan={5} className="px-8 py-20 text-center"><div className="flex flex-col items-center gap-3 text-slate-300"><FileText size={40} /><p className="font-semibold text-sm">No Pending Applications</p></div></td></tr>
+                    )}
                   </tbody>
                 </table>
               </Card>
@@ -1733,11 +1812,11 @@ const AdminDashboard = () => {
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Contact Node (Phone)</label><div className="relative"><Phone size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" /><input required type="tel" value={newUser.phone} onChange={e => setNewUser({ ...newUser, phone: e.target.value })} className="w-full h-14 pl-14 pr-6 rounded-2xl bg-slate-50 border border-transparent focus:bg-white focus:ring-4 ring-primary/5 focus:border-primary/20 outline-none font-bold text-sm transition-all" /></div></div>
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Role Architecture</label>
               <div className="grid grid-cols-3 gap-3">
-                {['passenger', 'staff', 'admin'].map(r => (
+                {['driver', 'staff', 'admin'].map(r => (
                   <button key={r} type="button" onClick={() => setNewUser({ ...newUser, role: r })} className={`h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${newUser.role === r ? 'bg-slate-900 text-white border-slate-900 shadow-xl' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'}`}>{r}</button>
                 ))}
               </div>
-              <p className="text-[10px] text-slate-400 font-bold ml-1 italic">{newUser.role === 'passenger' ? 'Passengers cannot access this portal.' : 'Managed Nodes have internal system access.'}</p>
+              <p className="text-[10px] text-slate-400 font-bold ml-1 italic">{newUser.role === 'driver' ? 'Drivers can access the Driver Portal.' : 'Managed Nodes have internal system access.'}</p>
             </div>
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Secret Key (Node Access)</label><div className="relative"><Lock size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" /><input required type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full h-14 pl-14 pr-6 rounded-2xl bg-slate-50 border border-transparent focus:bg-white focus:ring-4 ring-primary/5 focus:border-primary/20 outline-none font-bold text-sm transition-all" /></div></div>
           </div>
@@ -1756,7 +1835,7 @@ const AdminDashboard = () => {
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Phone</label><input required type="tel" value={editingUser?.phone || ""} onChange={e => setEditingUser({ ...editingUser, phone: e.target.value })} className="w-full h-14 px-6 rounded-2xl bg-slate-50 border border-transparent focus:bg-white focus:ring-4 ring-primary/5 outline-none font-bold text-sm transition-all" /></div>
             <div className="space-y-3"><label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Role Architecture</label>
               <div className="grid grid-cols-3 gap-3">
-                {['passenger', 'staff', 'admin'].map(r => (
+                {['driver', 'staff', 'admin'].map(r => (
                   <button key={r} type="button" onClick={() => setEditingUser({ ...editingUser, role: r })} className={`h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${editingUser?.role === r ? 'bg-slate-900 text-white border-slate-900 shadow-xl' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'}`}>{r}</button>
                 ))}
               </div>

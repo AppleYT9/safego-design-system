@@ -1,10 +1,13 @@
 import asyncio
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
-from passlib.hash import bcrypt
+import bcrypt
 
 def hash_password(password: str) -> str:
-    return bcrypt.hash(password)
+    password_bytes = password.encode("utf-8")
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode("utf-8")
 
 async def seed_users():
     client = AsyncIOMotorClient("mongodb://localhost:27017")

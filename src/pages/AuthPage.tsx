@@ -160,7 +160,7 @@ const AuthPage = () => {
       {/* Left Panel - Premium Brand Image & Overlay */}
       <div 
         className="hidden md:flex md:w-1/2 relative overflow-hidden bg-cover bg-center select-none"
-        style={{ backgroundImage: "url('/safego_taxis.jpg')" }}
+        style={{ backgroundImage: "url('/premium_taxi_login.png')" }}
       >
         {/* Dark overlay for rich contrast */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/30" />
@@ -193,7 +193,7 @@ const AuthPage = () => {
       </div>
 
       {/* Right Panel - Login/Signup Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-6 sm:p-10 md:p-16 bg-background relative overflow-hidden min-h-screen">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6 sm:p-10 md:p-8 lg:p-12 bg-background relative overflow-hidden min-h-screen">
         {/* Subtle dot grid pattern */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,#cbd5e1_1.5px,transparent_1.5px)] bg-[size:32px_32px] opacity-40 dark:bg-[radial-gradient(ellipse_at_center,#334155_1.5px,transparent_1.5px)] pointer-events-none select-none" />
         
@@ -216,7 +216,7 @@ const AuthPage = () => {
         </div>
 
         {/* Form Card Container */}
-        <div className="w-full max-w-[500px] py-12 px-10 sm:px-12 rounded-[2.5rem] bg-card/70 border border-border/80 shadow-[0_12px_40px_-15px_rgba(0,0,0,0.08)] backdrop-blur-md relative z-10 transition-all hover:shadow-[0_15px_45px_-12px_rgba(0,0,0,0.12)]">
+        <div className="w-full max-w-[500px] md:max-w-[580px] lg:max-w-[640px] py-14 px-10 sm:px-12 lg:px-16 rounded-[2.5rem] lg:rounded-[3.5rem] bg-card/70 border border-border/80 shadow-[0_15px_50px_-15px_rgba(0,0,0,0.1)] backdrop-blur-md relative z-10 transition-all hover:shadow-[0_20px_60px_-12px_rgba(0,0,0,0.15)]">
           <div className="mb-8 flex flex-col items-center md:items-start">
             <Link to="/" className="md:hidden mb-6 inline-block transition-transform hover:scale-105">
               <SafeGoLogo size={36} />

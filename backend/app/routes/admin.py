@@ -198,23 +198,17 @@ async def approve_driver(driver_id: str, payload: DriverApproval, admin: User = 
         await driver.save()
         return await _driver_dict(driver)
     elif payload.status == "rejected":
+        driver.status = DriverStatus.rejected
+        await driver.save()
+        
+        # Suspend access of the associated user
         user = await User.get(driver.user_id)
         if user:
-            await user.delete()
+            user.is_verified = False
+            user.is_active = False
+            await user.save()
             
-        vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
-        if vehicle:
-            await vehicle.delete()
-            
-        docs = await DriverDocument.find(DriverDocument.driver_id == driver.id).to_list()
-        for doc in docs:
-            await doc.delete()
-            
-        res_data = await _driver_dict(driver)
-        res_data["status"] = "rejected"
-        
-        await driver.delete()
-        return res_data
+        return await _driver_dict(driver)
 
 
 @router.put("/drivers/{driver_id}/online-status", response_model=DriverResponse)
@@ -307,8 +301,25 @@ async def get_all_users(role: Optional[str] = Query(None), q: Optional[str] = Qu
             {"email": {"$regex": q, "$options": "i"}},
             {"phone": {"$regex": q, "$options": "i"}}
         ]
-    users = await User.find(query).sort(-User.created_at).skip((page - 1) * per_page).limit(per_page).to_list()
-    return [_user_dict(u) for u in users]
+    
+    # Get all matching users
+    users = await User.find(query).sort(-User.created_at).to_list()
+    
+    # Filter out drivers that are not approved yet
+    filtered_users = []
+    for u in users:
+        if u.role == UserRole.driver:
+            driver = await Driver.find_one(Driver.user_id == u.id)
+            if not driver or driver.status != DriverStatus.approved:
+                continue
+        filtered_users.append(u)
+        
+    # Apply pagination on the filtered list
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_users = filtered_users[start:end]
+    
+    return [_user_dict(u) for u in paginated_users]
 
 
 @router.put("/users/{user_id}/toggle-active", response_model=UserResponse)
@@ -344,6 +355,32 @@ async def create_user(payload: AdminUserCreate, admin: User = Depends(get_curren
         is_verified=payload.is_verified
     )
     await user.insert()
+
+    # Automatically provision Driver & Vehicle records if user is created as a driver
+    if user.role == UserRole.driver:
+        driver = await Driver.find_one(Driver.user_id == user.id)
+        if not driver:
+            driver = Driver(
+                user_id=user.id,
+                license_number=f"DL-{str(user.id)[:10].upper()}",
+                status=DriverStatus.approved,
+                is_online=True
+            )
+            await driver.insert()
+
+            vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
+            if not vehicle:
+                vehicle = Vehicle(
+                    driver_id=driver.id,
+                    make="Toyota",
+                    model="Vios",
+                    color="Black",
+                    plate_number=f"TXT-{str(user.id)[:4].upper()}",
+                    year=2023,
+                    is_approved=True
+                )
+                await vehicle.insert()
+
     return _user_dict(user)
 
 
@@ -352,6 +389,8 @@ async def update_user(user_id: str, payload: AdminUserUpdate, admin: User = Depe
     user = await User.get(PydanticObjectId(user_id))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    role_changing_to_driver = payload.role is not None and payload.role == "driver" and user.role != UserRole.driver
 
     if payload.full_name is not None:
         user.full_name = payload.full_name
@@ -382,6 +421,32 @@ async def update_user(user_id: str, payload: AdminUserUpdate, admin: User = Depe
         user.is_verified = payload.is_verified
 
     await user.save()
+
+    # Automatically provision Driver & Vehicle records if user is updated to a driver
+    if role_changing_to_driver:
+        driver = await Driver.find_one(Driver.user_id == user.id)
+        if not driver:
+            driver = Driver(
+                user_id=user.id,
+                license_number=f"DL-{str(user.id)[:10].upper()}",
+                status=DriverStatus.approved,
+                is_online=True
+            )
+            await driver.insert()
+
+            vehicle = await Vehicle.find_one(Vehicle.driver_id == driver.id)
+            if not vehicle:
+                vehicle = Vehicle(
+                    driver_id=driver.id,
+                    make="Toyota",
+                    model="Vios",
+                    color="Black",
+                    plate_number=f"TXT-{str(user.id)[:4].upper()}",
+                    year=2023,
+                    is_approved=True
+                )
+                await vehicle.insert()
+
     return _user_dict(user)
 
 
