@@ -234,8 +234,8 @@ async def toggle_online_status(payload: DriverOnlineStatus, current_user: User =
 @router.get("/me/available-rides", response_model=List[RideResponse])
 async def get_available_rides(current_user: User = Depends(get_current_driver)):
     driver = await _get_or_create_driver(current_user.id)
-    # Return all rides in the system so that any driver can manually present requests during the demo
-    rides = await Ride.find().sort(-Ride.created_at).to_list()
+    # Return last 15 rides in the system to keep payload lightweight and ensure instant rendering
+    rides = await Ride.find().sort(-Ride.created_at).limit(15).to_list()
     
     # Batch load passengers to prevent N+1 query timeout
     passenger_ids = list(set(r.passenger_id for r in rides if r.passenger_id))
