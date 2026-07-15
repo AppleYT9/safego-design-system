@@ -361,12 +361,14 @@ const AdminDashboard = () => {
         // Get custom destination from live backend rides, localStorage, or fallback to Ayala Triangle
         const userDest = backendDest || localStorage.getItem('safego_current_booking_destination') || 'Ayala Triangle, Makati';
 
+        const solvedStatic = JSON.parse(localStorage.getItem("safego_solved_static_sos") || "{}");
+
         // Always ensure at least some ACTIVE threats for demo purposes
         const hasActive = data.some((a: any) => a.status === 'active');
         const finalAlerts = hasActive ? data : [
           ...data,
-          { _id: 'sos_static_1', severity: 'critical', location_address: `${userDest} (Simulated)`, user_id: 'SYSTEM_NODE', ride_id: 'SIM_992', status: 'active', created_at: new Date().toISOString() },
-          { _id: 'sos_static_2', severity: 'moderate', location_address: 'BGC Stopover (Simulated)', user_id: 'SYSTEM_NODE', ride_id: 'SIM_441', status: 'active', created_at: new Date().toISOString() }
+          { _id: 'sos_static_1', severity: 'critical', location_address: `${userDest} (Simulated)`, user_id: 'SYSTEM_NODE', ride_id: 'SIM_992', status: solvedStatic['sos_static_1'] || 'active', created_at: new Date().toISOString() },
+          { _id: 'sos_static_2', severity: 'moderate', location_address: 'BGC Stopover (Simulated)', user_id: 'SYSTEM_NODE', ride_id: 'SIM_441', status: solvedStatic['sos_static_2'] || 'active', created_at: new Date().toISOString() }
         ];
 
         // Ensure mock notifications exist for these simulated alerts so they can "turn green"
@@ -515,6 +517,11 @@ const AdminDashboard = () => {
 
     // If it's a mock ID (like 'sos1'), handle it locally
     if (alertId.startsWith('sos')) {
+      if (alertId.startsWith('sos_static')) {
+        const solvedStatic = JSON.parse(localStorage.getItem("safego_solved_static_sos") || "{}");
+        solvedStatic[alertId] = status;
+        localStorage.setItem("safego_solved_static_sos", JSON.stringify(solvedStatic));
+      }
       addNotification("SIMULATION RESOLVED", `Mock Alert #${alertId.toUpperCase()} cleared from local monitor.`, "success");
       return;
     }
@@ -657,7 +664,7 @@ const AdminDashboard = () => {
               "safego_driver_history", "safego_driver_activity", "safego_accepted_rides", 
               "safego_declined_rides", "safego_current_ride_id", "safego_new_booking", 
               "safego_admin_stats", "safego_admin_users", "safego_admin_drivers", 
-              "safego_admin_rides", "safego_admin_sos"
+              "safego_admin_rides", "safego_admin_sos", "safego_solved_static_sos"
             ];
             keysToRemove.forEach(k => localStorage.removeItem(k));
             navigate("/login");
