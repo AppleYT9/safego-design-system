@@ -236,8 +236,29 @@ const Dashboard = () => {
     const toastId = toast.loading(`Triggering SOS Alert to ${primaryContact.name}...`);
 
     try {
-      // Simulate API call to send SOS
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const token = localStorage.getItem("token");
+      const currentRideId = localStorage.getItem("safego_current_ride_id") || null;
+      
+      const response = await fetch(`${API_URL}/api/safety/sos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ride_id: currentRideId,
+          latitude: 11.2189,
+          longitude: 78.1672,
+          location_address: "Namakkal, Tamil Nadu, India",
+          severity: "critical"
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("SOS trigger failed");
+      }
+
+      const data = await response.json();
 
       toast.success(`SOS Alert sent successfully to ${primaryContact.name} (${primaryContact.phone})! Emergency services have been notified.`, {
         id: toastId,
@@ -246,7 +267,7 @@ const Dashboard = () => {
 
       // Add a notification to the log locally for immediate feedback
       const newNotif = {
-        _id: `sos-${Math.random().toString(36).substring(2, 6)}`,
+        _id: data._id,
         title: "SOS Alert Triggered",
         message: `Emergency SOS alert manually triggered by user. Notified: ${primaryContact.name} (${primaryContact.phone}). Location coordinates broadcasted.`,
         type: "alert",
