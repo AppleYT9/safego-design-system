@@ -815,16 +815,9 @@ const DriverPortal = () => {
       const c = localStorage.getItem("safego_driver_profile");
       if (c) return JSON.parse(c);
     } catch {}
-    return {
-      user: { full_name: "Loading Pilot..." },
-      average_rating: 0.0,
-      today_rides: 0,
-      today_earnings: 0,
-      acceptance_rate: 100,
-      total_rides: 0,
-    };
+    return null;
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [requests, setRequests] = useState<any[]>(() => {
     try {
@@ -1075,7 +1068,7 @@ const DriverPortal = () => {
 
       console.error("Failed to fetch driver data:", err);
       // Auto-retry after 2 seconds if the profile hasn't successfully loaded yet
-      if (driver?.user?.full_name === "Loading Pilot...") {
+      if (!driver) {
         setTimeout(() => {
           fetchDriverData();
         }, 2000);
@@ -1279,6 +1272,15 @@ const DriverPortal = () => {
       default: return null;
     }
   };
+
+  if (!driver) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4 text-white">
+        <Loader2 className="animate-spin text-emerald-500" size={48} />
+        <p className="text-lg font-bold tracking-wider animate-pulse">Initializing SafeGo Pilot Node...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
