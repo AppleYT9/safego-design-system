@@ -1082,7 +1082,6 @@ const BookingPage = () => {
     const token = localStorage.getItem("token");
     if (token && currentRideId) {
       try {
-        // 1. Mark completed
         await fetch(`${API_URL}/api/rides/${currentRideId}/status`, {
           method: "PUT",
           headers: {
@@ -1091,60 +1090,12 @@ const BookingPage = () => {
           },
           body: JSON.stringify({ status: "completed" })
         });
-        
-        // 2. Submit a 5-star rating automatically
-        await fetch(`${API_URL}/api/rides/${currentRideId}/rate`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            score: 5,
-            comment: "Excellent ride! (Auto-completed)"
-          })
-        });
       } catch (err) {
-        console.error("Failed to complete and rate ride in database:", err);
+        console.error("Failed to mark ride completed in database:", err);
       }
     }
-
-    // 3. Clear states and go back to booking instantly
-    try {
-      const saved = localStorage.getItem("safego_rides");
-      if (saved) {
-        const ridesList = JSON.parse(saved);
-        if (ridesList.length > 0) {
-          for (let i = 0; i < ridesList.length; i++) {
-            if (ridesList[i].status === "In Progress") {
-              ridesList[i].status = "Completed";
-              ridesList[i].rating = 5;
-              break;
-            }
-          }
-          localStorage.setItem("safego_rides", JSON.stringify(ridesList));
-        }
-      }
-    } catch (_) { }
-
-    try {
-      localStorage.removeItem("safego_passenger_rides");
-    } catch (_) {}
-
-    localStorage.removeItem('safego_current_ride_id');
-    setFlowState("booking");
-    setPickup("");
-    setDestination("");
-    setRouteFound(false);
-    setSelectedDriver(null);
-    setAskStatus("idle");
-    setChatOpen(false);
-    setRating(0);
-    setReviewText("");
-    setTriggerRoute(null);
-    setRoutePolyline(null);
+    setFlowState("review");
     leftRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-    handleUseCurrentLocation();
   };
 
   const handleSubmitReview = async () => {
