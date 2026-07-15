@@ -10,7 +10,7 @@ import {
   User, Phone, Mail, Shield, Bell, Eye, EyeOff, Camera, Pencil, X, Save,
   IndianRupee, Download, Filter, Search, Menu, ChevronDown, ChevronUp,
   Route, Clock3, Fuel, Award, ThumbsUp, Navigation, CircleDot,
-  FileUp, ExternalLink, MoreVertical, Trash2
+  FileUp, ExternalLink, MoreVertical, Trash2, Loader2
 } from "lucide-react";
 import {
   Dialog,
