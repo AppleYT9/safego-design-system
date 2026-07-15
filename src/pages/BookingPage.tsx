@@ -888,7 +888,7 @@ const BookingPage = () => {
         if (!finalPickupCoords) {
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 800);
+            const timeoutId = setTimeout(() => controller.abort(), 300);
             const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(pickup)}&limit=1&lang=en`, { signal: controller.signal });
             clearTimeout(timeoutId);
             if (res.ok) {
@@ -906,7 +906,7 @@ const BookingPage = () => {
         if (!finalPickupCoords) {
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 800);
+            const timeoutId = setTimeout(() => controller.abort(), 300);
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickup)}&limit=1`, { signal: controller.signal });
             clearTimeout(timeoutId);
             const data = await res.json();
@@ -927,7 +927,7 @@ const BookingPage = () => {
         if (!finalDestCoords) {
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 800);
+            const timeoutId = setTimeout(() => controller.abort(), 300);
             const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(destination)}&limit=1&lang=en`, { signal: controller.signal });
             clearTimeout(timeoutId);
             if (res.ok) {
@@ -945,7 +945,7 @@ const BookingPage = () => {
         if (!finalDestCoords) {
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 800);
+            const timeoutId = setTimeout(() => controller.abort(), 300);
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1`, { signal: controller.signal });
             clearTimeout(timeoutId);
             const data = await res.json();

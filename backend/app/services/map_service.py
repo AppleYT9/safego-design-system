@@ -56,7 +56,7 @@ async def get_route(
                 f"?overview=full&geometries=geojson&steps=true"
             )
             # Reusing the global client eliminates 100-300ms of SSL/TCP negotiation overhead!
-            resp = await HTTP_CLIENT.get(url)
+            resp = await HTTP_CLIENT.get(url, timeout=0.3)
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get("code") == "Ok" and data.get("routes"):
