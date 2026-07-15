@@ -86,6 +86,14 @@ def _doc_dict(doc: DriverDocument) -> dict:
     }
 
 
+def _format_dt(dt) -> Optional[str]:
+    if not dt:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
+
 async def _ride_dict(ride: Ride, passenger_map: Optional[dict] = None) -> dict:
     passenger = None
     if passenger_map and ride.passenger_id in passenger_map:
@@ -105,10 +113,15 @@ async def _ride_dict(ride: Ride, passenger_map: Optional[dict] = None) -> dict:
         "destination_longitude": ride.destination_longitude,
         "distance_km": ride.distance_km, "duration_minutes": ride.duration_minutes,
         "fare_amount": ride.fare_amount, "safety_score": ride.safety_score,
-        "route_polyline": ride.route_polyline, "scheduled_at": ride.scheduled_at,
-        "started_at": ride.started_at, "completed_at": ride.completed_at,
-        "cancelled_at": ride.cancelled_at, "cancel_reason": ride.cancel_reason,
-        "created_at": ride.created_at, "updated_at": ride.updated_at, "driver": None,
+        "route_polyline": ride.route_polyline,
+        "scheduled_at": _format_dt(ride.scheduled_at),
+        "started_at": _format_dt(ride.started_at),
+        "completed_at": _format_dt(ride.completed_at),
+        "cancelled_at": _format_dt(ride.cancelled_at),
+        "cancel_reason": ride.cancel_reason,
+        "created_at": _format_dt(ride.created_at),
+        "updated_at": _format_dt(ride.updated_at),
+        "driver": None,
     }
 
 

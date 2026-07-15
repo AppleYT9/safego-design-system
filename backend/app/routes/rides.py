@@ -15,6 +15,14 @@ from app.utils.dependencies import get_current_user, get_current_passenger
 router = APIRouter(prefix="/api/rides", tags=["rides"])
 
 
+def _format_dt(dt) -> Optional[str]:
+    if not dt:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
+
 def _ride_dict(ride: Ride, driver_brief=None) -> dict:
     return {
         "_id": str(ride.id),
@@ -33,15 +41,15 @@ def _ride_dict(ride: Ride, driver_brief=None) -> dict:
         "fare_amount": ride.fare_amount,
         "safety_score": ride.safety_score,
         "route_polyline": ride.route_polyline,
-        "scheduled_at": ride.scheduled_at,
-        "started_at": ride.started_at,
-        "completed_at": ride.completed_at,
-        "cancelled_at": ride.cancelled_at,
+        "scheduled_at": _format_dt(ride.scheduled_at),
+        "started_at": _format_dt(ride.started_at),
+        "completed_at": _format_dt(ride.completed_at),
+        "cancelled_at": _format_dt(ride.cancelled_at),
         "cancel_reason": ride.cancel_reason,
         "passenger_count": ride.passenger_count,
         "passenger_details": ride.passenger_details,
-        "created_at": ride.created_at,
-        "updated_at": ride.updated_at,
+        "created_at": _format_dt(ride.created_at),
+        "updated_at": _format_dt(ride.updated_at),
         "driver": driver_brief,
     }
 
