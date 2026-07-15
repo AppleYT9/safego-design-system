@@ -13,25 +13,58 @@ import {
 import { useState, useEffect, useRef } from "react";
 
 // ─── Simulated nearby cabs ───────────────────────────────────────────────────
-const generateNearbyCabs = (lat: number, lng: number, mode: string = "normal") => {
-  const maleNames = ["James D.", "Alex J.", "Robert P.", "David L.", "Michael S.", "Chris B."];
-  const femaleNames = ["Sarah M.", "Maria C.", "Joyce T.", "Emma W.", "Sophia K.", "Olivia R."];
-  const names = mode === "pink" ? femaleNames : maleNames;
+const generateNearbyCabs = (lat: number, lng: number, mode: string = "normal", dbDrivers: any[] = []) => {
+  // Filter database drivers based on mode
+  let filteredDbDrivers = dbDrivers;
+  if (mode === "pink") {
+    filteredDbDrivers = dbDrivers.filter(d => d.user?.gender === "female");
+  } else {
+    // Normal mode can show male or any drivers, but let's stick to the official 5 fleet logic
+    filteredDbDrivers = dbDrivers.filter(d => d.user?.gender === "male");
+  }
 
-  return Array.from({ length: 6 }, (_, i) => ({
-    id: i,
-    lat: lat + (Math.random() - 0.5) * 0.012,
-    lng: lng + (Math.random() - 0.5) * 0.012,
-    name: names[i % names.length],
-    rating: (Math.random() * 0.3 + 4.7).toFixed(1),
-    eta: Math.floor(Math.random() * 6 + 1),
-  }));
+  // Official Fleet (Max 10 total: 5 female, 5 male)
+  const maleNames = ["Aarav Sharma", "Kabir Khan", "Rohan Mehta", "Aditya Patel", "Vihaan Gupta"];
+  const femaleNames = ["Priya Singh", "Ananya Rao", "Diya Kapoor", "Neha Acharya", "Pooja Verma"];
+  const fallbackNames = mode === "pink" ? femaleNames : maleNames;
+
+  // STRICTLY limit to max 10 cabs total (or 5 for specific mode)
+  const cabCount = filteredDbDrivers.length > 0 ? filteredDbDrivers.length : fallbackNames.length;
+  const maxLimit = Math.min(cabCount, 10);
+
+  return Array.from({ length: maxLimit }, (_, i) => {
+    const dbDriver = filteredDbDrivers[i];
+    const cabLat = lat + (Math.random() - 0.5) * 0.012;
+    const cabLng = lng + (Math.random() - 0.5) * 0.012;
+
+    if (dbDriver) {
+      return {
+        id: i,
+        driver_id: dbDriver.id || dbDriver._id || null,
+        lat: cabLat,
+        lng: cabLng,
+        name: dbDriver.user?.full_name || fallbackNames[i % fallbackNames.length],
+        rating: dbDriver.average_rating ? dbDriver.average_rating.toFixed(1) : (Math.random() * 0.3 + 4.7).toFixed(1),
+        eta: Math.floor(Math.random() * 6 + 1),
+      };
+    } else {
+      return {
+        id: i,
+        driver_id: null,
+        lat: cabLat,
+        lng: cabLng,
+        name: fallbackNames[i % fallbackNames.length],
+        rating: (Math.random() * 0.3 + 4.7).toFixed(1),
+        eta: Math.floor(Math.random() * 6 + 1),
+      };
+    }
+  });
 };
 
 // ─── Leaflet Map Panel (no API key) ─────────────────────────────────────────
 declare global { interface Window { L: any } }
 
-const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRouteExtracted, onCabSelect, simulatingTravel, onTravelComplete, estimatedFare = 0 }: { accent: string, mode: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, routePolyline?: string | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void, simulatingTravel?: boolean, onTravelComplete?: () => void, estimatedFare?: number }) => {
+const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRouteExtracted, onCabSelect, simulatingTravel, onTravelComplete, estimatedFare = 0, activeDrivers = [] }: { accent: string, mode: string, centerLoc: { lat: number, lng: number } | null, triggerRoute: { from: string, to: string } | null, routePolyline?: string | null, onRouteExtracted?: (dist: number, cabs: any) => void, onCabSelect?: (cab: any) => void, simulatingTravel?: boolean, onTravelComplete?: () => void, estimatedFare?: number, activeDrivers?: any[] }) => {
   const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -85,7 +118,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
 
       L.circle([lat, lng], { radius: 60, color: "#3b82f6", fillOpacity: 0.08, weight: 1.5 }).addTo(map);
 
-      const fallbackCabs = generateNearbyCabs(lat, lng, mode);
+      const fallbackCabs = generateNearbyCabs(lat, lng, mode, activeDrivers);
       setCabs(fallbackCabs);
 
       fallbackCabs.forEach((cab: any) => {
@@ -306,7 +339,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
   useEffect(() => {
     if (centerLoc && mapInstanceRef.current && mapReady) {
       mapInstanceRef.current.flyTo([centerLoc.lat, centerLoc.lng], 15, { duration: 1.5 });
-      const fallbackCabs = generateNearbyCabs(centerLoc.lat, centerLoc.lng, mode);
+      const fallbackCabs = generateNearbyCabs(centerLoc.lat, centerLoc.lng, mode, activeDrivers);
       setCabs(fallbackCabs);
 
       const L = window.L;
@@ -329,7 +362,7 @@ const MapPanel = ({ accent, mode, centerLoc, triggerRoute, routePolyline, onRout
       }
       setLocError(false);
     }
-  }, [centerLoc, accent, mode, mapReady]);
+  }, [centerLoc, accent, mode, mapReady, activeDrivers]);
 
   const cabsWithPrices = cabs.map((cab, i) => ({
     ...cab,
@@ -464,6 +497,80 @@ const BookingPage = () => {
   const [currentRideId, setCurrentRideId] = useState<string | null>(null);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+  const [activeDrivers, setActiveDrivers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchActiveDrivers = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_URL}/api/drivers/active`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setActiveDrivers(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch active drivers:", err);
+      }
+    };
+    fetchActiveDrivers();
+  }, [API_URL]);
+
+  useEffect(() => {
+    const restoreActiveRide = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_URL}/api/rides/active`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const ride = await res.json();
+          if (ride) {
+            setPickup(ride.pickup_address || "");
+            setDestination(ride.destination_address || "");
+            if (ride.pickup_latitude && ride.pickup_longitude) {
+              setPickupCoords({ lat: ride.pickup_latitude, lng: ride.pickup_longitude });
+              setMapCenter({ lat: ride.pickup_latitude, lng: ride.pickup_longitude });
+            }
+            if (ride.destination_latitude && ride.destination_longitude) {
+              setDestinationCoords({ lat: ride.destination_latitude, lng: ride.destination_longitude });
+            }
+            setCurrentRideId(ride._id);
+            localStorage.setItem('safego_current_ride_id', ride._id);
+            if (ride.driver) {
+              setSelectedDriver({
+                driver_id: ride.driver._id || ride.driver.id,
+                name: ride.driver.user?.full_name || "Driver",
+                rating: ride.driver.average_rating || 5.0,
+                price: ride.fare_amount || 0,
+                eta: 3
+              });
+            }
+            if (ride.status === "completed") {
+              setFlowState("review");
+            } else if (ride.status === "matched" || ride.status === "driver_arriving" || ride.status === "in_progress") {
+              setFlowState("confirmed");
+              setAskStatus("accepted");
+            } else {
+              setFlowState("booking");
+              setAskStatus("asking");
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to restore active ride:", err);
+      }
+    };
+    restoreActiveRide();
+  }, [API_URL]);
 
   const handleUseCurrentLocation = () => {
     setIsLocatingAddress(true);
@@ -904,6 +1011,9 @@ const BookingPage = () => {
         timestamp: new Date().toISOString()
       }));
 
+      // Invalidate dashboard passenger rides cache to force fresh reload
+      localStorage.removeItem("safego_passenger_rides");
+
       // Trigger simulation instead of immediate confirmed state
       setIsSimulatingTravel(true);
       leftRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -971,6 +1081,10 @@ const BookingPage = () => {
         }
       }
     } catch (_) { }
+
+    try {
+      localStorage.removeItem("safego_passenger_rides");
+    } catch (_) {}
 
     localStorage.removeItem('safego_current_ride_id');
     setFlowState("booking");
@@ -1851,6 +1965,7 @@ const BookingPage = () => {
                 setIsSimulatingTravel(false);
               }}
               estimatedFare={rideDetails.fare}
+              activeDrivers={activeDrivers}
             />
           </div>
         )}

@@ -91,6 +91,13 @@ async def get_route(
             # Fallback to Haversine instantly
             distance_km = round(haversine_distance(pickup_lat, pickup_lng, dest_lat, dest_lng), 2)
             duration_minutes = estimate_duration(distance_km)
+            route_polyline = json.dumps({
+                "type": "LineString",
+                "coordinates": [
+                    [pickup_lng, pickup_lat],
+                    [dest_lng, dest_lat]
+                ]
+            })
 
     safety_score = calculate_safety_score(mode, distance_km)
 

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useVoiceAssistant } from "@/contexts/VoiceAssistantContext";
 
-const API_URL = import.meta.env.VITE_API_URL || "";
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard" },
@@ -32,8 +32,14 @@ const rides = [
 
 const statusColors: Record<string, string> = {
   Completed: "bg-primary/10 text-primary",
+  completed: "bg-primary/10 text-primary",
   Cancelled: "bg-destructive/10 text-destructive",
+  cancelled: "bg-destructive/10 text-destructive",
   "In Progress": "bg-amber-500/10 text-amber-500",
+  "in_progress": "bg-amber-500/10 text-amber-500",
+  "searching": "bg-blue-500/10 text-blue-500",
+  "matched": "bg-teal-500/10 text-teal-500",
+  "driver_arriving": "bg-purple-500/10 text-purple-500",
 };
 
 const Dashboard = () => {
@@ -48,7 +54,14 @@ const Dashboard = () => {
     }
   }, [location.state]);
 
-  const [myRides, setMyRides] = useState<any[]>([]);
+  const [myRides, setMyRides] = useState<any[]>(() => {
+    try {
+      const c = localStorage.getItem("safego_passenger_rides");
+      return c ? JSON.parse(c) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loadingRides, setLoadingRides] = useState(true);
   const [contacts, setContacts] = useState<any[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(true);
@@ -101,6 +114,11 @@ const Dashboard = () => {
       if (res.ok) {
         const data = await res.json();
         setMyRides(data);
+        try {
+          localStorage.setItem("safego_passenger_rides", JSON.stringify(data));
+        } catch (e) {
+          console.warn("Failed to cache rides to localStorage", e);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch rides", err);
@@ -193,6 +211,11 @@ const Dashboard = () => {
         toast.success("Ride history cleared successfully!");
         setMyRides([]);
         setSelectedRides(new Set());
+        try {
+          localStorage.removeItem("safego_passenger_rides");
+        } catch (e) {
+          console.warn("Failed to remove cached rides", e);
+        }
       } else {
         toast.error("Failed to clear history");
       }
@@ -694,7 +717,7 @@ const Dashboard = () => {
                         <td className="px-4 py-3 text-muted-foreground">{r.created_at ? new Date(r.created_at).toLocaleDateString() : "Today"}</td>
                         <td className="px-4 py-3 text-foreground">{r.driver?.user?.full_name || "Searching..."}</td>
                         <td className="px-4 py-3">
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColors[r.status]}`}>{r.status}</span>
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${statusColors[r.status] || "bg-secondary"}`}>{r.status}</span>
                         </td>
                         <td className="px-4 py-3">
                           {r.rating > 0 ? <div className="flex gap-0.5">{Array.from({ length: r.rating }).map((_, i) => <Star key={i} size={12} className="fill-amber-400 text-amber-400" />)}</div> : <span className="text-xs text-muted-foreground">None</span>}

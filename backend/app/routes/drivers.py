@@ -13,8 +13,38 @@ from app.schemas import (
 )
 from app.services.driver_service import create_driver_profile
 from app.utils.dependencies import get_current_user, get_current_driver
+import asyncio
 
 router = APIRouter(prefix="/api/drivers", tags=["drivers"])
+
+
+@router.get("/active", response_model=List[DriverResponse])
+async def get_active_drivers(current_user: User = Depends(get_current_user)):
+    """Fetch all approved and online drivers for live ride matching.
+    Only returns real fleet drivers (not auto-created profiles from passengers/admins).
+    """
+    drivers = await Driver.find(
+        Driver.status == DriverStatus.approved,
+        Driver.is_online == True
+    ).to_list()
+    
+    fleet_emails = [
+        "priya.singh@safego.in", "ananya.rao@safego.in", "diya.kapoor@safego.in", 
+        "neha.acharya@safego.in", "pooja.verma@safego.in",
+        "aarav.sharma@safego.in", "kabir.khan@safego.in",
+        "rohan.mehta@safego.in", "aditya.patel@safego.in", "vihaan.gupta@safego.in"
+    ]
+    
+    # Filter to strictly include ONLY official fleet drivers by email
+    fleet_drivers = []
+    for d in drivers:
+        user = await User.get(d.user_id)
+        if user and user.email in fleet_emails:
+            fleet_drivers.append(d)
+    
+    # Limit to max 10 fleet cabs (5 male, 5 female)
+    fleet_drivers = fleet_drivers[:10]
+    return await asyncio.gather(*[_driver_dict(d) for d in fleet_drivers])
 
 
 async def _driver_dict(driver: Driver) -> dict:
@@ -153,28 +183,34 @@ async def apply_as_driver(payload: DriverApplication):
     return await _driver_dict(driver)
 
 
-@router.get("/me", response_model=DriverResponse)
-async def get_driver_profile(current_user: User = Depends(get_current_driver)):
-    driver = await Driver.find_one(Driver.user_id == current_user.id)
+async def _get_or_create_driver(user_id) -> Driver:
+    driver = await Driver.find_one(Driver.user_id == user_id)
     if not driver:
         # Auto-create a driver profile for seamless demo flow
         driver = Driver(
-            user_id=current_user.id,
-            license_number=f"DEMO-{current_user.id}",
+            user_id=user_id,
+            license_number=f"DEMO-{user_id}",
             status=DriverStatus.approved,
             is_online=True,
             average_rating=5.0,
             certified_modes=["normal", "pink", "pwd", "premium", "elderly"]
         )
         await driver.insert()
+    return driver
+
+
+@router.get("/me", response_model=DriverResponse)
+async def get_driver_profile(current_user: User = Depends(get_current_driver)):
+    driver = await _get_or_create_driver(current_user.id)
+    if not driver.is_online:
+        driver.is_online = True
+        await driver.save()
     return await _driver_dict(driver)
 
 
 @router.get("/me/earnings", response_model=DriverEarnings)
 async def get_driver_earnings(current_user: User = Depends(get_current_driver)):
-    driver = await Driver.find_one(Driver.user_id == current_user.id)
-    if not driver:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+    driver = await _get_or_create_driver(current_user.id)
     return DriverEarnings(
         today_rides=driver.today_rides or 0, today_earnings=driver.today_earnings or 0.0,
         total_rides=driver.total_rides or 0, acceptance_rate=driver.acceptance_rate or 100.0,
@@ -184,9 +220,7 @@ async def get_driver_earnings(current_user: User = Depends(get_current_driver)):
 
 @router.put("/me/online-status", response_model=DriverResponse)
 async def toggle_online_status(payload: DriverOnlineStatus, current_user: User = Depends(get_current_driver)):
-    driver = await Driver.find_one(Driver.user_id == current_user.id)
-    if not driver:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+    driver = await _get_or_create_driver(current_user.id)
     driver.is_online = payload.is_online
     driver.updated_at = datetime.now(timezone.utc)
     await driver.save()
@@ -194,24 +228,12 @@ async def toggle_online_status(payload: DriverOnlineStatus, current_user: User =
 
 @router.get("/me/available-rides", response_model=List[RideResponse])
 async def get_available_rides(current_user: User = Depends(get_current_driver)):
-    driver = await Driver.find_one(Driver.user_id == current_user.id)
-    
-    # Bypass for seamless demo: show all pending/searching rides if no profile or admin
-    if not driver or current_user.role == UserRole.admin:
-        rides = await Ride.find(
-            {"status": {"$in": [RideStatus.pending.value, RideStatus.searching.value]}}
-        ).sort(-Ride.created_at).to_list()
-        return [await _ride_dict(r) for r in rides]
-
+    driver = await _get_or_create_driver(current_user.id)
+    # Return all pending, searching, or matched rides for seamless local demo visibility
     rides = await Ride.find({
-        "$or": [
-            {"status": {"$in": [RideStatus.pending.value, RideStatus.searching.value]}},
-            {"status": RideStatus.matched.value, "driver_id": driver.id}
-        ]
+        "status": {"$in": [RideStatus.pending.value, RideStatus.searching.value, RideStatus.matched.value]}
     }).sort(-Ride.created_at).to_list()
-    certified = driver.certified_modes or ["normal"]
-    available = [r for r in rides if r.mode.value in certified or r.mode.value == "normal"]
-    return [await _ride_dict(r) for r in available]
+    return [await _ride_dict(r) for r in rides]
 
 
 @router.get("/me/history", response_model=List[RideResponse])
@@ -221,35 +243,29 @@ async def get_driver_history(current_user: User = Depends(get_current_driver)):
     Note: is_deleted_by_user only hides the ride for the passenger.
     Drivers can always see their ride history.
     """
-    driver = await Driver.find_one(Driver.user_id == current_user.id)
-    if not driver:
-        return [] # Return empty history instead of 404 to avoid breaking the UI
-    
+    driver = await _get_or_create_driver(current_user.id)
     rides = await Ride.find(Ride.driver_id == driver.id).sort(-Ride.created_at).to_list()
     return [await _ride_dict(r) for r in rides]
 
 
 @router.post("/me/rides/{ride_id}/accept", response_model=RideResponse)
 async def accept_ride(ride_id: str, current_user: User = Depends(get_current_driver)):
-    driver = await Driver.find_one(Driver.user_id == current_user.id)
-    if not driver:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+    driver = await _get_or_create_driver(current_user.id)
     ride = await Ride.get(PydanticObjectId(ride_id))
     if not ride:
         raise HTTPException(status_code=404, detail="Ride not found")
-    if ride.status not in (RideStatus.pending, RideStatus.searching):
+    # Accept if pending, searching, or matched to any driver in demo environment
+    if ride.status not in (RideStatus.pending, RideStatus.searching, RideStatus.matched):
         raise HTTPException(status_code=400, detail="Ride is no longer available")
     ride.driver_id = driver.id
-    ride.status = RideStatus.matched
-    await ride.save()
+    from app.services.ride_service import complete_ride
+    ride = await complete_ride(ride)
     return await _ride_dict(ride)
 
 
 @router.post("/me/rides/{ride_id}/decline")
 async def decline_ride(ride_id: str, current_user: User = Depends(get_current_driver)):
-    driver = await Driver.find_one(Driver.user_id == current_user.id)
-    if not driver:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+    driver = await _get_or_create_driver(current_user.id)
     ride = await Ride.find_one(Ride.id == PydanticObjectId(ride_id), Ride.driver_id == driver.id)
     if not ride:
         raise HTTPException(status_code=404, detail="Ride not found or not assigned to you")
@@ -261,18 +277,14 @@ async def decline_ride(ride_id: str, current_user: User = Depends(get_current_dr
 
 @router.get("/me/documents", response_model=List[DriverDocumentResponse])
 async def list_documents(current_user: User = Depends(get_current_driver)):
-    driver = await Driver.find_one(Driver.user_id == current_user.id)
-    if not driver:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+    driver = await _get_or_create_driver(current_user.id)
     docs = await DriverDocument.find(DriverDocument.driver_id == driver.id).to_list()
     return [_doc_dict(d) for d in docs]
 
 
 @router.put("/me/documents/{doc_id}/upload", response_model=DriverDocumentResponse)
 async def upload_document(doc_id: str, payload: DocumentUpload, current_user: User = Depends(get_current_driver)):
-    driver = await Driver.find_one(Driver.user_id == current_user.id)
-    if not driver:
-        raise HTTPException(status_code=404, detail="Driver profile not found")
+    driver = await _get_or_create_driver(current_user.id)
     doc = await DriverDocument.find_one(
         DriverDocument.id == PydanticObjectId(doc_id),
         DriverDocument.driver_id == driver.id,
@@ -284,12 +296,11 @@ async def upload_document(doc_id: str, payload: DocumentUpload, current_user: Us
     doc.updated_at = datetime.now(timezone.utc)
     await doc.save()
     return _doc_dict(doc)
+
+
 @router.get("/me/activity", response_model=List[dict])
 async def get_driver_activity(current_user: User = Depends(get_current_driver)):
-    driver = await Driver.find_one(Driver.user_id == current_user.id)
-    if not driver:
-        return [] # Return empty activity instead of 404 to avoid breaking the UI
-    
+    driver = await _get_or_create_driver(current_user.id)
     activity = []
     
     # 1. Recent completed rides

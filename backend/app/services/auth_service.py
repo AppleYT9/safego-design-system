@@ -61,6 +61,9 @@ async def get_or_create_firebase_user(firebase_token: dict, role: str = "passeng
     # 1. Try finding by firebase_uid
     user = await User.find_one(User.firebase_uid == uid)
     if user:
+        if role and user.role.value != role:
+            user.role = UserRole(role)
+            await user.save()
         return user
     
     # 2. Try finding by email (in case user existed before Firebase migration)

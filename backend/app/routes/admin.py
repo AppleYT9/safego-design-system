@@ -247,6 +247,13 @@ async def get_live_rides(admin: User = Depends(get_current_admin)):
         RideStatus.in_progress.value
     ]
     rides = await Ride.find({"status": {"$in": active_statuses}}).sort(-Ride.created_at).to_list()
+    
+    # If fewer than 5 active rides, fetch recent completed/cancelled rides to show real history
+    if len(rides) < 5:
+        limit = 5 - len(rides)
+        recent_past = await Ride.find({"status": {"$in": [RideStatus.completed.value, RideStatus.cancelled.value]}}).sort(-Ride.created_at).limit(limit).to_list()
+        rides.extend(recent_past)
+        
     return [_ride_dict(r) for r in rides]
 
 

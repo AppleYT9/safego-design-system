@@ -805,14 +805,68 @@ const SettingsTab = () => {
 const DriverPortal = () => {
   const { t } = useTranslation();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
-  const [driver, setDriver] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>((localStorage.getItem("safego_driver_active_tab") as TabKey) || "dashboard");
+  useEffect(() => {
+    localStorage.setItem("safego_driver_active_tab", activeTab);
+  }, [activeTab]);
+  // ─── Restore cached data from localStorage for instant display on refresh ───
+  const [driver, setDriver] = useState<any>(() => {
+    try {
+      const c = localStorage.getItem("safego_driver_profile");
+      if (c) return JSON.parse(c);
+    } catch {}
+    return {
+      user: { full_name: "James Dela Cruz" },
+      average_rating: 4.8,
+      today_rides: 12,
+      today_earnings: 2450,
+      acceptance_rate: 98,
+      total_rides: 1240,
+    };
+  });
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [requests, setRequests] = useState<any[]>([]);
-  const [activity, setActivity] = useState<any[]>([]);
-  const [availableRides, setAvailableRides] = useState<any[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>(() => {
+    try {
+      const c = localStorage.getItem("safego_driver_requests");
+      if (c) return JSON.parse(c);
+    } catch {}
+    return [
+      { id: "1", pickup: "SM Megamall, Mandaluyong", dest: "BGC High Street, Taguig", dist: "3.2 km", fare: "₹185", mode: "pink", time: "10:30 AM", passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 4.8 },
+      { id: "2", pickup: "Trinoma, Quezon City", dest: "UP Diliman", dist: "5.1 km", fare: "₹210", mode: "normal", time: "10:35 AM", passengers: 2, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.0, rating: 4.7 }
+    ];
+  });
+  const [activity, setActivity] = useState<any[]>(() => {
+    try {
+      const c = localStorage.getItem("safego_driver_activity");
+      if (c) return JSON.parse(c);
+    } catch {}
+    return [
+      { type: "ride", text: "Completed ride to BGC High Street", time: "10:30 AM" },
+      { type: "document", text: "Vehicle Registration approved", time: "Yesterday" },
+      { type: "rating", text: "Received a 5-star rating", time: "Yesterday" }
+    ];
+  });
+  const [availableRides, setAvailableRides] = useState<any[]>(() => {
+    try {
+      const c = localStorage.getItem("safego_driver_available");
+      if (c) return JSON.parse(c);
+    } catch {}
+    return [
+      { id: "1", pickup: "SM Megamall, Mandaluyong", dest: "BGC High Street, Taguig", dist: "3.2 km", fare: "₹185", mode: "pink", time: "10:30 AM", passengers: 1, modeBg: "rgba(236, 72, 153, 0.1)", modeColor: "rgb(236, 72, 153)", surge: 1.0, rating: 4.8 },
+      { id: "2", pickup: "Trinoma, Quezon City", dest: "UP Diliman", dist: "5.1 km", fare: "₹210", mode: "normal", time: "10:35 AM", passengers: 2, modeBg: "rgba(13, 148, 136, 0.1)", modeColor: "rgb(13, 148, 136)", surge: 1.0, rating: 4.7 }
+    ];
+  });
+  const [history, setHistory] = useState<any[]>(() => {
+    try {
+      const c = localStorage.getItem("safego_driver_history");
+      if (c) return JSON.parse(c);
+    } catch {}
+    return [
+      { id: "h1", pickup: "NAIA Terminal 3", dest: "Makati Shangri-La", dist: "8.5 km", fare: "₹450", status: "completed", date: "Today", duration: "45 min", rating: 5, tip: "₹50" },
+      { id: "h2", pickup: "Ortigas Center", dest: "Eastwood City", dist: "4.2 km", fare: "₹220", status: "completed", date: "Yesterday", duration: "25 min", rating: 4, tip: "₹0" }
+    ];
+  });
   const [docList, setDocList] = useState([
     { name: "National ID", status: "Verified", icon: Check, color: "text-emerald-600", bg: "bg-emerald-100", expiry: "No Expiry", uploaded: "Jan 15, 2026", url: "https://images.unsplash.com/photo-1544383335-248386af915e?q=80&w=2000&auto=format&fit=crop" },
     { name: "Driver's License", status: "Verified", icon: Check, color: "text-emerald-600", bg: "bg-emerald-100", expiry: "Dec 2028", uploaded: "Jan 15, 2026", url: "https://images.unsplash.com/photo-1518458028785-8fbcd101ebb9?q=80&w=2000&auto=format&fit=crop" },
@@ -1012,6 +1066,15 @@ const DriverPortal = () => {
         }));
       setActivity([...activityToPrepend, ...initialActivity]);
 
+      // ─── Cache all data to localStorage for refresh persistence ───
+      try {
+        localStorage.setItem("safego_driver_profile", JSON.stringify(updatedProfile));
+        localStorage.setItem("safego_driver_requests", JSON.stringify(mappedAvailable.slice(0, 4)));
+        localStorage.setItem("safego_driver_activity", JSON.stringify([...activityToPrepend, ...initialActivity]));
+        localStorage.setItem("safego_driver_available", JSON.stringify(mappedAvailable));
+        localStorage.setItem("safego_driver_history", JSON.stringify([...ridesToPrepend, ...initialHistory]));
+      } catch (e) { console.warn("Failed to cache driver data", e); }
+
     } catch (err) {
       if (err instanceof Error && err.message === "Unauthorized") {
         return;
@@ -1041,14 +1104,15 @@ const DriverPortal = () => {
       });
 
       // Static mock data fallback with local overrides
-      setDriver({
+      const fallbackDriver = {
         user: { full_name: "James Dela Cruz" },
         average_rating: 4.8,
         today_rides: 12 + additionalRidesCount,
         today_earnings: 2450 + additionalEarnings,
         acceptance_rate: 98,
         total_rides: 1240 + additionalRidesCount,
-      });
+      };
+      setDriver(fallbackDriver);
 
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const mockAvailable = [
@@ -1076,7 +1140,8 @@ const DriverPortal = () => {
           duration: "Just now",
           tip: "₹0"
         }));
-      setHistory([...ridesToPrependMock, ...mockHistory]);
+      const updatedHistory = [...ridesToPrependMock, ...mockHistory];
+      setHistory(updatedHistory);
 
       const mockActivity = [
         { type: "ride", text: "Completed ride to BGC High Street", time: "10:30 AM" },
@@ -1091,7 +1156,18 @@ const DriverPortal = () => {
           text: `Completed ride to ${r.dest}`,
           time: "Just now"
         }));
-      setActivity([...activityToPrependMock, ...mockActivity]);
+      const updatedActivity = [...activityToPrependMock, ...mockActivity];
+      setActivity(updatedActivity);
+
+      try {
+        localStorage.setItem("safego_driver_profile", JSON.stringify(fallbackDriver));
+        localStorage.setItem("safego_driver_requests", JSON.stringify(filteredMock.slice(0, 4)));
+        localStorage.setItem("safego_driver_available", JSON.stringify(filteredMock));
+        localStorage.setItem("safego_driver_history", JSON.stringify(updatedHistory));
+        localStorage.setItem("safego_driver_activity", JSON.stringify(updatedActivity));
+      } catch (e) {
+        console.warn("Failed to cache driver mock data", e);
+      }
     } finally {
       if (!isBackground) setLoading(false);
     }
@@ -1099,9 +1175,17 @@ const DriverPortal = () => {
 
   useEffect(() => {
     fetchDriverData();
+    
+    // Poll for new available requests every 5 seconds
+    const interval = setInterval(() => {
+      fetchDriverData(true); // pass true for background fetch
+    }, 5000);
+
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab as TabKey);
     }
+
+    return () => clearInterval(interval);
   }, [location.state]);
 
   const handleAcceptRide = async (id: string, dest: string) => {
@@ -1127,8 +1211,10 @@ const DriverPortal = () => {
     }
 
     // ─── Optimistic Update (Immediate UI Feedback) ───
-    setRequests(prev => prev.filter(r => r.id !== id));
-    setAvailableRides(prev => prev.filter(r => r.id !== id));
+    const updatedRequests = requests.filter(r => r.id !== id);
+    const updatedAvailable = availableRides.filter(r => r.id !== id);
+    setRequests(updatedRequests);
+    setAvailableRides(updatedAvailable);
 
     const newHistoryItem = {
       ...rideToAccept,
@@ -1137,23 +1223,37 @@ const DriverPortal = () => {
       duration: "Just now",
       tip: "₹0"
     };
-    setHistory(prev => [newHistoryItem, ...prev]);
+    const updatedHistory = [newHistoryItem, ...history];
+    setHistory(updatedHistory);
 
-    setDriver(prev => {
-      if (!prev) return prev;
+    let updatedDriver = driver;
+    if (driver) {
       const fareValue = parseInt((rideToAccept.fare || "0").toString().replace("₹", "").replace(",", "")) || 0;
-      return {
-        ...prev,
-        today_rides: (prev.today_rides || 0) + 1,
-        today_earnings: (prev.today_earnings || 0) + fareValue,
-        total_rides: (prev.total_rides || 0) + 1
+      updatedDriver = {
+        ...driver,
+        today_rides: (driver.today_rides || 0) + 1,
+        today_earnings: (driver.today_earnings || 0) + fareValue,
+        total_rides: (driver.total_rides || 0) + 1
       };
-    });
+      setDriver(updatedDriver);
+    }
 
-    setActivity(prev => [
+    const updatedActivity = [
       { type: "ride", text: `Completed ride to ${dest}`, time: "Just now" },
-      ...prev
-    ]);
+      ...activity
+    ];
+    setActivity(updatedActivity);
+
+    // Save to localStorage immediately to survive page refreshes
+    try {
+      localStorage.setItem("safego_driver_profile", JSON.stringify(updatedDriver));
+      localStorage.setItem("safego_driver_requests", JSON.stringify(updatedRequests.slice(0, 4)));
+      localStorage.setItem("safego_driver_available", JSON.stringify(updatedAvailable));
+      localStorage.setItem("safego_driver_history", JSON.stringify(updatedHistory));
+      localStorage.setItem("safego_driver_activity", JSON.stringify(updatedActivity));
+    } catch (e) {
+      console.warn("Failed to persist accepted states in localStorage", e);
+    }
 
     toast.success(`Ride to ${dest} accepted!`, {
       icon: <Navigation size={18} className="text-white animate-pulse" />
@@ -1190,8 +1290,10 @@ const DriverPortal = () => {
     }
 
     // ─── Optimistic Update (Immediate UI Feedback) ───
-    setRequests(prev => prev.filter(r => r.id !== id));
-    setAvailableRides(prev => prev.filter(r => r.id !== id));
+    const updatedRequests = requests.filter(r => r.id !== id);
+    const updatedAvailable = availableRides.filter(r => r.id !== id);
+    setRequests(updatedRequests);
+    setAvailableRides(updatedAvailable);
 
     const newHistoryItem = {
       ...rideToDecline,
@@ -1201,12 +1303,24 @@ const DriverPortal = () => {
       tip: "₹0",
       rating: 0
     };
-    setHistory(prev => [newHistoryItem, ...prev]);
+    const updatedHistory = [newHistoryItem, ...history];
+    setHistory(updatedHistory);
 
-    setActivity(prev => [
+    const updatedActivity = [
       { type: "ride", text: `Declined request: ${rideToDecline.pickup}`, time: "Just now" },
-      ...prev
-    ]);
+      ...activity
+    ];
+    setActivity(updatedActivity);
+
+    // Save to localStorage immediately to survive page refreshes
+    try {
+      localStorage.setItem("safego_driver_requests", JSON.stringify(updatedRequests.slice(0, 4)));
+      localStorage.setItem("safego_driver_available", JSON.stringify(updatedAvailable));
+      localStorage.setItem("safego_driver_history", JSON.stringify(updatedHistory));
+      localStorage.setItem("safego_driver_activity", JSON.stringify(updatedActivity));
+    } catch (e) {
+      console.warn("Failed to persist declined states in localStorage", e);
+    }
 
     toast.error("Request Declined");
     // ────────────────────────────────────────────────
@@ -1467,6 +1581,11 @@ const DriverPortal = () => {
                 localStorage.setItem("userRole", "");
                 localStorage.removeItem("safego_accepted_rides");
                 localStorage.removeItem("safego_declined_rides");
+                localStorage.removeItem("safego_driver_profile");
+                localStorage.removeItem("safego_driver_requests");
+                localStorage.removeItem("safego_driver_activity");
+                localStorage.removeItem("safego_driver_available");
+                localStorage.removeItem("safego_driver_history");
                 window.location.href = "/login";
               }}
               className="flex items-center justify-center gap-3 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-4 py-3.5 text-[13px] font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.2)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] active:scale-[0.97] w-full text-left"
@@ -1517,6 +1636,11 @@ const DriverPortal = () => {
                   localStorage.removeItem("token");
                   localStorage.removeItem("safego_accepted_rides");
                   localStorage.removeItem("safego_declined_rides");
+                  localStorage.removeItem("safego_driver_profile");
+                  localStorage.removeItem("safego_driver_requests");
+                  localStorage.removeItem("safego_driver_activity");
+                  localStorage.removeItem("safego_driver_available");
+                  localStorage.removeItem("safego_driver_history");
                   window.location.href = "/login";
                 }}
                 className="flex items-center justify-center gap-4 rounded-2xl bg-[#ef4444] hover:bg-[#dc2626] px-5 py-4 text-sm font-bold text-white transition-all shadow-[0_4px_12px_rgba(239,68,68,0.3)] hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] mt-auto text-left w-full active:scale-[0.98]"
