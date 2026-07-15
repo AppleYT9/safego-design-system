@@ -9,6 +9,7 @@ This document describes the end-to-end logic, optimizations, and flows implement
 - **Cache Persistence**: Fetched rides are cached in `localStorage` under the key `safego_passenger_rides`. On page refreshes, the passenger dashboard loads this cache immediately, preventing blank lists while the API completes.
 - **Status Badges**: Added lowercase fallback support for all ride statuses (`completed`, `cancelled`, `in_progress`, `driver_arriving`, `matched`, `searching`) mapped to appropriate visual color indicators.
 - **Clean Immersive Loading (No Zero Flash)**: To prevent a flash of empty layouts or zero details on first load, the passenger portal renders a premium, full-screen loading screen (`Synchronizing SafeGo User Node...`) on mount until the backend profile fetch completes, ensuring the dashboard presents real data directly.
+- **Real SOS Trigger Integration**: Manually triggering an SOS alert sends a real POST request to the backend safety service `/api/safety/sos` containing coordinates, location description, and critical severity. This inserts a real `SOSAlert` record in MongoDB, which immediately streams to the Admin's Safety Command Center for manual resolution.
 
 ---
 
