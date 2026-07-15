@@ -955,11 +955,8 @@ const DriverPortal = () => {
         return res.json();
       };
 
-      const profile = await fetch(`${API_URL}/api/drivers/me`, { headers: { "Authorization": `Bearer ${token}` } }).then(handleResponse);
-      setDriver(profile);
-      if (!isBackground) setLoading(false);
-
-      const [available, historyData, activityData] = await Promise.all([
+      const [profile, available, historyData, activityData] = await Promise.all([
+        fetch(`${API_URL}/api/drivers/me`, { headers: { "Authorization": `Bearer ${token}` } }).then(handleResponse),
         fetch(`${API_URL}/api/drivers/me/available-rides`, { headers: { "Authorization": `Bearer ${token}` } }).then(handleResponse),
         fetch(`${API_URL}/api/drivers/me/history`, { headers: { "Authorization": `Bearer ${token}` } }).then(handleResponse),
         fetch(`${API_URL}/api/drivers/me/activity`, { headers: { "Authorization": `Bearer ${token}` } }).then(handleResponse),
